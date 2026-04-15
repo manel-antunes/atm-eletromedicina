@@ -68,12 +68,6 @@ const estadoConfig = {
   ok:      { label: 'Em dia',   bg: 'bg-green-50',   text: 'text-green-700',  border: 'border-green-200',  dot: 'bg-green-500',  badge: 'bg-green-100 text-green-700' },
 }
 
-const kpis = [
-  { label: 'Total',    bg: '#f8fafc', border: '#e2e8f0', iconBg: '#e2e8f0', iconCor: '#475569', valCor: '#0f172a', subCor: '#94a3b8', labelCor: '#64748b' },
-  { label: 'Em dia',  bg: '#f0fdf4', border: '#bbf7d0', iconBg: '#dcfce7', iconCor: '#16a34a', valCor: '#14532d', subCor: '#4ade80', labelCor: '#16a34a' },
-  { label: 'Em breve',bg: '#fffbeb', border: '#fde68a', iconBg: '#fef3c7', iconCor: '#d97706', valCor: '#78350f', subCor: '#f59e0b', labelCor: '#d97706' },
-  { label: 'Vencidas',bg: '#fff5f5', border: '#fecaca', iconBg: '#fee2e2', iconCor: '#dc2626', valCor: '#7f1d1d', subCor: '#f87171', labelCor: '#dc2626' },
-]
 
 
 export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
