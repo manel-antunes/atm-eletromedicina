@@ -490,7 +490,15 @@ export default function Relatorios({ equipamentos }: Props) {
                 <p className="text-sm font-semibold text-gray-800">Relatório de Calibrações</p>
                 <p className="text-xs text-gray-400 mt-0.5">Separado por estado em folhas</p>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
+              
+            </div>
+          
+            <button onClick={exportarCalibracoes} className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${gerado === 'calibracoes' ? 'bg-green-500 text-white' : 'bg-sky-600 hover:bg-sky-700 text-white'}`}>
+              <Download size={13} />
+              {gerado === 'calibracoes' ? 'Ficheiro gerado!' : 'Exportar Excel (.xlsx)'}
+            </button>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
   <div className="flex items-start gap-3 mb-4">
     <div className="bg-red-50 rounded-lg p-2">
       <FileText size={18} className="text-red-600" />
@@ -527,12 +535,6 @@ export default function Relatorios({ equipamentos }: Props) {
     Exportar PDF
   </button>
 </div>
-            </div>
-            <button onClick={exportarCalibracoes} className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${gerado === 'calibracoes' ? 'bg-green-500 text-white' : 'bg-sky-600 hover:bg-sky-700 text-white'}`}>
-              <Download size={13} />
-              {gerado === 'calibracoes' ? 'Ficheiro gerado!' : 'Exportar Excel (.xlsx)'}
-            </button>
-          </div>
         </div>
       </div>
     </div>

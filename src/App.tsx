@@ -13,6 +13,7 @@ import ModoApresentacao from './pages/ModoApresentacao'
 import ToastContainer from './components/Toast'
 import { useToast } from './hooks/useToast'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
+import DashboardIA from './pages/DashboardIA'
 
 const titulos: Record<string, string> = {
   dashboard: 'Dashboard Geral',
@@ -20,6 +21,7 @@ const titulos: Record<string, string> = {
   inventario: 'Inventário de Equipamentos',
   cedencias: 'Cedências',
   relatorios: 'Relatórios',
+  ia: 'Análise Inteligente',
 }
 
 function App() {
@@ -112,6 +114,8 @@ function App() {
         return <Cedencias equipamentos={equipamentos} onAtualizar={setEquipamentos} />
       case 'relatorios':
         return <Relatorios equipamentos={equipamentos} />
+      case 'ia':
+        return <DashboardIA equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       default:
         return null
     }
