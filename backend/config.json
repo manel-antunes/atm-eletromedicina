@@ -1,0 +1,17 @@
+{
+  "destinatarios": [
+    "1220769@isep.ipp.pt",
+    "manuantunes2013@gmail.com",
+    "catarina.pires@atmtotal.com"
+  ],
+  "agendamento": {
+    "ativo": false,
+    "diaSemana": "1",
+    "hora": "08:00"
+  },
+  "filtros": {
+    "incluirVencidas": true,
+    "incluirUrgentes": true,
+    "incluirEmBreve": true
+  }
+}

@@ -1,0 +1,102 @@
+import { Pool } from 'pg'
+import dotenv from 'dotenv'
+
+dotenv.config()
+
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+})
+
+export async function inicializarDB(): Promise<void> {
+  const client = await pool.connect()
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS equipamentos (
+        id SERIAL PRIMARY KEY,
+        numero_sap VARCHAR(50) UNIQUE NOT NULL,
+        descricao TEXT NOT NULL,
+        marca VARCHAR(100),
+        modelo VARCHAR(100),
+        numero_serie VARCHAR(100),
+        data_calibracao VARCHAR(50),
+        responsavel VARCHAR(100),
+        warning VARCHAR(50),
+        localizacao VARCHAR(200),
+        obs TEXT,
+        obs2 TEXT,
+        obs3 TEXT,
+        cc_pasta_2025 VARCHAR(100),
+        periodicidade VARCHAR(20) DEFAULT 'Anual',
+        criado_em TIMESTAMP DEFAULT NOW(),
+        atualizado_em TIMESTAMP DEFAULT NOW()
+      )
+    `)
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS calibracoes (
+        id SERIAL PRIMARY KEY,
+        equipamento_sap VARCHAR(50) NOT NULL,
+        data_calibracao DATE NOT NULL,
+        tecnico VARCHAR(100),
+        entidade VARCHAR(100),
+        observacoes TEXT,
+        relatorio VARCHAR(200),
+        aprovado_por VARCHAR(100),
+        criado_em TIMESTAMP DEFAULT NOW(),
+        FOREIGN KEY (equipamento_sap) REFERENCES equipamentos(numero_sap)
+      )
+    `)
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS cedencias (
+        id SERIAL PRIMARY KEY,
+        equipamento_sap VARCHAR(50) NOT NULL,
+        equipamento_nome TEXT,
+        destino VARCHAR(200),
+        responsavel VARCHAR(100),
+        contacto VARCHAR(100),
+        data_saida DATE,
+        data_retorno_prevista DATE,
+        data_retorno_efetiva DATE,
+        ativa BOOLEAN DEFAULT TRUE,
+        observacoes TEXT,
+        criado_em TIMESTAMP DEFAULT NOW(),
+        FOREIGN KEY (equipamento_sap) REFERENCES equipamentos(numero_sap)
+      )
+    `)
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS historico_emails (
+        id SERIAL PRIMARY KEY,
+        data VARCHAR(20),
+        hora VARCHAR(20),
+        destinatarios TEXT,
+        total_alertas INT,
+        vencidas INT,
+        urgentes INT,
+        em_breve INT,
+        sucesso BOOLEAN,
+        erro TEXT,
+        criado_em TIMESTAMP DEFAULT NOW()
+      )
+    `)
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS config_email (
+        id SERIAL PRIMARY KEY,
+        destinatarios TEXT,
+        agendamento_ativo BOOLEAN DEFAULT FALSE,
+        dia_semana VARCHAR(5) DEFAULT '1',
+        hora VARCHAR(10) DEFAULT '08:00',
+        incluir_vencidas BOOLEAN DEFAULT TRUE,
+        incluir_urgentes BOOLEAN DEFAULT TRUE,
+        incluir_em_breve BOOLEAN DEFAULT TRUE
+      )
+    `)
+
+    console.log('✅ Base de dados inicializada!')
+  } finally {
+    client.release()
+  }
+}

@@ -1,0 +1,153 @@
+import { useState, useEffect } from 'react'
+import type { Equipamento } from './data/equipamentos'
+import ImportarExcel from './components/ImportarExcel'
+import Sidebar from './components/Sidebar'
+import Topbar from './components/Topbar'
+import Dashboard from './pages/Dashboard'
+import Calibracoes from './pages/Calibracoes'
+import Inventario from './pages/Inventario'
+import Cedencias from './pages/Cedencias'
+import Relatorios from './pages/Relatorios'
+import DetalheEquipamento from './pages/DetalheEquipamento'
+import ModoApresentacao from './pages/ModoApresentacao'
+import ToastContainer from './components/Toast'
+import { useToast } from './hooks/useToast'
+import { carregarEquipamentos, importarEquipamentos } from './services/api'
+
+const titulos: Record<string, string> = {
+  dashboard: 'Dashboard Geral',
+  calibracoes: 'Calibrações',
+  inventario: 'Inventário de Equipamentos',
+  cedencias: 'Cedências',
+  relatorios: 'Relatórios',
+}
+
+function App() {
+  const [equipamentos, setEquipamentos] = useState<Equipamento[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [paginaAtiva, setPaginaAtiva] = useState('dashboard')
+  const [equipDetalhe, setEquipDetalhe] = useState<Equipamento | null>(null)
+  const [apresentacao, setApresentacao] = useState(false)
+  const { toasts, mostrar, remover } = useToast()
+
+  useEffect(() => {
+    carregarEquipamentos()
+      .then(dados => {
+        if (dados && dados.length > 0) {
+          const mapped = dados.map((row: Record<string, string>, i: number) => ({
+            id: i + 1,
+            numeroSAP: row.numero_sap,
+            descricao: row.descricao,
+            marca: row.marca,
+            modelo: row.modelo,
+            numeroSerie: row.numero_serie,
+            dataCalibracao: row.data_calibracao,
+            responsavel: row.responsavel,
+            warning: row.warning,
+            localizacao: row.localizacao,
+            obs: row.obs,
+            obs2: row.obs2,
+            obs3: row.obs3,
+            ccPasta2025: row.cc_pasta_2025,
+            periodicidade: row.periodicidade ?? 'Anual',
+          }))
+          setEquipamentos(mapped)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCarregando(false))
+  }, [])
+
+  async function handleImportar(novos: Equipamento[]) {
+    await importarEquipamentos(novos)
+    setEquipamentos(novos)
+    mostrar('sucesso', `${novos.length} equipamentos importados`, 'Dados guardados na base de dados.')
+  }
+
+  async function handleAtualizar(novos: Equipamento[]) {
+    setEquipamentos(novos)
+    mostrar('sucesso', 'Calibração registada!', 'Dados guardados na base de dados.')
+  }
+
+  if (carregando) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div style={{ width: 40, height: 40, border: '3px solid #e2e8f0', borderTop: '3px solid #C0001A', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+          <p className="text-sm text-gray-400">A carregar equipamentos...</p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
+
+  if (equipamentos.length === 0) {
+    return (
+      <>
+        <div className="h-screen bg-gray-50">
+          <ImportarExcel onImportar={handleImportar} />
+        </div>
+        <ToastContainer toasts={toasts} onRemover={remover} />
+      </>
+    )
+  }
+
+  function renderPagina() {
+    if (equipDetalhe) {
+      return (
+        <DetalheEquipamento
+          equipamento={equipDetalhe}
+          onVoltar={() => setEquipDetalhe(null)}
+        />
+      )
+    }
+    switch (paginaAtiva) {
+      case 'dashboard':
+        return <Dashboard equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
+      case 'calibracoes':
+        return <Calibracoes equipamentos={equipamentos} onAtualizar={handleAtualizar} onVerDetalhe={setEquipDetalhe} />
+      case 'inventario':
+        return <Inventario equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
+      case 'cedencias':
+        return <Cedencias equipamentos={equipamentos} onAtualizar={setEquipamentos} />
+      case 'relatorios':
+        return <Relatorios equipamentos={equipamentos} />
+      default:
+        return null
+    }
+  }
+
+  return (
+    <>
+      {apresentacao && (
+        <ModoApresentacao
+          equipamentos={equipamentos}
+          onFechar={() => setApresentacao(false)}
+        />
+      )}
+      <div className="flex h-screen bg-gray-100 overflow-hidden">
+        <Sidebar
+          paginaAtiva={paginaAtiva}
+          onNavegar={(p) => { setPaginaAtiva(p); setEquipDetalhe(null) }}
+          equipamentos={equipamentos}
+        />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <Topbar
+            titulo={equipDetalhe ? equipDetalhe.descricao : titulos[paginaAtiva]}
+            totalEquipamentos={equipamentos.length}
+            onReimportar={() => setEquipamentos([])}
+            equipamentos={equipamentos}
+            onVerDetalhe={(eq) => setEquipDetalhe(eq)}
+            onApresentacao={() => setApresentacao(true)}
+          />
+          <main className="flex-1 overflow-y-auto p-5">
+            {renderPagina()}
+          </main>
+        </div>
+      </div>
+      <ToastContainer toasts={toasts} onRemover={remover} />
+    </>
+  )
+}
+
+export default App

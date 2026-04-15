@@ -1,0 +1,87 @@
+[
+  {
+    "id": "1776248317659",
+    "data": "15/04/2026",
+    "hora": "11:18:37",
+    "destinatarios": [
+      "1220769@isep.ipp.pt",
+      "manuantunes2013@gmail.com"
+    ],
+    "totalAlertas": 14,
+    "vencidas": 7,
+    "urgentes": 2,
+    "emBreve": 5,
+    "sucesso": true
+  },
+  {
+    "id": "1776248236327",
+    "data": "15/04/2026",
+    "hora": "11:17:16",
+    "destinatarios": [
+      "1220769@isep.ipp.pt",
+      "manuantunes2013@gmail.com"
+    ],
+    "totalAlertas": 14,
+    "vencidas": 7,
+    "urgentes": 2,
+    "emBreve": 5,
+    "sucesso": true
+  },
+  {
+    "id": "1776248198044",
+    "data": "15/04/2026",
+    "hora": "11:16:38",
+    "destinatarios": [
+      "1220769@isep.ipp.pt",
+      "manuantunes2013@gmail.com"
+    ],
+    "totalAlertas": 14,
+    "vencidas": 7,
+    "urgentes": 2,
+    "emBreve": 5,
+    "sucesso": true
+  },
+  {
+    "id": "1776244647048",
+    "data": "15/04/2026",
+    "hora": "10:17:27",
+    "destinatarios": [
+      "1220769@isep.ipp.pt",
+      "manuantunes2013@gmail.com"
+    ],
+    "totalAlertas": 14,
+    "vencidas": 7,
+    "urgentes": 2,
+    "emBreve": 5,
+    "sucesso": true
+  },
+  {
+    "id": "1776244575233",
+    "data": "15/04/2026",
+    "hora": "10:16:15",
+    "destinatarios": [
+      "1220769@isep.ipp.pt",
+      "manuantunes2013@gmail.com"
+    ],
+    "totalAlertas": 15,
+    "vencidas": 8,
+    "urgentes": 2,
+    "emBreve": 5,
+    "sucesso": true
+  },
+  {
+    "id": "1776244241491",
+    "data": "15/04/2026",
+    "hora": "10:10:41",
+    "destinatarios": [
+      "1220769@isep.ipp.pt",
+      "diogo.correia@atmtotal.com",
+      "manuantunes2013@gmail.com"
+    ],
+    "totalAlertas": 15,
+    "vencidas": 8,
+    "urgentes": 2,
+    "emBreve": 5,
+    "sucesso": true
+  }
+]
