@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3001'
+const API_URL = 'https://atm-eletromedicina-production.up.railway.app'
 
 export async function importarEquipamentos(equipamentos: unknown[]) {
   const res = await fetch(`${API_URL}/api/equipamentos/importar`, {

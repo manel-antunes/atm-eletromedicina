@@ -1,8 +1,7 @@
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 
-const API_URL = 'http://localhost:3001'
-
+const API_URL = 'https://atm-eletromedicina-production.up.railway.app/'
 function parseData(dataStr: string): Date | null {
   if (!dataStr || dataStr === 'undefined') return null
   const numerico = Number(dataStr)
