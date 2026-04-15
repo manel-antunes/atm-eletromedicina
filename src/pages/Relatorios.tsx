@@ -4,6 +4,7 @@ import { FileText, Download, Table, Mail, CheckCircle, Send, Plus, X, Clock, Set
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import { enviarAlertasEmail, testarEmail, carregarConfig, guardarConfig, carregarHistorico, atualizarCache } from '../services/emailService'
+import { gerarPDFAlertas, gerarPDFInventario } from '../services/pdfService'
 
 interface Props {
   equipamentos: Equipamento[]
@@ -489,6 +490,43 @@ export default function Relatorios({ equipamentos }: Props) {
                 <p className="text-sm font-semibold text-gray-800">Relatório de Calibrações</p>
                 <p className="text-xs text-gray-400 mt-0.5">Separado por estado em folhas</p>
               </div>
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+  <div className="flex items-start gap-3 mb-4">
+    <div className="bg-red-50 rounded-lg p-2">
+      <FileText size={18} className="text-red-600" />
+    </div>
+    <div>
+      <p className="text-sm font-semibold text-gray-800">Relatório de Alertas PDF</p>
+      <p className="text-xs text-gray-400 mt-0.5">Vencidas, urgentes e em breve</p>
+    </div>
+  </div>
+  <button
+    onClick={() => gerarPDFAlertas(equipamentos)}
+    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white transition-all"
+  >
+    <Download size={13} />
+    Exportar PDF
+  </button>
+</div>
+
+<div className="bg-white rounded-xl border border-gray-200 p-5">
+  <div className="flex items-start gap-3 mb-4">
+    <div className="bg-slate-50 rounded-lg p-2">
+      <FileText size={18} className="text-slate-600" />
+    </div>
+    <div>
+      <p className="text-sm font-semibold text-gray-800">Inventário Completo PDF</p>
+      <p className="text-xs text-gray-400 mt-0.5">Todos os {stats.total} equipamentos</p>
+    </div>
+  </div>
+  <button
+    onClick={() => gerarPDFInventario(equipamentos)}
+    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-800 text-white transition-all"
+  >
+    <Download size={13} />
+    Exportar PDF
+  </button>
+</div>
             </div>
             <button onClick={exportarCalibracoes} className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${gerado === 'calibracoes' ? 'bg-green-500 text-white' : 'bg-sky-600 hover:bg-sky-700 text-white'}`}>
               <Download size={13} />
