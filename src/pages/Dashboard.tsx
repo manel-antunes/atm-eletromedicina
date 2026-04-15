@@ -75,7 +75,6 @@ const kpis = [
   { label: 'Vencidas',bg: '#fff5f5', border: '#fecaca', iconBg: '#fee2e2', iconCor: '#dc2626', valCor: '#7f1d1d', subCor: '#f87171', labelCor: '#dc2626' },
 ]
 
-const delays = ['delay-1', 'delay-2', 'delay-3', 'delay-4']
 
 export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
   const estados = equipamentos.map(eq => ({ eq, estado: getEstado(eq) }))
@@ -85,12 +84,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
   const emDia    = estados.filter(e => e.estado === 'ok')
   const alertas  = [...vencidos, ...urgentes, ...avisos]
 
-  const kpiDados = [
-    { ...kpis[0], valor: equipamentos.length, sub: 'equipamentos', icon: <Package size={15} /> },
-    { ...kpis[1], valor: emDia.length, sub: `${Math.round((emDia.length / equipamentos.length) * 100)}% do total`, icon: <CheckCircle size={15} /> },
-    { ...kpis[2], valor: avisos.length + urgentes.length, sub: 'próximos 60 dias', icon: <Clock size={15} /> },
-    { ...kpis[3], valor: vencidos.length, sub: 'ação imediata', icon: <AlertTriangle size={15} /> },
-  ]
+
 
   const [ordenacao, setOrdenacao] = useState<{ coluna: string; direcao: 'asc' | 'desc' }>({
     coluna: 'estado', direcao: 'asc'

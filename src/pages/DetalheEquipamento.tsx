@@ -1,4 +1,4 @@
-import { ArrowLeft, Calendar, MapPin, User, Clock, CheckCircle, FileText, Package } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Clock, CheckCircle, FileText, Package } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 

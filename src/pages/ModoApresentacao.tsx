@@ -71,7 +71,6 @@ export default function ModoApresentacao({ equipamentos, onFechar }: Props) {
     return () => window.removeEventListener('keydown', handleKey)
   }, [])
 
-  const slides = ['kpis', 'alertas', 'grafico']
 
   return (
     <div style={{

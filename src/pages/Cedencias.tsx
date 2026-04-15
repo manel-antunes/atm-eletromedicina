@@ -100,8 +100,8 @@ export default function Cedencias({ equipamentos, onAtualizar }: Props) {
   function registarRetorno() {
     if (!modalRetorno) return
     if (!dataRetorno) { setErro('Indica a data de retorno.'); return }
-
-    const eq = equipamentos.find(e => e.id === modalRetorno.equipamentoId)
+const eqSelecionado = equipamentos.find(e => e.id === Number(form.equipamentoId))
+if (!eqSelecionado) return
     const novosEquip = equipamentos.map(e =>
       e.id === modalRetorno.equipamentoId ? { ...e, localizacao: 'FIXO HPRT' } : e
     )
