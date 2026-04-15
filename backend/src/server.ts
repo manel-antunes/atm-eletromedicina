@@ -423,8 +423,94 @@ app.post('/api/testar-email', async (_req, res) => {
   }
 })
 
+// ... resto do código ...
+
+app.get('/api/descricao/:sap', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT descricao_tecnica FROM descricoes_equipamentos WHERE equipamento_sap=$1',
+      [req.params.sap]
+    )
+    res.json({ descricao: result.rows[0]?.descricao_tecnica ?? null })
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+app.post('/api/descricao/:sap', async (req, res) => {
+  const { descricao } = req.body
+  try {
+    await pool.query(
+      `INSERT INTO descricoes_equipamentos (equipamento_sap, descricao_tecnica)
+       VALUES ($1, $2)
+       ON CONFLICT (equipamento_sap) DO UPDATE SET descricao_tecnica=$2, gerado_em=NOW()`,
+      [req.params.sap, descricao]
+    )
+    res.json({ sucesso: true })
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+
 // Iniciar
 const PORT = process.env.PORT ?? 3001
+// Rota para gerar descrição com IA
+app.post('/api/descricao-ia', async (req, res) => {
+  const { descricao, marca, modelo } = req.body
+  const nome = `${descricao} ${marca} ${modelo}`.toLowerCase()
+
+  const base: Record<string, string> = {
+    'multiparametrico': `**Função principal**\nEquipamento de monitorização multiparamétrica utilizado para avaliar e simular sinais vitais de doentes. Essencial para verificar o correto funcionamento de monitores de sinais vitais.\n\n**Princípio de funcionamento**\nGera sinais elétricos e fisiológicos simulados (ECG, SpO2, NIBP, temperatura, respiração) com elevada precisão, permitindo testar monitores de paciente sem necessidade de doente real.\n\n**Aplicações clínicas**\nVerificação de monitores em UCI, bloco operatório, urgência e enfermarias. Usado durante manutenção preventiva e corretiva.\n\n**Parâmetros medidos**\nECG (12 derivações), frequência cardíaca, SpO2, NIBP, temperatura, frequência respiratória.\n\n**Normas relevantes**\nIEC 60601-1, IEC 60601-2-27, IEC 62133.\n\n**Cuidados de calibração**\nCalibração anual obrigatória para garantir rastreabilidade metrológica. Fundamental para acreditação hospitalar.`,
+
+    'analisador de segurança': `**Função principal**\nAnalisador de segurança elétrica para equipamentos médicos. Verifica a conformidade elétrica de dispositivos médicos segundo normas internacionais.\n\n**Princípio de funcionamento**\nMede correntes de fuga, resistência de terra, rigidez dielétrica e outras grandezas elétricas de segurança. Compara com limites definidos nas normas IEC.\n\n**Aplicações clínicas**\nTeste de aceitação de novos equipamentos, manutenção preventiva periódica, verificação após reparação e inspeções de segurança obrigatórias.\n\n**Parâmetros medidos**\nCorrente de fuga para terra, corrente de fuga de chassis, corrente de fuga de doente, resistência de terra de proteção.\n\n**Normas relevantes**\nIEC 60601-1, IEC 62353, ABNT NBR IEC 60601-1.\n\n**Cuidados de calibração**\nCalibração semestral ou anual conforme política hospitalar. Essencial para garantir segurança dos doentes e profissionais.`,
+
+    'osciloscópio': `**Função principal**\nInstrumento de medição que permite visualizar graficamente sinais elétricos variáveis no tempo. Indispensável para análise de formas de onda em equipamentos médicos.\n\n**Princípio de funcionamento**\nConverte sinais elétricos analógicos em representação digital, exibindo amplitude e frequência em função do tempo. Permite análise de transitórios e distorções.\n\n**Aplicações clínicas**\nAnálise de sinais de ECG, verificação de desfibrilhadores, teste de unidades de eletrocirurgia e diagnóstico de falhas em equipamentos médicos.\n\n**Parâmetros medidos**\nTensão (mV a kV), frequência (Hz a GHz), tempo, fase, forma de onda.\n\n**Normas relevantes**\nIEC 61010-1, ANSI/IEEE 1057.\n\n**Cuidados de calibração**\nCalibração anual recomendada. Verificação de sondas incluída no processo.`,
+
+    'multímetro': `**Função principal**\nInstrumento de medição elétrica multifunções. Mede tensão, corrente e resistência elétrica com elevada precisão.\n\n**Princípio de funcionamento**\nUtiliza conversores analógico-digitais de alta resolução para medir grandezas elétricas. Modo automático seleciona o fundo de escala adequado.\n\n**Aplicações clínicas**\nDiagnóstico de falhas em equipamentos médicos, verificação de alimentações elétricas, medição de resistências de terra e continuidade de circuitos.\n\n**Parâmetros medidos**\nTensão DC/AC (mV a kV), corrente DC/AC (µA a A), resistência (Ω a MΩ), continuidade, díodos, capacitância.\n\n**Normas relevantes**\nIEC 61010-1, CAT III/IV.\n\n**Cuidados de calibração**\nCalibração anual obrigatória para garantir rastreabilidade metrológica IPAC.`,
+
+    'desfibrilhador': `**Função principal**\nAnalisador de desfibrilhadores para verificação do desempenho e segurança de desfibrilhadores e cardioversores.\n\n**Princípio de funcionamento**\nMede a energia entregue, forma de onda, tempo de descarga e outros parâmetros críticos de desfibrilhadores externos e implantáveis.\n\n**Aplicações clínicas**\nManutenção preventiva de desfibrilhadores em urgência, UCI e bloco operatório. Verificação após reparação.\n\n**Parâmetros medidos**\nEnergia entregue (J), forma de onda, tempo de descarga, corrente de pico, tensão de pico.\n\n**Normas relevantes**\nIEC 60601-2-4, AAMI DF80.\n\n**Cuidados de calibração**\nCalibração semestral recomendada dado o carácter crítico do equipamento.`,
+
+    'ventilador': `**Função principal**\nAnalisador de fluxo e pressão para ventiladores mecânicos. Verifica o desempenho de ventiladores pulmonares.\n\n**Princípio de funcionamento**\nMede caudal de gás, pressão e volume com sensores de alta precisão. Analisa curvas de ventilação e compara com parâmetros programados.\n\n**Aplicações clínicas**\nManutenção preventiva de ventiladores em UCI, bloco operatório e transporte. Verificação após reparação e calibração.\n\n**Parâmetros medidos**\nCaudal (L/min), volume corrente (mL), frequência respiratória, PEEP, pressão de pico, FiO2.\n\n**Normas relevantes**\nIEC 60601-2-12, ISO 80601-2-12.\n\n**Cuidados de calibração**\nCalibração anual obrigatória. Verificação semestral recomendada.`,
+
+    'infus': `**Função principal**\nAnalisador de bombas de infusão para verificação do desempenho de bombas seringa e volumétricas.\n\n**Princípio de funcionamento**\nMede com precisão o caudal de infusão real, detetando desvios face ao caudal programado. Regista oclusões e alarmes.\n\n**Aplicações clínicas**\nManutenção preventiva de bombas de infusão em UCI, oncologia, pediatria e bloco operatório.\n\n**Parâmetros medidos**\nCaudal (mL/h), volume infundido, pressão de oclusão, tempo de resposta a alarmes.\n\n**Normas relevantes**\nIEC 60601-2-24, ISO 28620.\n\n**Cuidados de calibração**\nCalibração anual obrigatória para garantir precisão na administração de medicação.`,
+
+    'incubadora': `**Função principal**\nAnalisador de incubadoras neonatais para verificação das condições ambientais internas.\n\n**Princípio de funcionamento**\nMede temperatura, humidade e velocidade do ar no interior de incubadoras. Verifica uniformidade térmica e tempos de recuperação.\n\n**Aplicações clínicas**\nManutenção preventiva de incubadoras em neonatologia e UCIN. Verificação após reparação.\n\n**Parâmetros medidos**\nTemperatura (°C), humidade relativa (%), velocidade do ar (m/s), ruído (dB), iluminância (lux).\n\n**Normas relevantes**\nIEC 60601-2-19, EN ISO 10993.\n\n**Cuidados de calibração**\nCalibração anual obrigatória dado o uso em neonatos de alto risco.`,
+
+    'eletrobisturi': `**Função principal**\nAnalisador de unidades de eletrocirurgia (bisturi elétrico) para verificação de segurança e desempenho.\n\n**Princípio de funcionamento**\nMede potência de saída, correntes de fuga, impedância de carga e outros parâmetros de segurança de unidades eletrocirúrgicas mono e bipolares.\n\n**Aplicações clínicas**\nManutenção preventiva de bisturis elétricos no bloco operatório. Verificação após reparação e antes de uso clínico.\n\n**Parâmetros medidos**\nPotência (W), corrente de alta frequência (A), corrente de fuga, impedância de carga, forma de onda.\n\n**Normas relevantes**\nIEC 60601-2-2, AAMI HF18.\n\n**Cuidados de calibração**\nCalibração semestral obrigatória. Equipamento crítico para segurança cirúrgica.`,
+
+    'radiometro': `**Função principal**\nRadiómetro para medição de intensidade de radiação eletromagnética em equipamentos de fototerapia e desinfecção UV.\n\n**Princípio de funcionamento**\nUtiliza fotodetetores calibrados para medir irradiância (W/m²) em diferentes comprimentos de onda. Permite verificar eficácia de lâmpadas UV e fototerapia.\n\n**Aplicações clínicas**\nVerificação de equipamentos de fototerapia neonatal, desinfecção UV e lasers terapêuticos.\n\n**Parâmetros medidos**\nIrradiância (W/m², µW/cm²), dose cumulativa, comprimento de onda.\n\n**Normas relevantes**\nIEC 60601-2-50, IEC 62471.\n\n**Cuidados de calibração**\nCalibração anual obrigatória. Sensores sujeitos a degradação com o uso.`,
+
+    'luximetro': `**Função principal**\nLuxímetro para medição de intensidade luminosa em ambientes hospitalares e blocos operatórios.\n\n**Princípio de funcionamento**\nUtiliza fotodíodos com resposta espetral próxima da visão humana (curva V-lambda) para medir iluminância em lux.\n\n**Aplicações clínicas**\nVerificação de iluminação cirúrgica, iluminação de emergência e conformidade com requisitos de iluminação hospitalar.\n\n**Parâmetros medidos**\nIluminância (lux), luminância (cd/m²).\n\n**Normas relevantes**\nEN 12464-1, ISO 8995-1.\n\n**Cuidados de calibração**\nCalibração anual recomendada.`,
+
+    'tacometro': `**Função principal**\nTacómetro para medição de velocidade de rotação em equipamentos médicos com componentes rotativos.\n\n**Princípio de funcionamento**\nMede rotações por minuto (RPM) por método ótico ou de contacto. Permite verificar velocidade de centrifugadoras, motores e outros equipamentos rotativos.\n\n**Aplicações clínicas**\nVerificação de centrifugadoras de laboratório, misturadores e outros equipamentos com motor.\n\n**Parâmetros medidos**\nVelocidade de rotação (RPM), velocidade linear (m/min).\n\n**Normas relevantes**\nISO 10002, IEC 61010-1.\n\n**Cuidados de calibração**\nCalibração anual recomendada.`,
+
+    'fonte de alimentação': `**Função principal**\nFonte de alimentação programável para testes de equipamentos médicos sob diferentes condições de alimentação elétrica.\n\n**Princípio de funcionamento**\nGera tensões DC e AC estabilizadas e programáveis. Permite simular variações de tensão, frequência e formas de onda para teste de imunidade de equipamentos médicos.\n\n**Aplicações clínicas**\nTestes de compatibilidade eletromagnética, verificação de estabilidade de equipamentos médicos sob variações de alimentação.\n\n**Parâmetros medidos**\nTensão (V), corrente (A), potência (W), frequência (Hz).\n\n**Normas relevantes**\nIEC 61010-1, IEC 60601-1.\n\n**Cuidados de calibração**\nCalibração anual obrigatória para garantir rastreabilidade das medições.`,
+
+    'gerador de funções': `**Função principal**\nGerador de sinais elétricos de diferentes formas de onda para teste e calibração de equipamentos médicos.\n\n**Princípio de funcionamento**\nGera sinais sinusoidais, quadrados, triangulares e arbitrários com frequência e amplitude programáveis. Usa síntese digital direta (DDS) para alta estabilidade.\n\n**Aplicações clínicas**\nCalibração de amplificadores biomédicos, teste de filtros, verificação de equipamentos de diagnóstico e terapêutica.\n\n**Parâmetros medidos**\nFrequência (Hz a MHz), amplitude (mV a V), offset DC, fase, forma de onda.\n\n**Normas relevantes**\nIEC 61010-1, ANSI/IEEE 1057.\n\n**Cuidados de calibração**\nCalibração anual recomendada.`,
+
+    'fotometro': `**Função principal**\nFotómetro para medição de propriedades óticas de soluções e materiais em laboratório clínico.\n\n**Princípio de funcionamento**\nMede a absorvância de soluções a comprimentos de onda específicos usando a lei de Beer-Lambert. Permite quantificação de analitos em amostras biológicas.\n\n**Aplicações clínicas**\nAnálises bioquímicas em laboratório clínico, controlo de qualidade de reagentes e calibração de analisadores automáticos.\n\n**Parâmetros medidos**\nAbsorvância, transmitância (%), concentração.\n\n**Normas relevantes**\nISO 15189, ISO 8655.\n\n**Cuidados de calibração**\nCalibração anual obrigatória para laboratórios acreditados.`,
+  }
+
+  // Encontra a melhor correspondência
+  let melhorDescricao = ''
+  let melhorScore = 0
+
+  for (const [chave, texto] of Object.entries(base)) {
+    const palavras = chave.split(' ')
+    const score = palavras.filter(p => nome.includes(p)).length
+    if (score > melhorScore) {
+      melhorScore = score
+      melhorDescricao = texto
+    }
+  }
+
+  if (!melhorDescricao) {
+    melhorDescricao = `**Função principal**\nEquipamento de teste e medição utilizado pela Unidade de Eletromedicina da ATM para verificação e calibração de dispositivos médicos.\n\n**Aplicações clínicas**\nUtilizado em procedimentos de manutenção preventiva e corretiva de equipamentos médicos hospitalares.\n\n**Cuidados de calibração**\nCalibração periódica obrigatória conforme programa de manutenção da Unidade de Eletromedicina. Garantia de rastreabilidade metrológica às normas nacionais e internacionais.`
+  }
+
+  res.json({ descricao: melhorDescricao })
+})
 inicializarDB().then(() => {
   iniciarCron()
   app.listen(PORT, () => console.log(`✅ Servidor ATM a correr em http://localhost:${PORT}`))

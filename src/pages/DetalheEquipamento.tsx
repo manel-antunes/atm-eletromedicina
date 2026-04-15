@@ -1,4 +1,5 @@
-import { ArrowLeft, Calendar, MapPin, Clock, CheckCircle, FileText, Package } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ArrowLeft, Calendar, MapPin, Clock, CheckCircle, FileText, Package, Brain } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 
@@ -47,6 +48,39 @@ const estadoConfig = {
 }
 
 export default function DetalheEquipamento({ equipamento: eq, onVoltar }: Props) {
+  const [descricaoIA, setDescricaoIA] = useState<string | null>(null)
+  const [gerandoIA, setGerandoIA] = useState(false)
+  const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/descricao/${eq.numeroSAP}`)
+      .then(r => r.json())
+      .then(d => { if (d.descricao) setDescricaoIA(d.descricao) })
+      .catch(() => {})
+  }, [eq.numeroSAP])
+
+  async function handleGerarDescricao() {
+    setGerandoIA(true)
+    try {
+      const res = await fetch(`${API_URL}/api/descricao-ia`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descricao: eq.descricao, marca: eq.marca, modelo: eq.modelo }),
+      })
+      const data = await res.json()
+      setDescricaoIA(data.descricao)
+      await fetch(`${API_URL}/api/descricao/${eq.numeroSAP}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descricao: data.descricao }),
+      })
+    } catch {
+      setDescricaoIA('Erro ao gerar descrição. Tenta novamente.')
+    } finally {
+      setGerandoIA(false)
+    }
+  }
+
   const estado = getEstado(eq)
   const cfg = estadoConfig[estado]
   const proxima = parseData(eq.dataCalibracao)
@@ -88,17 +122,17 @@ export default function DetalheEquipamento({ equipamento: eq, onVoltar }: Props)
       <div className="grid grid-cols-3 gap-4">
 
         {/* Identificação */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 col-span-1">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <Package size={14} className="text-gray-400" />
             <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Identificação</h2>
           </div>
           <div className="space-y-3">
             {[
-              { label: 'Nº SAP', valor: eq.numeroSAP },
-              { label: 'Nº Série', valor: eq.numeroSerie || '—' },
-              { label: 'Marca', valor: eq.marca },
-              { label: 'Modelo', valor: eq.modelo },
+              { label: 'Nº SAP',        valor: eq.numeroSAP },
+              { label: 'Nº Série',      valor: eq.numeroSerie || '—' },
+              { label: 'Marca',         valor: eq.marca },
+              { label: 'Modelo',        valor: eq.modelo },
               { label: 'Periodicidade', valor: eq.periodicidade ?? 'Anual' },
             ].map(({ label, valor }) => (
               <div key={label} className="flex justify-between items-start">
@@ -110,7 +144,7 @@ export default function DetalheEquipamento({ equipamento: eq, onVoltar }: Props)
         </div>
 
         {/* Calibração */}
-        <div className={`rounded-2xl border shadow-sm p-5 col-span-1 ${cfg.bg} ${cfg.border}`}>
+        <div className={`rounded-2xl border shadow-sm p-5 ${cfg.bg} ${cfg.border}`}>
           <div className="flex items-center gap-2 mb-4">
             <Calendar size={14} className={cfg.text} />
             <h2 className={`text-xs font-bold uppercase tracking-widest ${cfg.text}`}>Calibração</h2>
@@ -130,8 +164,8 @@ export default function DetalheEquipamento({ equipamento: eq, onVoltar }: Props)
           </div>
         </div>
 
-        {/* Localização e responsável */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 col-span-1">
+        {/* Localização */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <MapPin size={14} className="text-gray-400" />
             <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Localização</h2>
@@ -202,6 +236,67 @@ export default function DetalheEquipamento({ equipamento: eq, onVoltar }: Props)
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Descrição técnica IA */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Brain size={14} className="text-purple-500" />
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Descrição técnica</h2>
+          </div>
+          <button
+            onClick={handleGerarDescricao}
+            disabled={gerandoIA}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: gerandoIA ? '#f1f5f9' : 'linear-gradient(135deg,#7c3aed,#a855f7)',
+              color: gerandoIA ? '#94a3b8' : '#fff',
+              border: 'none', borderRadius: 8, padding: '6px 14px',
+              cursor: gerandoIA ? 'wait' : 'pointer',
+              fontSize: 11, fontWeight: 700, transition: 'all 0.2s',
+            }}
+          >
+            <Brain size={12} />
+            {gerandoIA ? 'A gerar...' : descricaoIA ? 'Regenerar' : 'Gerar descrição'}
+          </button>
+        </div>
+
+        {gerandoIA && (
+          <div className="flex items-center gap-3 py-6">
+            <div style={{ width: 20, height: 20, border: '2px solid #e2e8f0', borderTop: '2px solid #7c3aed', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+            <p className="text-sm text-gray-400">A analisar o equipamento...</p>
+            <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+          </div>
+        )}
+
+        {!gerandoIA && descricaoIA && (
+          <div className="space-y-1">
+            {descricaoIA.split('\n').map((linha, i) => {
+              if (!linha.trim()) return null
+              if (linha.startsWith('**') && linha.endsWith('**')) {
+                return <p key={i} className="text-xs font-bold text-gray-700 uppercase tracking-wide mt-3 mb-1 first:mt-0">{linha.replace(/\*\*/g, '')}</p>
+              }
+              if (linha.includes('**')) {
+                const parts = linha.split('**')
+                return (
+                  <p key={i} className="text-xs text-gray-600 leading-relaxed">
+                    {parts.map((part, j) => j % 2 === 1 ? <strong key={j} className="text-gray-800">{part}</strong> : part)}
+                  </p>
+                )
+              }
+              return <p key={i} className="text-xs text-gray-600 leading-relaxed">{linha}</p>
+            })}
+          </div>
+        )}
+
+        {!gerandoIA && !descricaoIA && (
+          <div className="text-center py-8">
+            <Brain size={28} className="text-gray-200 mx-auto mb-3" />
+            <p className="text-sm text-gray-300 font-medium">Sem descrição técnica</p>
+            <p className="text-xs text-gray-300 mt-1">Clica em "Gerar descrição" para obter informação técnica detalhada</p>
           </div>
         )}
       </div>
