@@ -1,0 +1,37 @@
+{
+  "name": "ATM Eletromedicina",
+  "short_name": "ATM",
+  "description": "Gestão de Equipamentos de Teste - Unidade de Eletromedicina",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#C0001A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/",
+      "description": "Ver dashboard geral"
+    },
+    {
+      "name": "Calibrações",
+      "url": "/?page=calibracoes",
+      "description": "Gerir calibrações"
+    }
+  ]
+}
