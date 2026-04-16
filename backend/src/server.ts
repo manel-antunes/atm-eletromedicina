@@ -452,6 +452,63 @@ app.post('/api/descricao/:sap', async (req, res) => {
   }
 })
 
+// Documentos
+app.get('/api/documentos', async (_req, res) => {
+  try {
+    const result = await pool.query('SELECT id, equipamento_sap, nome, tipo, tamanho, criado_em FROM documentos ORDER BY criado_em DESC')
+    res.json(result.rows)
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+app.get('/api/documentos/:sap', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, equipamento_sap, nome, tipo, tamanho, criado_em FROM documentos WHERE equipamento_sap=$1 ORDER BY criado_em DESC',
+      [req.params.sap]
+    )
+    res.json(result.rows)
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+app.get('/api/documentos/download/:id', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT nome, tipo, dados FROM documentos WHERE id=$1', [req.params.id])
+    if (!result.rows.length) return res.status(404).json({ erro: 'Documento não encontrado' })
+    const { nome, tipo, dados } = result.rows[0]
+    const buffer = Buffer.from(dados, 'base64')
+    res.setHeader('Content-Type', tipo || 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${nome}"`)
+    res.send(buffer)
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+app.post('/api/documentos', async (req, res) => {
+  const { equipamentoSAP, nome, tipo, tamanho, dados } = req.body
+  try {
+    await pool.query(
+      `INSERT INTO documentos (equipamento_sap, nome, tipo, tamanho, dados) VALUES ($1,$2,$3,$4,$5)`,
+      [equipamentoSAP || null, nome, tipo, tamanho, dados]
+    )
+    res.json({ sucesso: true })
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+app.delete('/api/documentos/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM documentos WHERE id=$1', [req.params.id])
+    res.json({ sucesso: true })
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
 
 // Iniciar
 const PORT = process.env.PORT ?? 3001

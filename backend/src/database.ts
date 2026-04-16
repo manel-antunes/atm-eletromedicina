@@ -49,6 +49,17 @@ export async function inicializarDB(): Promise<void> {
     `)
 
     await client.query(`
+  CREATE TABLE IF NOT EXISTS documentos (
+    id SERIAL PRIMARY KEY,
+    equipamento_sap VARCHAR(50),
+    nome VARCHAR(200) NOT NULL,
+    tipo VARCHAR(50),
+    tamanho INT,
+    dados TEXT NOT NULL,
+    criado_em TIMESTAMP DEFAULT NOW()
+  )
+`)
+    await client.query(`
   CREATE TABLE IF NOT EXISTS descricoes_equipamentos (
     id SERIAL PRIMARY KEY,
     equipamento_sap VARCHAR(50) UNIQUE NOT NULL,
