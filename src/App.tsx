@@ -17,6 +17,8 @@ import { useToast } from './hooks/useToast'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
 import DashboardIA from './pages/DashboardIA'
 import Mapa from './pages/Mapa'
+import EstadoOffline from './components/EstadoOffline'
+import ErroBackend from './components/ErroBackend'
 
 const titulos: Record<string, string> = {
   dashboard: 'Dashboard Geral',
@@ -38,34 +40,35 @@ function App() {
   const [equipDetalhe, setEquipDetalhe] = useState<Equipamento | null>(null)
   const [apresentacao, setApresentacao] = useState(false)
   const { toasts, mostrar, remover } = useToast()
-
-  useEffect(() => {
-    carregarEquipamentos()
-      .then(dados => {
-        if (dados && dados.length > 0) {
-          const mapped = dados.map((row: Record<string, string>, i: number) => ({
-            id: i + 1,
-            numeroSAP: row.numero_sap,
-            descricao: row.descricao,
-            marca: row.marca,
-            modelo: row.modelo,
-            numeroSerie: row.numero_serie,
-            dataCalibracao: row.data_calibracao,
-            responsavel: row.responsavel,
-            warning: row.warning,
-            localizacao: row.localizacao,
-            obs: row.obs,
-            obs2: row.obs2,
-            obs3: row.obs3,
-            ccPasta2025: row.cc_pasta_2025,
-            periodicidade: row.periodicidade ?? 'Anual',
-          }))
-          setEquipamentos(mapped)
-        }
-      })
-      .catch(() => {})
-      .finally(() => setCarregando(false))
-  }, [])
+const [erroBackend, setErroBackend] = useState(false)
+useEffect(() => {
+  carregarEquipamentos()
+    .then(dados => {
+      setErroBackend(false)
+      if (dados && dados.length > 0) {
+        const mapped = dados.map((row: Record<string, string>, i: number) => ({
+          id: i + 1,
+          numeroSAP: row.numero_sap,
+          descricao: row.descricao,
+          marca: row.marca,
+          modelo: row.modelo,
+          numeroSerie: row.numero_serie,
+          dataCalibracao: row.data_calibracao,
+          responsavel: row.responsavel,
+          warning: row.warning,
+          localizacao: row.localizacao,
+          obs: row.obs,
+          obs2: row.obs2,
+          obs3: row.obs3,
+          ccPasta2025: row.cc_pasta_2025,
+          periodicidade: row.periodicidade ?? 'Anual',
+        }))
+        setEquipamentos(mapped)
+      }
+    })
+    .catch(() => setErroBackend(true))
+    .finally(() => setCarregando(false))
+}, [])
 
   async function handleImportar(novos: Equipamento[]) {
     await importarEquipamentos(novos)
@@ -134,37 +137,34 @@ function App() {
     }
   }
 
-  return (
-    <>
-      {apresentacao && (
-        <ModoApresentacao
-          equipamentos={equipamentos}
-          onFechar={() => setApresentacao(false)}
-        />
-      )}
-      <div className="flex h-screen bg-gray-100 overflow-hidden">
-        <Sidebar
-          paginaAtiva={paginaAtiva}
-          onNavegar={(p) => { setPaginaAtiva(p); setEquipDetalhe(null) }}
-          equipamentos={equipamentos}
-        />
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <Topbar
-            titulo={equipDetalhe ? equipDetalhe.descricao : titulos[paginaAtiva]}
-            totalEquipamentos={equipamentos.length}
-            onReimportar={() => setEquipamentos([])}
-            equipamentos={equipamentos}
-            onVerDetalhe={(eq) => setEquipDetalhe(eq)}
-            onApresentacao={() => setApresentacao(true)}
-          />
-          <main className="flex-1 overflow-y-auto p-5">
-            {renderPagina()}
-          </main>
-        </div>
-      </div>
-      <ToastContainer toasts={toasts} onRemover={remover} />
-    </>
-  )
+return (
+  <>
+    <EstadoOffline />
+
+    {ErroBackend && (
+      <ErroBackend
+        onTentar={() => {
+          setErroBackend(false)
+          setCarregando(true)
+          window.location.reload()
+        }}
+      />
+    )}
+
+    {apresentacao && (
+      <ModoApresentacao
+        equipamentos={equipamentos}
+        onFechar={() => setApresentacao(false)}
+      />
+    )}
+
+ 
+
+  
+
+    <ToastContainer toasts={toasts} onRemover={remover} />
+  </>
+)
 }
 
 export default App
