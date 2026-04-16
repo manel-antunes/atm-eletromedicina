@@ -9,6 +9,7 @@ import Calibracoes from './pages/Calibracoes'
 import Inventario from './pages/Inventario'
 import Cedencias from './pages/Cedencias'
 import Relatorios from './pages/Relatorios'
+import Contactos from './pages/Contactos'
 import DetalheEquipamento from './pages/DetalheEquipamento'
 import ModoApresentacao from './pages/ModoApresentacao'
 import ToastContainer from './components/Toast'
@@ -24,6 +25,7 @@ const titulos: Record<string, string> = {
   relatorios: 'Relatórios',
   ia: 'Análise Inteligente',
   documentos: 'Documentos',
+  contactos: 'Contactos de Marcas',
 }
 
 function App() {
@@ -120,6 +122,8 @@ function App() {
         return <DashboardIA equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
         case 'documentos':
   return <Documentos equipamentos={equipamentos} />
+      case 'contactos':
+        return <Contactos equipamentos={equipamentos} />
       default:
         return null
     }
