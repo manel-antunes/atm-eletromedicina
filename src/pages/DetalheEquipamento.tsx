@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { ArrowLeft, Calendar, MapPin, Clock, CheckCircle, FileText, Package, Brain } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { ArrowLeft, Calendar, MapPin, Clock, CheckCircle, FileText, Package, Brain, ClipboardCheck, Upload, X } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 
@@ -80,7 +80,54 @@ export default function DetalheEquipamento({ equipamento: eq, onVoltar }: Props)
       setGerandoIA(false)
     }
   }
+const [modalCalib, setModalCalib] = useState(false)
+const [formCalib, setFormCalib] = useState({
+  data: new Date().toISOString().split('T')[0],
+  tecnico: '',
+  entidade: '',
+  observacoes: '',
+  aprovadoPor: '',
+})
+const [ficheiroCalib, setFicheiroCalib] = useState<File | null>(null)
+const [assinado, setAssinado] = useState(false)
+const [erroCalib, setErroCalib] = useState('')
+const [sucessoCalib, setSucessoCalib] = useState(false)
+const inputCalibRef = useRef<HTMLInputElement>(null)
 
+async function handleSubmitCalib() {
+  if (!formCalib.data) { setErroCalib('A data é obrigatória.'); return }
+  if (!formCalib.tecnico) { setErroCalib('O técnico é obrigatório.'); return }
+  if (!formCalib.entidade) { setErroCalib('A entidade é obrigatória.'); return }
+  if (!ficheiroCalib) { setErroCalib('O relatório PDF é obrigatório.'); return }
+  if (!assinado) { setErroCalib('É necessário confirmar a aprovação.'); return }
+
+  const dataCalib = new Date(formCalib.data)
+  const novaProxima = new Date(dataCalib)
+  if (eq.periodicidade === 'Bienal') novaProxima.setFullYear(novaProxima.getFullYear() + 2)
+  else novaProxima.setFullYear(novaProxima.getFullYear() + 1)
+  const excelDate = Math.round((novaProxima.getTime() / 86400000) + 25569)
+
+  try {
+    await fetch(`${API_URL}/api/calibracoes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        equipamentoSAP: eq.numeroSAP,
+        dataCalibracao: formCalib.data,
+        tecnico: formCalib.tecnico,
+        entidade: formCalib.entidade,
+        observacoes: formCalib.observacoes,
+        relatorio: ficheiroCalib.name,
+        aprovadoPor: formCalib.aprovadoPor,
+        novaProximaCalib: String(excelDate),
+      }),
+    })
+    setSucessoCalib(true)
+    setTimeout(() => { setModalCalib(false); setSucessoCalib(false) }, 1500)
+  } catch {
+    setErroCalib('Erro ao registar calibração.')
+  }
+}
   const estado = getEstado(eq)
   const cfg = estadoConfig[estado]
   const proxima = parseData(eq.dataCalibracao)
@@ -107,15 +154,23 @@ export default function DetalheEquipamento({ equipamento: eq, onVoltar }: Props)
           <ArrowLeft size={12} />
           Voltar
         </button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-gray-800">{eq.descricao}</h1>
-            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>
-              {cfg.label}
-            </span>
-          </div>
-          <p className="text-sm text-gray-400 mt-0.5">{eq.marca} {eq.modelo} · Nº SAP: {eq.numeroSAP}</p>
-        </div>
+<div className="flex-1">
+  <div className="flex items-center gap-3 flex-wrap">
+    <h1 className="text-lg font-bold text-gray-800">{eq.descricao}</h1>
+    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>
+      {cfg.label}
+    </span>
+    <button
+      onClick={() => setModalCalib(true)}
+      className="flex items-center gap-1.5 text-xs font-semibold text-white px-3 py-1.5 rounded-lg"
+      style={{ background: '#C0001A' }}
+    >
+      <ClipboardCheck size={12} />
+      Registar calibração
+    </button>
+  </div>
+  <p className="text-sm text-gray-400 mt-0.5">{eq.marca} {eq.modelo} · Nº SAP: {eq.numeroSAP}</p>
+</div>
       </div>
 
       {/* Info principal */}
@@ -249,6 +304,7 @@ export default function DetalheEquipamento({ equipamento: eq, onVoltar }: Props)
           </div>
           <button
             onClick={handleGerarDescricao}
+            
             disabled={gerandoIA}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
@@ -300,7 +356,81 @@ export default function DetalheEquipamento({ equipamento: eq, onVoltar }: Props)
           </div>
         )}
       </div>
-
+{/* Modal calibração rápida */}
+{modalCalib && (
+  <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+    <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div>
+          <h2 className="text-sm font-bold text-gray-800">Registar Calibração</h2>
+          <p className="text-xs text-gray-400 mt-0.5">{eq.descricao}</p>
+        </div>
+        <button onClick={() => { setModalCalib(false); setErroCalib('') }} className="text-gray-400 hover:text-gray-600">
+          <X size={18} />
+        </button>
+      </div>
+      <div className="px-6 py-4 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Data *</label>
+            <input type="date" value={formCalib.data} onChange={e => setFormCalib({...formCalib, data: e.target.value})}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Entidade *</label>
+            <input type="text" placeholder="Ex: CATIM, IPQ..." value={formCalib.entidade} onChange={e => setFormCalib({...formCalib, entidade: e.target.value})}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Técnico *</label>
+          <input type="text" placeholder="Nome do técnico" value={formCalib.tecnico} onChange={e => setFormCalib({...formCalib, tecnico: e.target.value})}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
+        </div>
+        <div>
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Aprovado por</label>
+          <input type="text" placeholder="Nome do responsável" value={formCalib.aprovadoPor} onChange={e => setFormCalib({...formCalib, aprovadoPor: e.target.value})}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
+        </div>
+        <div>
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">
+            Relatório PDF <span className="text-red-500">*</span>
+          </label>
+          <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${ficheiroCalib ? 'border-green-300 bg-green-50' : 'border-gray-200 hover:border-red-300'}`}>
+            {ficheiroCalib ? (
+              <div className="flex items-center gap-2 text-green-700">
+                <CheckCircle size={14} />
+                <span className="text-xs font-semibold">{ficheiroCalib.name}</span>
+              </div>
+            ) : (
+              <>
+                <Upload size={18} className="text-gray-400 mb-1" />
+                <span className="text-xs text-gray-400">Clique para anexar PDF</span>
+              </>
+            )}
+            <input ref={inputCalibRef} type="file" accept=".pdf" className="hidden" onChange={e => setFicheiroCalib(e.target.files?.[0] ?? null)} />
+          </label>
+        </div>
+        <div onClick={() => setAssinado(!assinado)} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${assinado ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
+          <div className={`w-5 h-5 rounded flex items-center justify-center border-2 flex-shrink-0 ${assinado ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+            {assinado && <CheckCircle size={12} className="text-white" />}
+          </div>
+          <p className="text-xs text-gray-600">Confirmo que os dados são corretos e assumo responsabilidade.</p>
+        </div>
+        {erroCalib && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{erroCalib}</p>}
+        {sucessoCalib && <p className="text-xs text-green-700 bg-green-50 px-3 py-2 rounded-lg">✓ Calibração registada com sucesso!</p>}
+      </div>
+      <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+        <button onClick={() => { setModalCalib(false); setErroCalib('') }} className="text-xs font-semibold text-gray-500 px-4 py-2 rounded-lg border border-gray-200">
+          Cancelar
+        </button>
+        <button onClick={handleSubmitCalib} className="text-xs font-semibold text-white px-4 py-2 rounded-lg" style={{ background: '#C0001A' }}>
+          Encerrar Calibração
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   )
 }

@@ -167,9 +167,39 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
       <div className="anim-fade-up delay-5">
         <GraficoCalibracoes equipamentos={equipamentos} />
       </div>
-
+{/* Alertas de cedências atrasadas */}
+{(() => {
+  try {
+    const ceds = JSON.parse(localStorage.getItem('atm_cedencias') ?? '[]')
+    const atrasadas = ceds.filter((c: { ativa: boolean; dataRetornoPrevista: string }) => {
+      if (!c.ativa) return false
+      const retorno = new Date(c.dataRetornoPrevista)
+      return retorno < new Date()
+    })
+    if (atrasadas.length === 0) return null
+    return (
+      <div className="mb-2">
+        {atrasadas.map((c: { id: number; equipamentoNome: string; destino: string; dataRetornoPrevista: string }) => (
+          <div key={c.id} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f97316', flexShrink: 0 }} />
+              <div>
+                <p style={{ color: '#9a3412', fontSize: 13, fontWeight: 700 }}>{c.equipamentoNome}</p>
+                <p style={{ color: '#ea580c', fontSize: 11, marginTop: 2, opacity: 0.7 }}>Cedido a {c.destino} — retorno previsto: {new Date(c.dataRetornoPrevista).toLocaleDateString('pt-PT')}</p>
+              </div>
+            </div>
+            <span style={{ background: '#ffedd5', color: '#9a3412', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
+              Retorno atrasado
+            </span>
+          </div>
+        ))}
+      </div>
+    )
+  } catch { return null }
+})()}
       {/* Alertas */}
       {alertas.length > 0 && (
+        
         <div className="anim-fade-up delay-6">
           <div className="flex items-center gap-2 mb-3">
             <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Alertas ativos</h2>
