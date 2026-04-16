@@ -16,6 +16,7 @@ import ToastContainer from './components/Toast'
 import { useToast } from './hooks/useToast'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
 import DashboardIA from './pages/DashboardIA'
+import Mapa from './pages/Mapa'
 
 const titulos: Record<string, string> = {
   dashboard: 'Dashboard Geral',
@@ -26,6 +27,8 @@ const titulos: Record<string, string> = {
   ia: 'Análise Inteligente',
   documentos: 'Documentos',
   contactos: 'Contactos de Marcas',
+  mapa: 'Mapa de Equipamentos',
+
 }
 
 function App() {
@@ -124,6 +127,8 @@ function App() {
   return <Documentos equipamentos={equipamentos} />
       case 'contactos':
         return <Contactos equipamentos={equipamentos} />
+        case 'mapa':
+  return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       default:
         return null
     }
