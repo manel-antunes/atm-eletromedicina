@@ -48,17 +48,22 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos }: Props)
     <aside className="w-56 min-w-56 flex flex-col" style={{ background: '#C0001A' }}>
 
       {/* Logo */}
-      <div className="px-5 pt-6 pb-5">
-        <img
-          src={logoAtm}
-          alt="ATM"
-          className="w-28 object-contain brightness-0 invert mb-3"
-        />
-        <div className="h-px w-full opacity-20" style={{ background: 'white' }} />
-        <p className="text-red-100 text-xs mt-3 opacity-70 uppercase tracking-widest font-semibold">
-          Eletromedicina
-        </p>
-      </div>
+<div className="px-5 pt-6 pb-5">
+  <div className="flex items-center justify-between mb-3">
+    <img src={logoAtm} alt="ATM" className="w-28 object-contain brightness-0 invert" />
+    <button
+      onClick={() => {}}
+      className="text-red-200 opacity-50 hover:opacity-100 md:hidden"
+      id="fechar-sidebar"
+    >
+      ✕
+    </button>
+  </div>
+  <div className="h-px w-full opacity-20" style={{ background: 'white' }} />
+  <p className="text-red-100 text-xs mt-3 opacity-70 uppercase tracking-widest font-semibold">
+    Eletromedicina
+  </p>
+</div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-2 space-y-0.5">
