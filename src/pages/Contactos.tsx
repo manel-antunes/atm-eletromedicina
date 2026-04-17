@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Phone, Mail, Globe, MapPin, Edit2, Check, X, Plus } from 'lucide-react'
+import { Phone, Mail, Globe, MapPin, Edit2, Check, X, Plus, ChevronDown } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 
 interface Props {
@@ -17,6 +17,7 @@ interface Contacto {
 }
 
 const CHAVE = 'atm_contactos'
+
 
 function carregarContactos(marcas: string[]): Record<string, Contacto> {
   try {
@@ -49,6 +50,7 @@ export default function Contactos({ equipamentos }: Props) {
   const [formEdit, setFormEdit] = useState<Contacto | null>(null)
   const [pesquisa, setPesquisa] = useState('')
   const [novoModal, setNovoModal] = useState(false)
+  const [cardExpandido, setCardExpandido] = useState<string | null>(null)
   const [novaEntrada, setNovaEntrada] = useState<Contacto>({
     marca: '', website: '', email: '', telefone: '', morada: '', representante: '', notas: '',
   })
@@ -136,122 +138,128 @@ export default function Contactos({ equipamentos }: Props) {
       </div>
 
       {/* Cards de contactos */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {filtradas.map(contacto => {
-          const eqDaMarca = equipamentos.filter(e => e.marca === contacto.marca)
-          const estaEditando = editando === contacto.marca
-          const dados = estaEditando && formEdit ? formEdit : contacto
-          const totalPreenchidos = [contacto.website, contacto.email, contacto.telefone, contacto.morada, contacto.representante]
-            .filter(v => v && v !== 'Por Preencher').length
+<div className="space-y-2">
+  {filtradas.map(contacto => {
+    const eqDaMarca = equipamentos.filter(e => e.marca === contacto.marca)
+    const estaEditando = editando === contacto.marca
+    const dados = estaEditando && formEdit ? formEdit : contacto
+    const totalPreenchidos = [contacto.website, contacto.email, contacto.telefone, contacto.morada, contacto.representante]
+      .filter(v => v && v !== 'Por Preencher').length
+    const expandido = cardExpandido === contacto.marca
 
-          return (
-            <div key={contacto.marca} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    return (
+      <div key={contacto.marca} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
-              {/* Header do card */}
-              <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '16px 20px' }}>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p style={{ color: '#fff', fontSize: 15, fontWeight: 700 }}>{contacto.marca}</p>
-                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 2 }}>
-                      {eqDaMarca.length} equipamento(s) no inventário
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div style={{
-                      background: totalPreenchidos >= 3 ? 'rgba(34,197,94,0.2)' : totalPreenchidos > 0 ? 'rgba(234,179,8,0.2)' : 'rgba(239,68,68,0.2)',
-                      borderRadius: 99, padding: '3px 10px',
-                    }}>
-                      <span style={{
-                        color: totalPreenchidos >= 3 ? '#4ade80' : totalPreenchidos > 0 ? '#facc15' : '#f87171',
-                        fontSize: 10, fontWeight: 700,
-                      }}>
-                        {totalPreenchidos}/5 preenchidos
-                      </span>
-                    </div>
-                    {!estaEditando ? (
-                      <button
-                        onClick={() => iniciarEdicao(contacto.marca)}
-                        style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}
-                      >
-                        <Edit2 size={11} /> Editar
-                      </button>
-                    ) : (
-                      <div className="flex gap-2">
-                        <button onClick={guardarEdicao} style={{ background: 'rgba(34,197,94,0.2)', border: 'none', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', color: '#4ade80', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}>
-                          <Check size={11} /> Guardar
-                        </button>
-                        <button onClick={cancelarEdicao} style={{ background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', color: '#f87171', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}>
-                          <X size={11} /> Cancelar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+        {/* Linha compacta sempre visível */}
+        <div
+          onClick={() => !estaEditando && setCardExpandido(expandido ? null : contacto.marca)}
+          className={`flex items-center gap-4 px-5 py-3.5 ${!estaEditando ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
+        >
+          {/* Indicador preenchimento */}
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+            background: totalPreenchidos >= 3 ? '#22c55e' : totalPreenchidos > 0 ? '#eab308' : '#ef4444'
+          }} />
 
-                {/* Mini lista de equipamentos */}
-                <div className="flex flex-wrap gap-1 mt-3">
-                  {eqDaMarca.slice(0, 3).map(eq => (
-                    <span key={eq.id} style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: 10, padding: '2px 8px', borderRadius: 99 }}>
-                      {eq.modelo || eq.descricao}
-                    </span>
-                  ))}
-                  {eqDaMarca.length > 3 && (
-                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, padding: '2px 0' }}>+{eqDaMarca.length - 3} mais</span>
-                  )}
-                </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-800">{contacto.marca}</p>
+            <p className="text-xs text-gray-400">{eqDaMarca.length} equipamento(s) · {totalPreenchidos}/5 campos preenchidos</p>
+          </div>
+
+          {/* Badges modelos */}
+          <div className="hidden md:flex gap-1">
+            {eqDaMarca.slice(0, 2).map(eq => (
+              <span key={eq.id} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{eq.modelo || eq.descricao}</span>
+            ))}
+            {eqDaMarca.length > 2 && <span className="text-xs text-gray-400">+{eqDaMarca.length - 2}</span>}
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {!estaEditando ? (
+              <button
+                onClick={e => { e.stopPropagation(); iniciarEdicao(contacto.marca) }}
+                className="text-xs font-semibold text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 px-3 py-1.5 rounded-lg transition-all"
+              >
+                <Edit2 size={11} className="inline mr-1" />Editar
+              </button>
+            ) : (
+              <div className="flex gap-1.5">
+                <button onClick={e => { e.stopPropagation(); guardarEdicao() }} className="text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
+                  <Check size={11} className="inline mr-1" />Guardar
+                </button>
+                <button onClick={e => { e.stopPropagation(); cancelarEdicao() }} className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">
+                  <X size={11} className="inline mr-1" />Cancelar
+                </button>
               </div>
+            )}
+            {!estaEditando && (
+              <ChevronDown
+                size={14}
+                className="text-gray-400 transition-transform duration-200"
+                style={{ transform: expandido ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              />
+            )}
+          </div>
+        </div>
 
-              {/* Campos de contacto */}
-              <div className="p-4 space-y-3">
-                {campos.map(campo => {
-                  const valor = dados[campo.key as keyof Contacto]
-                  const porPreencher = valor === 'Por Preencher' || !valor
-                  return (
-                    <div key={campo.key} className="flex items-start gap-3">
-                      <div style={{ color: porPreencher ? '#cbd5e1' : '#64748b', marginTop: 1, flexShrink: 0 }}>
-                        {campo.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-400 mb-0.5">{campo.label}</p>
-                        {estaEditando ? (
-                          <input
-                            type="text"
-                            value={formEdit?.[campo.key as keyof Contacto] ?? ''}
-                            onChange={e => setFormEdit(prev => prev ? { ...prev, [campo.key]: e.target.value } : null)}
-                            className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-red-400"
-                            placeholder={`Inserir ${campo.label.toLowerCase()}...`}
-                          />
-                        ) : (
-                          <p className={`text-xs font-medium truncate ${porPreencher ? 'text-gray-300 italic' : 'text-gray-700'}`}>
-                            {valor || 'Por Preencher'}
-                          </p>
-                        )}
-                      </div>
+        {/* Conteúdo expansível */}
+        <div style={{
+          maxHeight: expandido || estaEditando ? 500 : 0,
+          overflow: 'hidden',
+          transition: 'max-height 0.35s cubic-bezier(0.16,1,0.3,1)',
+        }}>
+          <div className="px-5 pb-4 border-t border-gray-100">
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              {campos.map(campo => {
+                const valor = dados[campo.key as keyof Contacto]
+                const porPreencher = valor === 'Por Preencher' || !valor
+                return (
+                  <div key={campo.key} className="flex items-start gap-3">
+                    <div style={{ color: porPreencher ? '#cbd5e1' : '#64748b', marginTop: 2, flexShrink: 0 }}>
+                      {campo.icon}
                     </div>
-                  )
-                })}
-
-                {/* Notas */}
-                <div className="pt-2 border-t border-gray-50">
-                  <p className="text-xs text-gray-400 mb-1">Notas</p>
-                  {estaEditando ? (
-                    <textarea
-                      value={formEdit?.notas ?? ''}
-                      onChange={e => setFormEdit(prev => prev ? { ...prev, notas: e.target.value } : null)}
-                      className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-red-400 resize-none h-16"
-                      placeholder="Notas adicionais..."
-                    />
-                  ) : (
-                    <p className={`text-xs ${dados.notas ? 'text-gray-600' : 'text-gray-300 italic'}`}>
-                      {dados.notas || 'Sem notas'}
-                    </p>
-                  )}
-                </div>
-              </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-400 mb-0.5">{campo.label}</p>
+                      {estaEditando ? (
+                        <input
+                          type="text"
+                          value={formEdit?.[campo.key as keyof Contacto] ?? ''}
+                          onChange={e => setFormEdit(prev => prev ? { ...prev, [campo.key]: e.target.value } : null)}
+                          className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-red-400"
+                          placeholder={`Inserir ${campo.label.toLowerCase()}...`}
+                        />
+                      ) : (
+                        <p className={`text-xs font-medium truncate ${porPreencher ? 'text-gray-300 italic' : 'text-gray-700'}`}>
+                          {valor || 'Por Preencher'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          )
-        })}
+
+            <div className="mt-3 pt-3 border-t border-gray-50">
+              <p className="text-xs text-gray-400 mb-1">Notas</p>
+              {estaEditando ? (
+                <textarea
+                  value={formEdit?.notas ?? ''}
+                  onChange={e => setFormEdit(prev => prev ? { ...prev, notas: e.target.value } : null)}
+                  className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-red-400 resize-none h-14"
+                  placeholder="Notas adicionais..."
+                />
+              ) : (
+                <p className={`text-xs ${dados.notas ? 'text-gray-600' : 'text-gray-300 italic'}`}>
+                  {dados.notas || 'Sem notas'}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
+    )
+  })}
+</div>
 
       {/* Modal novo contacto */}
       {novoModal && (

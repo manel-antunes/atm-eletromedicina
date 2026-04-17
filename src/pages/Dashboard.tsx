@@ -4,7 +4,6 @@ import { differenceInDays, parse, isValid } from 'date-fns'
 import { useState } from 'react'
 import GraficoCalibracoes from '../components/GraficoCalibracoes'
 import KpiCard from '../components/KpiCard'
-
 interface Props {
   equipamentos: Equipamento[]
   onVerDetalhe: (eq: Equipamento) => void
@@ -77,6 +76,8 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
   const avisos   = estados.filter(e => e.estado === 'aviso')
   const emDia    = estados.filter(e => e.estado === 'ok')
   const alertas  = [...vencidos, ...urgentes, ...avisos]
+
+const [vista, setVista] = useState<'tabela' | 'cards'>('tabela')
 
 
 
@@ -263,73 +264,153 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
       )}
 
       {/* Tabela */}
-      <div className="anim-fade-up delay-7">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Todos os equipamentos</h2>
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                {[
-                  { key: 'sap',         label: 'Nº SAP',        sortable: false },
-                  { key: 'descricao',   label: 'Descrição',     sortable: true },
-                  { key: 'marca',       label: 'Marca/Modelo',  sortable: true },
-                  { key: 'periodicidade',label: 'Periodicidade', sortable: false },
-                  { key: 'ultimaCalib', label: 'Última Calib.', sortable: true },
-                  { key: 'proximaCalib',label: 'Próxima Calib.',sortable: true },
-                  { key: 'localizacao', label: 'Localização',   sortable: true },
-                  { key: 'estado',      label: 'Estado',        sortable: true },
-                ].map(col => (
-                  <th
-                    key={col.key}
-                    onClick={() => col.sortable && toggleOrdenacao(col.key)}
-                    className={`text-left px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wide select-none ${col.sortable ? 'cursor-pointer hover:text-gray-600' : ''}`}
-                  >
-                    <span className="flex items-center gap-1">
-                      {col.label}
-                      {col.sortable && (
-                        <span className="text-gray-300">
-                          {ordenacao.coluna === col.key ? (ordenacao.direcao === 'asc' ? '↑' : '↓') : '↕'}
-                        </span>
-                      )}
+{/* Tabela / Cards toggle */}
+<div className="anim-fade-up delay-7">
+  <div className="flex items-center justify-between mb-3">
+    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Todos os equipamentos</h2>
+    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+      <button
+        onClick={() => setVista('tabela')}
+        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'tabela' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+      >
+        ☰ Tabela
+      </button>
+      <button
+        onClick={() => setVista('cards')}
+        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'cards' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+      >
+        ⊞ Cards
+      </button>
+    </div>
+  </div>
+
+  {vista === 'tabela' ? (
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-100">\
+            {[
+              { key: 'sap',          label: 'Nº SAP',         sortable: false },
+              { key: 'descricao',    label: 'Descrição',      sortable: true },
+              { key: 'marca',        label: 'Marca/Modelo',   sortable: true },
+              { key: 'periodicidade',label: 'Periodicidade',  sortable: false },
+              { key: 'ultimaCalib',  label: 'Última Calib.',  sortable: true },
+              { key: 'proximaCalib', label: 'Próxima Calib.', sortable: true },
+              { key: 'localizacao',  label: 'Localização',    sortable: true },
+              { key: 'estado',       label: 'Estado',         sortable: true },
+            ].map(col => (
+              <th
+                key={col.key}
+                onClick={() => col.sortable && toggleOrdenacao(col.key)}
+                className={`text-left px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wide select-none ${col.sortable ? 'cursor-pointer hover:text-gray-600' : ''}`}
+              >
+                <span className="flex items-center gap-1">
+                  {col.label}
+                  {col.sortable && (
+                    <span className="text-gray-300">
+                      {ordenacao.coluna === col.key ? (ordenacao.direcao === 'asc' ? '↑' : '↓') : '↕'}
                     </span>
-                  </th>
-                ))}
+                  )}
+                </span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {ordenarEstados(estados).map(({ eq, estado }) => {
+            const cfg = estadoConfig[estado]
+            const proxima = parseData(eq.dataCalibracao)
+            const ultima = proxima ? getUltimaCalib(proxima, eq.periodicidade) : null
+            return (
+              <tr
+                key={eq.id}
+                onClick={() => onVerDetalhe(eq)}
+                className="border-b border-gray-50 hover:bg-blue-50 transition-colors cursor-pointer"
+              >
+                <td className="px-4 py-3 font-mono text-xs text-gray-400">{eq.numeroSAP}</td>
+                <td className="px-4 py-3 font-semibold text-gray-800 text-xs max-w-48 truncate">{eq.descricao}</td>
+                <td className="px-4 py-3 text-gray-500 text-xs">{eq.marca} {eq.modelo}</td>
+                <td className="px-4 py-3 text-xs">
+                  <span className={`px-2 py-0.5 rounded-full font-semibold ${eq.periodicidade === 'Bienal' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {eq.periodicidade ?? 'Anual'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500">{ultima ? ultima.toLocaleDateString('pt-PT') : '—'}</td>
+                <td className="px-4 py-3 text-xs text-gray-500">{proxima ? proxima.toLocaleDateString('pt-PT') : '—'}</td>
+                <td className="px-4 py-3 text-xs text-gray-500 max-w-32 truncate">{eq.localizacao || '—'}</td>
+                <td className="px-4 py-3">
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>
+                    {cfg.label}
+                  </span>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {ordenarEstados(estados).map(({ eq, estado }) => {
-                const cfg = estadoConfig[estado]
-                const proxima = parseData(eq.dataCalibracao)
-                const ultima = proxima ? getUltimaCalib(proxima, eq.periodicidade) : null
-                return (
-                  <tr
-                    key={eq.id}
-                    onClick={() => onVerDetalhe(eq)}
-                    className="border-b border-gray-50 hover:bg-blue-50 transition-colors cursor-pointer"
-                  >
-                    <td className="px-4 py-3 font-mono text-xs text-gray-400">{eq.numeroSAP}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-800 text-xs max-w-48 truncate">{eq.descricao}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{eq.marca} {eq.modelo}</td>
-                    <td className="px-4 py-3 text-xs">
-                      <span className={`px-2 py-0.5 rounded-full font-semibold ${eq.periodicidade === 'Bienal' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                        {eq.periodicidade ?? 'Anual'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{ultima ? ultima.toLocaleDateString('pt-PT') : '—'}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{proxima ? proxima.toLocaleDateString('pt-PT') : '—'}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 max-w-32 truncate">{eq.localizacao || '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>
-                        {cfg.label}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      {ordenarEstados(estados).map(({ eq, estado }) => {
+        const cfg = estadoConfig[estado]
+        const proxima = parseData(eq.dataCalibracao)
+        const ultima = proxima ? getUltimaCalib(proxima, eq.periodicidade) : null
+        const diff = proxima ? differenceInDays(proxima, new Date()) : null
+        return (
+          <div
+            key={eq.id}
+            onClick={() => onVerDetalhe(eq)}
+            className={`bg-white rounded-2xl border cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${cfg.border} overflow-hidden`}
+          >
+            {/* Topo colorido */}
+            <div className={`h-1.5 w-full ${cfg.dot}`} />
+            <div className="p-4">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-gray-800 truncate">{eq.descricao}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{eq.marca} {eq.modelo}</p>
+                </div>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ml-2 flex-shrink-0 ${cfg.badge}`}>
+                  {cfg.label}
+                </span>
+              </div>
+
+              {/* Info */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">SAP</span>
+                  <span className="text-xs font-mono text-gray-600">{eq.numeroSAP}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">Última</span>
+                  <span className="text-xs text-gray-600">{ultima ? ultima.toLocaleDateString('pt-PT') : '—'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">Próxima</span>
+                  <span className={`text-xs font-semibold ${cfg.text}`}>{proxima ? proxima.toLocaleDateString('pt-PT') : '—'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">Local</span>
+                  <span className="text-xs text-gray-600 truncate max-w-24">{eq.localizacao || '—'}</span>
+                </div>
+              </div>
+
+              {/* Footer */}
+              {diff !== null && (
+                <div className={`mt-3 pt-2 border-t ${cfg.border}`}>
+                  <p className={`text-xs font-semibold ${cfg.text}`}>
+                    {diff < 0 ? `Venceu há ${Math.abs(diff)} dias` : diff === 0 ? 'Vence hoje!' : `Vence em ${diff} dias`}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )}
+</div>
 
     </div>
   )

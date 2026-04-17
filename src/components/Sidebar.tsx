@@ -48,8 +48,7 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos }: Props)
   ]
 
   return (
-    <aside className="w-56 min-w-56 flex flex-col" style={{ background: '#C0001A' }}>
-
+<aside className="w-56 min-w-56 h-screen flex flex-col" style={{ background: '#C0001A' }}>
       {/* Logo */}
       <div className="px-5 pt-6 pb-5">
         <img
@@ -89,7 +88,7 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos }: Props)
       {/* Footer */}
       <div className="px-5 py-4">
         <div className="h-px w-full opacity-20 mb-3" style={{ background: 'white' }} />
-        <p className="text-red-200 text-xs opacity-50 font-mono">v1.0 · ATM 2025</p>
+        <p className="text-red-200 text-xs opacity-50 font-mono">v1.0 · ATM 2026</p>
       </div>
     </aside>
   )

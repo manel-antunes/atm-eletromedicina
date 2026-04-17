@@ -16,6 +16,8 @@ interface Props {
   equipamentos: Equipamento[]
   onVerDetalhe: (eq: Equipamento) => void
   onApresentacao: () => void
+  onMenuToggle: () => void
+  isMobile: boolean
 }
 
 export default function Topbar({ titulo, totalEquipamentos, onReimportar, equipamentos, onVerDetalhe, onApresentacao }: Props) {
