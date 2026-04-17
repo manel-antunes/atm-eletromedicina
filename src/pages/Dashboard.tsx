@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Clock, Package } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Clock, Package, Search, X } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import { useState } from 'react'
@@ -74,7 +74,10 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
   const vencidos = estados.filter(e => e.estado === 'vencido')
   const urgentes = estados.filter(e => e.estado === 'urgente')
   const avisos   = estados.filter(e => e.estado === 'aviso')
+  const [cardExpandido, setCardExpandido] = useState<number | null>(null)
+  const [pesquisaTabela, setPesquisaTabela] = useState('')  // junto aos outros useState
   const emDia    = estados.filter(e => e.estado === 'ok')
+  const [tabelaExpandida, setTabelaExpandida] = useState(false)
   const alertas  = [...vencidos, ...urgentes, ...avisos]
 
 const [vista, setVista] = useState<'tabela' | 'cards'>('tabela')
@@ -265,149 +268,227 @@ const [vista, setVista] = useState<'tabela' | 'cards'>('tabela')
 
       {/* Tabela */}
 {/* Tabela / Cards toggle */}
+{/* Tabela / Cards toggle */}
 <div className="anim-fade-up delay-7">
   <div className="flex items-center justify-between mb-3">
     <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Todos os equipamentos</h2>
-    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-      <button
-        onClick={() => setVista('tabela')}
-        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'tabela' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-      >
-        ☰ Tabela
-      </button>
-      <button
-        onClick={() => setVista('cards')}
-        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'cards' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-      >
-        ⊞ Cards
-      </button>
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+        <button
+          onClick={() => setVista('tabela')}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'tabela' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          ☰ Tabela
+        </button>
+        <button
+          onClick={() => setVista('cards')}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'cards' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          ⊞ Cards
+        </button>
+      </div>
     </div>
   </div>
 
   {vista === 'tabela' ? (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-100">\
-            {[
-              { key: 'sap',          label: 'Nº SAP',         sortable: false },
-              { key: 'descricao',    label: 'Descrição',      sortable: true },
-              { key: 'marca',        label: 'Marca/Modelo',   sortable: true },
-              { key: 'periodicidade',label: 'Periodicidade',  sortable: false },
-              { key: 'ultimaCalib',  label: 'Última Calib.',  sortable: true },
-              { key: 'proximaCalib', label: 'Próxima Calib.', sortable: true },
-              { key: 'localizacao',  label: 'Localização',    sortable: true },
-              { key: 'estado',       label: 'Estado',         sortable: true },
-            ].map(col => (
-              <th
-                key={col.key}
-                onClick={() => col.sortable && toggleOrdenacao(col.key)}
-                className={`text-left px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wide select-none ${col.sortable ? 'cursor-pointer hover:text-gray-600' : ''}`}
-              >
-                <span className="flex items-center gap-1">
-                  {col.label}
-                  {col.sortable && (
-                    <span className="text-gray-300">
-                      {ordenacao.coluna === col.key ? (ordenacao.direcao === 'asc' ? '↑' : '↓') : '↕'}
-                    </span>
-                  )}
+<div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+  {/* Barra de pesquisa inline */}
+  <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
+    <Search size={13} className="text-gray-400 flex-shrink-0" />
+    <input
+      type="text"
+      placeholder="Filtrar equipamentos..."
+      value={pesquisaTabela}
+      onChange={e => setPesquisaTabela(e.target.value)}
+      className="flex-1 text-xs outline-none bg-transparent text-gray-600 placeholder-gray-400"
+    />
+    {pesquisaTabela && (
+      <button onClick={() => setPesquisaTabela('')} className="text-gray-400 hover:text-gray-600">
+        <X size={12} />
+      </button>
+    )}
+    <span className="text-xs text-gray-400 font-mono flex-shrink-0">
+      {ordenarEstados(estados).filter(({ eq }) =>
+        pesquisaTabela === '' ||
+        eq.descricao.toLowerCase().includes(pesquisaTabela.toLowerCase()) ||
+        eq.marca.toLowerCase().includes(pesquisaTabela.toLowerCase()) ||
+        eq.numeroSAP.includes(pesquisaTabela)
+      ).length} equipamentos
+    </span>
+  </div>
+
+  <table className="w-full">
+    <thead>
+      <tr className="border-b border-gray-100">
+        {[
+          { key: 'descricao',    label: 'Equipamento',    sortable: true },
+          { key: 'marca',        label: 'Marca',          sortable: true },
+          { key: 'proximaCalib', label: 'Próxima Calib.', sortable: true },
+          { key: 'localizacao',  label: 'Local',          sortable: true },
+          { key: 'estado',       label: 'Estado',         sortable: true },
+        ].map(col => (
+          <th
+            key={col.key}
+            onClick={() => col.sortable && toggleOrdenacao(col.key)}
+            className={`text-left px-4 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide select-none ${col.sortable ? 'cursor-pointer hover:text-gray-600' : ''}`}
+          >
+            <span className="flex items-center gap-1">
+              {col.label}
+              {col.sortable && (
+                <span className="text-gray-300 text-xs">
+                  {ordenacao.coluna === col.key ? (ordenacao.direcao === 'asc' ? '↑' : '↓') : '↕'}
                 </span>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {ordenarEstados(estados).map(({ eq, estado }) => {
-            const cfg = estadoConfig[estado]
-            const proxima = parseData(eq.dataCalibracao)
-            const ultima = proxima ? getUltimaCalib(proxima, eq.periodicidade) : null
-            return (
-              <tr
-                key={eq.id}
-                onClick={() => onVerDetalhe(eq)}
-                className="border-b border-gray-50 hover:bg-blue-50 transition-colors cursor-pointer"
-              >
-                <td className="px-4 py-3 font-mono text-xs text-gray-400">{eq.numeroSAP}</td>
-                <td className="px-4 py-3 font-semibold text-gray-800 text-xs max-w-48 truncate">{eq.descricao}</td>
-                <td className="px-4 py-3 text-gray-500 text-xs">{eq.marca} {eq.modelo}</td>
-                <td className="px-4 py-3 text-xs">
-                  <span className={`px-2 py-0.5 rounded-full font-semibold ${eq.periodicidade === 'Bienal' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {eq.periodicidade ?? 'Anual'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs text-gray-500">{ultima ? ultima.toLocaleDateString('pt-PT') : '—'}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">{proxima ? proxima.toLocaleDateString('pt-PT') : '—'}</td>
-                <td className="px-4 py-3 text-xs text-gray-500 max-w-32 truncate">{eq.localizacao || '—'}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>
-                    {cfg.label}
-                  </span>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+              )}
+            </span>
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {ordenarEstados(estados)
+        .filter(({ eq }) =>
+          pesquisaTabela === '' ||
+          eq.descricao.toLowerCase().includes(pesquisaTabela.toLowerCase()) ||
+          eq.marca.toLowerCase().includes(pesquisaTabela.toLowerCase()) ||
+          eq.numeroSAP.includes(pesquisaTabela)
+        )
+        .slice(0, tabelaExpandida ? undefined : 5)
+        .map(({ eq, estado }) => {
+          const cfg = estadoConfig[estado]
+          const proxima = parseData(eq.dataCalibracao)
+          const diff = proxima ? differenceInDays(proxima, new Date()) : null
+          return (
+            <tr
+              key={eq.id}
+              onClick={() => onVerDetalhe(eq)}
+              className="border-b border-gray-50 hover:bg-blue-50 transition-colors cursor-pointer group"
+            >
+              <td className="px-4 py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot === 'bg-red-500' ? '#ef4444' : cfg.dot === 'bg-orange-500' ? '#f97316' : cfg.dot === 'bg-yellow-400' ? '#eab308' : '#22c55e', flexShrink: 0 }} />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">{eq.descricao}</p>
+                    <p className="text-xs text-gray-400 font-mono">{eq.numeroSAP}</p>
+                  </div>
+                </div>
+              </td>
+              <td className="px-4 py-2.5 text-xs text-gray-500">{eq.marca} <span className="text-gray-300">{eq.modelo}</span></td>
+              <td className="px-4 py-2.5">
+                <div>
+                  <p className="text-xs text-gray-700">{proxima ? proxima.toLocaleDateString('pt-PT') : '—'}</p>
+                  {diff !== null && (
+                    <p className={`text-xs font-semibold ${diff < 0 ? 'text-red-500' : diff <= 30 ? 'text-orange-500' : diff <= 60 ? 'text-yellow-600' : 'text-gray-400'}`}>
+                      {diff < 0 ? `há ${Math.abs(diff)}d` : `em ${diff}d`}
+                    </p>
+                  )}
+                </div>
+              </td>
+              <td className="px-4 py-2.5 text-xs text-gray-500">{eq.localizacao || '—'}</td>
+              <td className="px-4 py-2.5">
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>{cfg.label}</span>
+              </td>
+            </tr>
+          )
+        })}
+    </tbody>
+  </table>
+
+  {/* Footer expandir/recolher */}
+  {!tabelaExpandida && estados.length > 5 ? (
+    <button
+      onClick={() => setTabelaExpandida(true)}
+      className="w-full py-3 text-xs font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all border-t border-gray-100 flex items-center justify-center gap-2 group"
+    >
+      <span>Ver todos os {estados.length} equipamentos</span>
+      <span className="bg-gray-100 group-hover:bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full transition-colors">↓</span>
+    </button>
+  ) : tabelaExpandida ? (
+    <button
+      onClick={() => setTabelaExpandida(false)}
+      className="w-full py-3 text-xs font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all border-t border-gray-100 flex items-center justify-center gap-2"
+    >
+      Recolher ↑
+    </button>
+  ) : null}
+</div>
   ) : (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-      {ordenarEstados(estados).map(({ eq, estado }) => {
-        const cfg = estadoConfig[estado]
-        const proxima = parseData(eq.dataCalibracao)
-        const ultima = proxima ? getUltimaCalib(proxima, eq.periodicidade) : null
-        const diff = proxima ? differenceInDays(proxima, new Date()) : null
-        return (
-          <div
-            key={eq.id}
-            onClick={() => onVerDetalhe(eq)}
-            className={`bg-white rounded-2xl border cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${cfg.border} overflow-hidden`}
-          >
-            {/* Topo colorido */}
-            <div className={`h-1.5 w-full ${cfg.dot}`} />
-            <div className="p-4">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-gray-800 truncate">{eq.descricao}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{eq.marca} {eq.modelo}</p>
-                </div>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ml-2 flex-shrink-0 ${cfg.badge}`}>
-                  {cfg.label}
-                </span>
-              </div>
+      {ordenarEstados(estados)
+        .slice(0, tabelaExpandida ? undefined : 6)
+        .map(({ eq, estado }) => {
+          const cfg = estadoConfig[estado]
+          const proxima = parseData(eq.dataCalibracao)
+          const ultima = proxima ? getUltimaCalib(proxima, eq.periodicidade) : null
+          const diff = proxima ? differenceInDays(proxima, new Date()) : null
+          const expandido = cardExpandido === eq.id
 
-              {/* Info */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">SAP</span>
-                  <span className="text-xs font-mono text-gray-600">{eq.numeroSAP}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">Última</span>
-                  <span className="text-xs text-gray-600">{ultima ? ultima.toLocaleDateString('pt-PT') : '—'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">Próxima</span>
-                  <span className={`text-xs font-semibold ${cfg.text}`}>{proxima ? proxima.toLocaleDateString('pt-PT') : '—'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">Local</span>
-                  <span className="text-xs text-gray-600 truncate max-w-24">{eq.localizacao || '—'}</span>
+          return (
+            <div
+              key={eq.id}
+              onClick={() => setCardExpandido(expandido ? null : eq.id)}
+              className={`bg-white rounded-2xl border cursor-pointer transition-all duration-300 overflow-hidden ${cfg.border} ${expandido ? 'shadow-lg ring-1 ring-gray-200' : 'hover:shadow-md'}`}
+            >
+              <div className={`h-1 w-full ${cfg.dot}`} />
+              <div className="px-4 py-3 flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot} ${estado === 'vencido' || estado === 'urgente' ? 'dot-piscar' : ''}`} />
+                <p className="text-xs font-bold text-gray-800 flex-1 truncate">{eq.descricao}</p>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${cfg.badge}`}>{cfg.label}</span>
+                <span style={{ fontSize: 9, color: '#cbd5e1', display: 'inline-block', transform: expandido ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', flexShrink: 0 }}>▼</span>
+              </div>
+              <div style={{ maxHeight: expandido ? 280 : 0, overflow: 'hidden', transition: 'max-height 0.35s cubic-bezier(0.16,1,0.3,1)' }}>
+                <div className={`px-4 pb-4 border-t ${cfg.border}`}>
+                  <div className="space-y-2 mt-3">
+                    {[
+                      { label: 'Nº SAP', valor: eq.numeroSAP, mono: true },
+                      { label: 'Marca/Modelo', valor: `${eq.marca} ${eq.modelo}` },
+                      { label: 'Localização', valor: eq.localizacao || '—' },
+                      { label: 'Periodicidade', valor: eq.periodicidade ?? 'Anual' },
+                      { label: 'Última calib.', valor: ultima ? ultima.toLocaleDateString('pt-PT') : '—' },
+                      { label: 'Próxima calib.', valor: proxima ? proxima.toLocaleDateString('pt-PT') : '—' },
+                    ].map(({ label, valor, mono }) => (
+                      <div key={label} className="flex justify-between items-center">
+                        <span className="text-xs text-gray-400">{label}</span>
+                        <span className={`text-xs font-semibold text-gray-700 truncate max-w-32 ${mono ? 'font-mono' : ''}`}>{valor}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className={`mt-3 pt-2 border-t ${cfg.border} flex items-center justify-between`}>
+                    {diff !== null && (
+                      <p className={`text-xs font-bold ${cfg.text}`}>
+                        {diff < 0 ? `Venceu há ${Math.abs(diff)} dias` : diff === 0 ? 'Vence hoje!' : `Vence em ${diff} dias`}
+                      </p>
+                    )}
+                    <button
+                      onClick={e => { e.stopPropagation(); onVerDetalhe(eq) }}
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors ml-auto"
+                    >
+                      Ver detalhes →
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              {/* Footer */}
-              {diff !== null && (
-                <div className={`mt-3 pt-2 border-t ${cfg.border}`}>
-                  <p className={`text-xs font-semibold ${cfg.text}`}>
-                    {diff < 0 ? `Venceu há ${Math.abs(diff)} dias` : diff === 0 ? 'Vence hoje!' : `Vence em ${diff} dias`}
-                  </p>
-                </div>
-              )}
             </div>
-          </div>
-        )
-      })}
+          )
+        })}
+
+      {/* Botão ver todos cards */}
+      {!tabelaExpandida && estados.length > 6 && (
+        <div
+          onClick={() => setTabelaExpandida(true)}
+          className="bg-gray-50 rounded-2xl border border-dashed border-gray-200 cursor-pointer hover:bg-gray-100 transition-all flex flex-col items-center justify-center gap-2 min-h-24"
+        >
+          <p className="text-xs font-bold text-gray-400">+{estados.length - 6} equipamentos</p>
+          <p className="text-xs text-gray-300">Clica para ver todos</p>
+        </div>
+      )}
+      {tabelaExpandida && (
+        <button
+          onClick={() => setTabelaExpandida(false)}
+          className="col-span-full py-3 text-xs font-semibold text-gray-500 hover:text-gray-700 bg-white rounded-2xl border border-gray-100 transition-all"
+        >
+          Recolher ↑
+        </button>
+      )}
     </div>
   )}
 </div>
