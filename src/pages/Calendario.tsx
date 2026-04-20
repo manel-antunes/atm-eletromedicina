@@ -260,9 +260,9 @@ function ViewMes({ cells, animKey, selectedDate, openDetail }: {
 }
 
 // ─── View Semana ──────────────────────────────────────────────────────────────
-function ViewSemana({ weekStart, selectedDate, openDetail }: {
-  weekStart:Date; selectedDate:string|null; openDetail:(d:string)=>void
-}) {
+function ViewSemana({ weekStart, openDetail }: {
+  weekStart:Date; openDetail:(d:string)=>void
+}){
   const today = new Date()
   const days = Array.from({length:7},(_,i)=>{const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);return d})
   const hours = Array.from({length:13},(_,i)=>i+8)
@@ -544,7 +544,7 @@ export default function CalendarioPage() {
         </div>
 
         {view==='mes'    && <ViewMes cells={cells} animKey={animKey} selectedDate={selectedDate} openDetail={openDetail} />}
-        {view==='semana' && <ViewSemana weekStart={weekStart} selectedDate={selectedDate} openDetail={openDetail} />}
+{view==='semana' && <ViewSemana weekStart={weekStart} openDetail={openDetail} />}
         {view==='dia'    && <ViewDia date={curDate} openDetail={openDetail} />}
       </main>
 
