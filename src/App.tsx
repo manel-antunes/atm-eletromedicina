@@ -14,6 +14,7 @@ import DashboardIA from './pages/DashboardIA'
 import Documentos from './pages/Documentos'
 import Contactos from './pages/Contactos'
 import Mapa from './pages/Mapa'
+import Calendario from './pages/Calendario'
 import ToastContainer from './components/Toast'
 import EstadoOffline from './components/EstadoOffline'
 import ErroBackend from './components/ErroBackend'
@@ -27,6 +28,7 @@ const titulos: Record<string, string> = {
   cedencias:   'Cedências',
   relatorios:  'Relatórios',
   ia:          'Análise Inteligente',
+  calendario:  'Calendário',
   documentos:  'Documentos',
   contactos:   'Contactos de Marcas',
   mapa:        'Mapa de Equipamentos',
@@ -133,12 +135,15 @@ function App() {
       case 'cedencias':   return <Cedencias equipamentos={equipamentos} onAtualizar={setEquipamentos} />
       case 'relatorios':  return <Relatorios equipamentos={equipamentos} />
       case 'ia':          return <DashboardIA equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
+      case 'calendario':  return <Calendario />
       case 'documentos':  return <Documentos equipamentos={equipamentos} />
       case 'contactos':   return <Contactos equipamentos={equipamentos} />
       case 'mapa':        return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       default:            return null
     }
   }
+
+  const isCalendario = paginaAtiva === 'calendario' && !equipDetalhe
 
   return (
     <>
@@ -194,7 +199,7 @@ function App() {
             onMenuToggle={() => setSidebarAberta(!sidebarAberta)}
             isMobile={isMobile}
           />
-          <main className="flex-1 overflow-y-auto p-3 md:p-5">
+          <main className={`flex-1 overflow-hidden ${isCalendario ? '' : 'overflow-y-auto p-3 md:p-5'}`}>
             {renderPagina()}
           </main>
         </div>

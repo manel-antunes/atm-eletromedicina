@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Brain, AlertTriangle, TrendingUp, Lightbulb, Info, Shield, ChevronRight } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { calcularScoreRisco, gerarInsights, calcularPrevisaoMeses } from '../services/iaService'
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts'
 
 interface Props {
   equipamentos: Equipamento[]
@@ -185,20 +185,34 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
             ].map(l => (
               <div key={l.label} className="flex items-center gap-1.5">
                 <div style={{ width: 8, height: 8, borderRadius: 2, background: l.cor }} />
-                <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10 }}>{l.label}</span>
+                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 500 }}>{l.label}</span>
               </div>
             ))}
           </div>
         </div>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={previsao} barSize={22} barCategoryGap="35%">
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={previsao} barSize={28} barCategoryGap="35%">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-            <XAxis dataKey="mes" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.3)', fontWeight: 500 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.3)' }} axisLine={false} tickLine={false} allowDecimals={false} domain={[0, maxPrevisao + 1]} />
+            <XAxis
+              dataKey="mes"
+              tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.45)', fontWeight: 600 }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }}
+              axisLine={false}
+              tickLine={false}
+              allowDecimals={false}
+              domain={[0, maxPrevisao + 1]}
+            />
             <Tooltip content={<CustomTooltipBarra />} cursor={{ fill: 'rgba(255,255,255,0.03)', radius: 4 }} />
             <Bar dataKey="total" radius={[6, 6, 0, 0]}>
               {previsao.map((entry, i) => (
-                <rect key={i} fill={entry.total >= 10 ? '#C0001A' : entry.total >= 5 ? '#f97316' : '#22c55e'} />
+                <Cell
+                  key={i}
+                  fill={entry.total >= 10 ? '#C0001A' : entry.total >= 5 ? '#f97316' : '#22c55e'}
+                />
               ))}
             </Bar>
           </BarChart>
@@ -258,4 +272,4 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
       </div>
     </div>
   )
-} 
+}

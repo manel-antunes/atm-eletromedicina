@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Map } from 'lucide-react'
+import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Map, Calendar } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import logoAtm from '../assets/logo-atm.png'
@@ -41,14 +41,15 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos }: Props)
     { id: 'inventario',  label: 'Inventário',   icon: Package,         badge: 0 },
     { id: 'cedencias',   label: 'Cedências',    icon: ArrowLeftRight,  badge: 0 },
     { id: 'relatorios',  label: 'Relatórios',   icon: FileText,        badge: 0 },
-    { id: 'ia', label: 'Análise IA', icon: Brain, badge: 0 },
-    { id: 'documentos', label: 'Documentos', icon: FolderOpen, badge: 0 },
-    { id: 'contactos', label: 'Contactos', icon: Phone, badge: 0 },
-    { id: 'mapa', label: 'Mapa', icon: Map, badge: 0 },
+    { id: 'ia',          label: 'Análise IA',   icon: Brain,           badge: 0 },
+    { id: 'calendario',  label: 'Calendário',   icon: Calendar,        badge: 0 },
+    { id: 'documentos',  label: 'Documentos',   icon: FolderOpen,      badge: 0 },
+    { id: 'contactos',   label: 'Contactos',    icon: Phone,           badge: 0 },
+    { id: 'mapa',        label: 'Mapa',         icon: Map,             badge: 0 },
   ]
 
   return (
-<aside className="w-56 min-w-56 h-screen flex flex-col" style={{ background: '#C0001A' }}>
+    <aside className="w-56 min-w-56 h-screen flex flex-col" style={{ background: '#C0001A' }}>
       {/* Logo */}
       <div className="px-5 pt-6 pb-5">
         <img
@@ -92,4 +93,4 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos }: Props)
       </div>
     </aside>
   )
-}   
+}
