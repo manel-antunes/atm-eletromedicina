@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Upload, FileText, Download, Trash2, Search, Filter } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
-
+console.log('API URL:', import.meta.env.VITE_API_URL)
 interface Props {
   equipamentos: Equipamento[]
 }
@@ -15,7 +15,7 @@ interface Documento {
   criado_em: string
 }
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+const API_URL = 'https://atm-eletromedicina-production.up.railway.app'
 
 const tipoConfig: Record<string, { label: string; cor: string; bg: string }> = {
   'certificado': { label: 'Certificado', cor: '#16a34a', bg: '#f0fdf4' },
@@ -56,40 +56,51 @@ export default function Documentos({ equipamentos }: Props) {
     finally { setCarregando(false) }
   }
 
-  async function handleUpload() {
-    if (!ficheiro) { setErro('Seleciona um ficheiro.'); return }
-    if (ficheiro.size > 10 * 1024 * 1024) { setErro('Ficheiro demasiado grande. Máximo 10MB.'); return }
+async function handleUpload() {
+  if (!ficheiro) { setErro('Seleciona um ficheiro.'); return }
+  if (ficheiro.size > 10 * 1024 * 1024) { setErro('Ficheiro demasiado grande. Máximo 10MB.'); return }
 
-    setEnviando(true)
-    setErro('')
-    try {
+  setEnviando(true)
+  setErro('')
+
+  try {
+    const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
-      reader.onload = async (e) => {
-        const base64 = (e.target?.result as string).split(',')[1]
-        await fetch(`${API_URL}/api/documentos`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            equipamentoSAP: form.equipamentoSAP || null,
-            nome: ficheiro.name,
-            tipo: form.tipo,
-            tamanho: ficheiro.size,
-            dados: base64,
-          }),
-        })
-        await carregarDocs()
-        setModalAberto(false)
-        setFicheiro(null)
-        setForm({ equipamentoSAP: '', tipo: 'certificado' })
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        resolve(result.split(',')[1])
       }
+      reader.onerror = () => reject(new Error('Erro ao ler ficheiro'))
       reader.readAsDataURL(ficheiro)
-    } catch {
-      setErro('Erro ao fazer upload.')
-    } finally {
-      setEnviando(false)
-    }
-  }
+    })
 
+    const res = await fetch(`${API_URL}/api/documentos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        equipamentoSAP: form.equipamentoSAP || null,
+        nome: ficheiro.name,
+        tipo: form.tipo,
+        tamanho: ficheiro.size,
+        dados: base64,
+      }),
+    })
+
+    if (!res.ok) {
+      const msg = await res.text()
+      throw new Error(msg || 'Erro ao guardar documento')
+    }
+
+    await carregarDocs()
+    setModalAberto(false)
+    setFicheiro(null)
+    setForm({ equipamentoSAP: '', tipo: 'certificado' })
+  } catch (e) {
+    setErro(e instanceof Error ? e.message : 'Erro ao fazer upload.')
+  } finally {
+    setEnviando(false)
+  }
+}
   async function handleDownload(doc: Documento) {
     window.open(`${API_URL}/api/documentos/download/${doc.id}`, '_blank')
   }
