@@ -18,6 +18,7 @@ import Calendario from './pages/Calendario'
 import ToastContainer from './components/Toast'
 import EstadoOffline from './components/EstadoOffline'
 import ErroBackend from './components/ErroBackend'
+import Manutencoes from './pages/Manutencoes'
 import { useToast } from './hooks/useToast'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
 
@@ -139,6 +140,8 @@ function App() {
       case 'documentos':  return <Documentos equipamentos={equipamentos} />
       case 'contactos':   return <Contactos equipamentos={equipamentos} />
       case 'mapa':        return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
+      case 'manutencoes':
+  return <Manutencoes equipamentos={equipamentos} />
       default:            return null
     }
   }

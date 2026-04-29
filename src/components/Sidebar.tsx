@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Map, Calendar } from 'lucide-react'
+import { LayoutDashboard, ClipboardCheck, ClipboardList, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Map, Calendar } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import logoAtm from '../assets/logo-atm.png'
@@ -46,6 +46,8 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos }: Props)
     { id: 'documentos',  label: 'Documentos',   icon: FolderOpen,      badge: 0 },
     { id: 'contactos',   label: 'Contactos',    icon: Phone,           badge: 0 },
     { id: 'mapa',        label: 'Mapa',         icon: Map,             badge: 0 },
+    { id: 'manutencoes', label: 'OTs', icon: <ClipboardList size={18} /> },
+
   ]
 
   return (
