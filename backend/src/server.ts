@@ -12,19 +12,12 @@ app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.office365.com',
-  port: 587,
-  secure: false,
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  tls: {
-    ciphers: 'SSLv3',
-    rejectUnauthorized: false,
-  },
 })
-
 interface Alerta {
   descricao: string
   marca: string
