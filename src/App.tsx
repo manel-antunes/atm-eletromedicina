@@ -15,24 +15,28 @@ import Documentos from './pages/Documentos'
 import Contactos from './pages/Contactos'
 import Mapa from './pages/Mapa'
 import Calendario from './pages/Calendario'
+import Manutencoes from './pages/Manutencoes'
+import Login from './pages/Login'
 import ToastContainer from './components/Toast'
 import EstadoOffline from './components/EstadoOffline'
 import ErroBackend from './components/ErroBackend'
-import Manutencoes from './pages/Manutencoes'
 import { useToast } from './hooks/useToast'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
 
+const API_URL = 'https://atm-eletromedicina-production.up.railway.app'
+
 const titulos: Record<string, string> = {
-  dashboard:   'Dashboard Geral',
-  calibracoes: 'Calibrações',
-  inventario:  'Inventário de Equipamentos',
-  cedencias:   'Cedências',
-  relatorios:  'Relatórios',
-  ia:          'Análise Inteligente',
-  calendario:  'Calendário',
-  documentos:  'Documentos',
-  contactos:   'Contactos de Marcas',
-  mapa:        'Mapa de Equipamentos',
+  dashboard:    'Dashboard Geral',
+  calibracoes:  'Calibrações',
+  inventario:   'Inventário de Equipamentos',
+  cedencias:    'Cedências',
+  relatorios:   'Relatórios',
+  ia:           'Análise Inteligente',
+  calendario:   'Calendário',
+  documentos:   'Documentos',
+  contactos:    'Contactos de Marcas',
+  mapa:         'Mapa de Equipamentos',
+  manutencoes:  'Ordens de Trabalho',
 }
 
 function useIsMobile() {
@@ -53,10 +57,35 @@ function App() {
   const [apresentacao, setApresentacao] = useState(false)
   const [sidebarAberta, setSidebarAberta] = useState(false)
   const [erroBackend, setErroBackend] = useState(false)
+  const [token, setToken] = useState<string | null>(localStorage.getItem('atm_token'))
+  const [nomeUtilizador, setNomeUtilizador] = useState(localStorage.getItem('atm_nome') ?? '')
+  const [verificandoToken, setVerificandoToken] = useState(true)
   const { toasts, mostrar, remover } = useToast()
   const isMobile = useIsMobile()
 
+  // Verifica se o token ainda é válido
   useEffect(() => {
+    if (!token) { setVerificandoToken(false); return }
+    fetch(`${API_URL}/api/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        if (!res.ok) {
+          setToken(null)
+          setNomeUtilizador('')
+          localStorage.removeItem('atm_token')
+          localStorage.removeItem('atm_nome')
+        }
+      })
+      .catch(() => {
+        // Se não há ligação ao servidor, mantém o token e tenta carregar
+      })
+      .finally(() => setVerificandoToken(false))
+  }, [])
+
+  // Carrega equipamentos após autenticação
+  useEffect(() => {
+    if (!token || verificandoToken) return
     carregarEquipamentos()
       .then(dados => {
         setErroBackend(false)
@@ -83,7 +112,21 @@ function App() {
       })
       .catch(() => setErroBackend(true))
       .finally(() => setCarregando(false))
-  }, [])
+  }, [token, verificandoToken])
+
+  function handleLogin(novoToken: string, nome: string) {
+    setToken(novoToken)
+    setNomeUtilizador(nome)
+    setCarregando(true)
+  }
+
+  function handleLogout() {
+    setToken(null)
+    setNomeUtilizador('')
+    setEquipamentos([])
+    localStorage.removeItem('atm_token')
+    localStorage.removeItem('atm_nome')
+  }
 
   async function handleImportar(novos: Equipamento[]) {
     await importarEquipamentos(novos)
@@ -102,6 +145,27 @@ function App() {
     setSidebarAberta(false)
   }
 
+  // A verificar token
+  if (verificandoToken) {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{ background: '#0A0F1E' }}>
+        <div style={{ width: 36, height: 36, border: '3px solid rgba(192,0,26,0.3)', borderTop: '3px solid #C0001A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
+
+  // Não autenticado — mostrar login
+  if (!token) {
+    return (
+      <>
+        <Login onLogin={handleLogin} />
+        <ToastContainer toasts={toasts} onRemover={remover} />
+      </>
+    )
+  }
+
+  // Carregando dados
   if (carregando) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
@@ -140,8 +204,7 @@ function App() {
       case 'documentos':  return <Documentos equipamentos={equipamentos} />
       case 'contactos':   return <Contactos equipamentos={equipamentos} />
       case 'mapa':        return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
-      case 'manutencoes':
-  return <Manutencoes equipamentos={equipamentos} />
+      case 'manutencoes': return <Manutencoes equipamentos={equipamentos} />
       default:            return null
     }
   }
@@ -169,25 +232,18 @@ function App() {
         />
       )}
 
-      {/* Overlay mobile */}
       {isMobile && sidebarAberta && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40"
-          onClick={() => setSidebarAberta(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarAberta(false)} />
       )}
 
       <div className="flex h-screen bg-gray-100 overflow-hidden">
-        <div className={`
-          ${isMobile
-            ? `fixed top-0 left-0 h-full z-50 transition-transform duration-300 ${sidebarAberta ? 'translate-x-0' : '-translate-x-full'}`
-            : 'relative'
-          }
-        `}>
+        <div className={`${isMobile ? `fixed top-0 left-0 h-full z-50 transition-transform duration-300 ${sidebarAberta ? 'translate-x-0' : '-translate-x-full'}` : 'relative'}`}>
           <Sidebar
             paginaAtiva={paginaAtiva}
             onNavegar={navegar}
             equipamentos={equipamentos}
+            nomeUtilizador={nomeUtilizador}
+            onLogout={handleLogout}
           />
         </div>
 
