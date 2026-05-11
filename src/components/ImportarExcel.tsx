@@ -105,7 +105,9 @@ export default function ImportarExcel({ onImportar }: Props) {
       }
 
       // Vignette
-      const vig = ctx!.createRadialGradient(w/2, h/2, h*0.2, w/2, h/2, h)
+      const r0 = Math.max(0, h * 0.2)
+const r1 = Math.max(r0 + 1, h)
+const vig = ctx!.createRadialGradient(w/2, h/2, r0, w/2, h/2, r1)
       vig.addColorStop(0, 'rgba(10,6,6,0)')
       vig.addColorStop(1, 'rgba(10,6,6,0.75)')
       ctx!.fillStyle = vig

@@ -1,16 +1,26 @@
 const API_URL = 'https://atm-eletromedicina-production.up.railway.app'
 
-export async function importarEquipamentos(equipamentos: unknown[]) {
-  const res = await fetch(`${API_URL}/api/equipamentos/importar`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ equipamentos }),
+function getHeaders(): Record<string, string> {
+  const token = localStorage.getItem('atm_token')
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
+export async function carregarEquipamentos() {
+  const res = await fetch(`${API_URL}/api/equipamentos`, {
+    headers: getHeaders(),
   })
   return res.json()
 }
 
-export async function carregarEquipamentos() {
-  const res = await fetch(`${API_URL}/api/equipamentos`)
+export async function importarEquipamentos(equipamentos: unknown[]) {
+  const res = await fetch(`${API_URL}/api/equipamentos/importar`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ equipamentos }),
+  })
   return res.json()
 }
 
@@ -26,19 +36,23 @@ export async function registarCalibracao(dados: {
 }) {
   const res = await fetch(`${API_URL}/api/calibracoes`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify(dados),
   })
   return res.json()
 }
 
 export async function carregarCalibracoes(sap: string) {
-  const res = await fetch(`${API_URL}/api/calibracoes/${sap}`)
+  const res = await fetch(`${API_URL}/api/calibracoes/${sap}`, {
+    headers: getHeaders(),
+  })
   return res.json()
 }
 
 export async function carregarCedencias() {
-  const res = await fetch(`${API_URL}/api/cedencias`)
+  const res = await fetch(`${API_URL}/api/cedencias`, {
+    headers: getHeaders(),
+  })
   return res.json()
 }
 
@@ -54,7 +68,7 @@ export async function registarCedencia(dados: {
 }) {
   const res = await fetch(`${API_URL}/api/cedencias`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify(dados),
   })
   return res.json()
@@ -63,7 +77,7 @@ export async function registarCedencia(dados: {
 export async function registarRetorno(id: number, dataRetornoEfetiva: string) {
   const res = await fetch(`${API_URL}/api/cedencias/${id}/retorno`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify({ dataRetornoEfetiva }),
   })
   return res.json()
