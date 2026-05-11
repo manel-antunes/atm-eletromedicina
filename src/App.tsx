@@ -178,17 +178,14 @@ function App() {
     )
   }
 
-  if (equipamentos.length === 0 && !erroBackend) {
-    return (
-      <>
-        <div className="h-screen bg-gray-50">
-          <ImportarExcel onImportar={handleImportar} />
-        </div>
-        <ToastContainer toasts={toasts} onRemover={remover} />
-      </>
-    )
-  }
-
+if (equipamentos.length === 0 && !erroBackend) {
+  return (
+    <>
+      <ImportarExcel onImportar={handleImportar} />
+      <ToastContainer toasts={toasts} onRemover={remover} />
+    </>
+  )
+}
   function renderPagina() {
     if (equipDetalhe) {
       return <DetalheEquipamento equipamento={equipDetalhe} onVoltar={() => setEquipDetalhe(null)} />
