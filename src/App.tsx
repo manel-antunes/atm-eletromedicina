@@ -60,15 +60,14 @@ function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('atm_token'))
   const [nomeUtilizador, setNomeUtilizador] = useState(localStorage.getItem('atm_nome') ?? '')
   const [verificandoToken, setVerificandoToken] = useState(true)
+  const [reimportando, setReimportando] = useState(false)
   const { toasts, mostrar, remover } = useToast()
   const isMobile = useIsMobile()
 
-  // Verifica se o token ainda é válido
+  // Verifica token
   useEffect(() => {
     if (!token) { setVerificandoToken(false); return }
-    fetch(`${API_URL}/api/me`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    fetch(`${API_URL}/api/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
         if (!res.ok) {
           setToken(null)
@@ -77,13 +76,11 @@ function App() {
           localStorage.removeItem('atm_nome')
         }
       })
-      .catch(() => {
-        // Se não há ligação ao servidor, mantém o token e tenta carregar
-      })
+      .catch(() => {})
       .finally(() => setVerificandoToken(false))
   }, [])
 
-  // Carrega equipamentos após autenticação
+  // Carrega equipamentos
   useEffect(() => {
     if (!token || verificandoToken) return
     carregarEquipamentos()
@@ -131,10 +128,11 @@ function App() {
   async function handleImportar(novos: Equipamento[]) {
     await importarEquipamentos(novos)
     setEquipamentos(novos)
+    setReimportando(false)
     mostrar('sucesso', `${novos.length} equipamentos importados`, 'Dados guardados na base de dados.')
   }
 
-  async function handleAtualizar(novos: Equipamento[]) {
+  function handleAtualizar(novos: Equipamento[]) {
     setEquipamentos(novos)
     mostrar('sucesso', 'Calibração registada!', 'Dados guardados na base de dados.')
   }
@@ -155,7 +153,7 @@ function App() {
     )
   }
 
-  // Não autenticado — mostrar login
+  // Não autenticado
   if (!token) {
     return (
       <>
@@ -165,7 +163,17 @@ function App() {
     )
   }
 
-  // Carregando dados
+  // A reimportar
+  if (reimportando) {
+    return (
+      <>
+        <ImportarExcel onImportar={handleImportar} />
+        <ToastContainer toasts={toasts} onRemover={remover} />
+      </>
+    )
+  }
+
+  // A carregar
   if (carregando) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
@@ -178,14 +186,16 @@ function App() {
     )
   }
 
-if (equipamentos.length === 0 && !erroBackend) {
-  return (
-    <>
-      <ImportarExcel onImportar={handleImportar} />
-      <ToastContainer toasts={toasts} onRemover={remover} />
-    </>
-  )
-}
+  // Sem equipamentos
+  if (equipamentos.length === 0 && !erroBackend) {
+    return (
+      <>
+        <ImportarExcel onImportar={handleImportar} />
+        <ToastContainer toasts={toasts} onRemover={remover} />
+      </>
+    )
+  }
+
   function renderPagina() {
     if (equipDetalhe) {
       return <DetalheEquipamento equipamento={equipDetalhe} onVoltar={() => setEquipDetalhe(null)} />
@@ -213,20 +223,11 @@ if (equipamentos.length === 0 && !erroBackend) {
       <EstadoOffline />
 
       {erroBackend && (
-        <ErroBackend
-          onTentar={() => {
-            setErroBackend(false)
-            setCarregando(true)
-            window.location.reload()
-          }}
-        />
+        <ErroBackend onTentar={() => { setErroBackend(false); setCarregando(true); window.location.reload() }} />
       )}
 
       {apresentacao && (
-        <ModoApresentacao
-          equipamentos={equipamentos}
-          onFechar={() => setApresentacao(false)}
-        />
+        <ModoApresentacao equipamentos={equipamentos} onFechar={() => setApresentacao(false)} />
       )}
 
       {isMobile && sidebarAberta && (
@@ -248,7 +249,7 @@ if (equipamentos.length === 0 && !erroBackend) {
           <Topbar
             titulo={equipDetalhe ? equipDetalhe.descricao : titulos[paginaAtiva]}
             totalEquipamentos={equipamentos.length}
-            onReimportar={() => setEquipamentos([])}
+            onReimportar={() => setReimportando(true)}
             equipamentos={equipamentos}
             onVerDetalhe={(eq) => setEquipDetalhe(eq)}
             onApresentacao={() => setApresentacao(true)}
