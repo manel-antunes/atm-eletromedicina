@@ -4,7 +4,6 @@ import dotenv from 'dotenv'
 import * as cron from 'node-cron'
 import { Resend } from 'resend'
 import jwt from 'jsonwebtoken'
-import bcrypt from 'bcryptjs'
 import { pool, inicializarDB } from './database'
 
 dotenv.config()
@@ -17,9 +16,10 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 const JWT_SECRET = process.env.JWT_SECRET ?? 'atm-eletromedicina-2026'
 
 // ── UTILIZADORES ──────────────────────────────────────────
+
 const UTILIZADORES = [
-  { username: 'admin',   passwordHash: bcrypt.hashSync(process.env.PASS_ADMIN   ?? 'atm2026',  10), nome: 'Administrador' },
-  { username: 'tecnico', passwordHash: bcrypt.hashSync(process.env.PASS_TECNICO ?? 'hprt2026', 10), nome: 'Técnico HPRT' },
+  { username: 'admin',   password: process.env.PASS_ADMIN   ?? 'atm2026',  nome: 'Administrador' },
+  { username: 'tecnico', password: process.env.PASS_TECNICO ?? 'hprt2026', nome: 'Técnico HPRT' },
 ]
 
 // ── MIDDLEWARE AUTH ────────────────────────────────────────
@@ -37,8 +37,9 @@ function autenticar(req: any, res: any, next: any) {
 // ── LOGIN ──────────────────────────────────────────────────
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body
-  const user = UTILIZADORES.find(u => u.username === username)
-  if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+// DEPOIS
+const user = UTILIZADORES.find(u => u.username === username)
+if (!user || user.password !== password) {
     return res.status(401).json({ erro: 'Utilizador ou password incorretos' })
   }
   const token = jwt.sign({ username, nome: user.nome }, JWT_SECRET, { expiresIn: '8h' })
