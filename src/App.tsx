@@ -60,7 +60,6 @@ function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('atm_token'))
   const [nomeUtilizador, setNomeUtilizador] = useState(localStorage.getItem('atm_nome') ?? '')
   const [verificandoToken, setVerificandoToken] = useState(true)
-  const [reimportando, setReimportando] = useState(false)
   const { toasts, mostrar, remover } = useToast()
   const isMobile = useIsMobile()
 
@@ -128,7 +127,6 @@ function App() {
   async function handleImportar(novos: Equipamento[]) {
     await importarEquipamentos(novos)
     setEquipamentos(novos)
-    setReimportando(false)
     mostrar('sucesso', `${novos.length} equipamentos importados`, 'Dados guardados na base de dados.')
   }
 
@@ -163,16 +161,6 @@ function App() {
     )
   }
 
-  // A reimportar
-  if (reimportando) {
-    return (
-      <>
-        <ImportarExcel onImportar={handleImportar} />
-        <ToastContainer toasts={toasts} onRemover={remover} />
-      </>
-    )
-  }
-
   // A carregar
   if (carregando) {
     return (
@@ -186,7 +174,7 @@ function App() {
     )
   }
 
-  // Sem equipamentos
+  // Sem equipamentos ou a reimportar
   if (equipamentos.length === 0 && !erroBackend) {
     return (
       <>
@@ -249,7 +237,9 @@ function App() {
           <Topbar
             titulo={equipDetalhe ? equipDetalhe.descricao : titulos[paginaAtiva]}
             totalEquipamentos={equipamentos.length}
-            onReimportar={() => setReimportando(true)}
+            onReimportar={() => {
+              setEquipamentos([])
+            }}
             equipamentos={equipamentos}
             onVerDetalhe={(eq) => setEquipDetalhe(eq)}
             onApresentacao={() => setApresentacao(true)}
