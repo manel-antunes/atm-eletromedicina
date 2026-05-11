@@ -6,6 +6,10 @@ interface Props {
   onLogin: (token: string, nome: string) => void
 }
 
+interface Particle {
+  x: number; y: number; vx: number; vy: number; r: number; alpha: number
+}
+
 export default function Login({ onLogin }: Props) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -16,103 +20,109 @@ export default function Login({ onLogin }: Props) {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
-    // Partículas
-    const particles: { x: number; y: number; vx: number; vy: number; r: number; alpha: number }[] = []
-    for (let i = 0; i < 60; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        r: Math.random() * 1.5 + 0.5,
-        alpha: Math.random() * 0.4 + 0.1,
-      })
+    const resize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
     }
+    resize()
+    window.addEventListener('resize', resize)
 
-    // ECG
-    let ecgOffset = 0
+    const particles: Particle[] = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 1.5 + 0.5,
+      alpha: Math.random() * 0.4 + 0.1,
+    }))
+
     const ecgPath = [0,0,0,0,0,0,0,0,0.2,0.5,1,-0.3,0.1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-
+    let ecgOffset = 0
     let animId: number
+
     function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      const w = canvas!.width
+      const h = canvas!.height
 
-      // Fundo
-      ctx.fillStyle = '#060910'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx!.clearRect(0, 0, w, h)
+      ctx!.fillStyle = '#060910'
+      ctx!.fillRect(0, 0, w, h)
 
-      // Grid subtil
-      ctx.strokeStyle = 'rgba(192,0,26,0.04)'
-      ctx.lineWidth = 1
-      for (let x = 0; x < canvas.width; x += 50) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke()
+      // Grid
+      ctx!.strokeStyle = 'rgba(192,0,26,0.04)'
+      ctx!.lineWidth = 1
+      for (let x = 0; x < w; x += 50) {
+        ctx!.beginPath(); ctx!.moveTo(x, 0); ctx!.lineTo(x, h); ctx!.stroke()
       }
-      for (let y = 0; y < canvas.height; y += 50) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke()
+      for (let y = 0; y < h; y += 50) {
+        ctx!.beginPath(); ctx!.moveTo(0, y); ctx!.lineTo(w, y); ctx!.stroke()
       }
 
-      // Partículas com linhas de conexão
+      // Partículas
       particles.forEach(p => {
         p.x += p.vx; p.y += p.vy
-        if (p.x < 0) p.x = canvas.width
-        if (p.x > canvas.width) p.x = 0
-        if (p.y < 0) p.y = canvas.height
-        if (p.y > canvas.height) p.y = 0
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(192,0,26,${p.alpha})`
-        ctx.fill()
-      })
-      particles.forEach((p, i) => {
-        particles.slice(i + 1).forEach(p2 => {
-          const d = Math.hypot(p.x - p2.x, p.y - p2.y)
-          if (d < 120) {
-            ctx.beginPath()
-            ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y)
-            ctx.strokeStyle = `rgba(192,0,26,${0.08 * (1 - d / 120)})`
-            ctx.lineWidth = 0.5
-            ctx.stroke()
-          }
-        })
+        if (p.x < 0) p.x = w
+        if (p.x > w) p.x = 0
+        if (p.y < 0) p.y = h
+        if (p.y > h) p.y = 0
+        ctx!.beginPath()
+        ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+        ctx!.fillStyle = `rgba(192,0,26,${p.alpha})`
+        ctx!.fill()
       })
 
-      // ECG animado centrado
-      const ecgW = 500
-      const startX = (canvas.width - ecgW) / 2
-      const centerY = canvas.height * 0.72
+      // Linhas entre partículas próximas
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const d = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y)
+          if (d < 120) {
+            ctx!.beginPath()
+            ctx!.moveTo(particles[i].x, particles[i].y)
+            ctx!.lineTo(particles[j].x, particles[j].y)
+            ctx!.strokeStyle = `rgba(192,0,26,${0.08 * (1 - d / 120)})`
+            ctx!.lineWidth = 0.5
+            ctx!.stroke()
+          }
+        }
+      }
+
+      // ECG
+      const ecgW = Math.min(500, w * 0.7)
+      const startX = (w - ecgW) / 2
+      const centerY = h * 0.72
       const amplitude = 55
 
-      ctx.beginPath()
-      ctx.strokeStyle = 'rgba(192,0,26,0.6)'
-      ctx.lineWidth = 1.5
-      ctx.shadowColor = '#C0001A'
-      ctx.shadowBlur = 8
+      ctx!.beginPath()
+      ctx!.strokeStyle = 'rgba(192,0,26,0.6)'
+      ctx!.lineWidth = 1.5
       for (let x = 0; x < ecgW; x++) {
         const idx = Math.floor(((x + ecgOffset) / ecgW * ecgPath.length)) % ecgPath.length
         const y = centerY - ecgPath[idx] * amplitude
-        x === 0 ? ctx.moveTo(startX + x, y) : ctx.lineTo(startX + x, y)
+        x === 0 ? ctx!.moveTo(startX + x, y) : ctx!.lineTo(startX + x, y)
       }
-      ctx.stroke()
-      ctx.shadowBlur = 0
+      ctx!.stroke()
 
-      // Ponto a piscar no fim do ECG
-      const lastIdx = Math.floor((ecgPath.length - 1 + ecgOffset) % ecgPath.length)
+      // Ponto pulsante
       const pulseAlpha = 0.5 + 0.5 * Math.sin(Date.now() / 200)
-      ctx.beginPath()
-      ctx.arc(startX + ecgW, centerY - ecgPath[lastIdx] * amplitude, 4, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(192,0,26,${pulseAlpha})`
-      ctx.fill()
+      const lastIdx = Math.floor(ecgOffset) % ecgPath.length
+      ctx!.beginPath()
+      ctx!.arc(startX + ecgW, centerY - ecgPath[lastIdx] * amplitude, 4, 0, Math.PI * 2)
+      ctx!.fillStyle = `rgba(192,0,26,${pulseAlpha})`
+      ctx!.fill()
 
       ecgOffset = (ecgOffset + 0.5) % ecgPath.length
-
       animId = requestAnimationFrame(draw)
     }
+
     draw()
-    return () => cancelAnimationFrame(animId)
+
+    return () => {
+      cancelAnimationFrame(animId)
+      window.removeEventListener('resize', resize)
+    }
   }, [])
 
   async function handleLogin(e: React.FormEvent) {
@@ -145,16 +155,16 @@ export default function Login({ onLogin }: Props) {
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
         @keyframes spin { to{transform:rotate(360deg)} }
         .login-card { animation: fade-up .6s cubic-bezier(.16,1,.3,1) both }
-        .logo-wrap { animation: float 3s ease-in-out infinite }
-        .input-field {
+        .logo-float { animation: float 3s ease-in-out infinite }
+        .input-login {
           width: 100%; padding: 12px 16px; border-radius: 10px;
           background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
           color: white; font-size: 14px; outline: none;
           transition: border-color .2s, background .2s;
           box-sizing: border-box;
         }
-        .input-field::placeholder { color: rgba(255,255,255,0.2) }
-        .input-field:focus { border-color: rgba(192,0,26,.6); background: rgba(255,255,255,0.07) }
+        .input-login::placeholder { color: rgba(255,255,255,0.2) }
+        .input-login:focus { border-color: rgba(192,0,26,.6); background: rgba(255,255,255,0.07) }
         .btn-login {
           width: 100%; padding: 13px; border-radius: 10px; border: none; cursor: pointer;
           background: linear-gradient(135deg, #C0001A, #E30613);
@@ -162,22 +172,19 @@ export default function Login({ onLogin }: Props) {
           box-shadow: 0 8px 32px rgba(192,0,26,.35);
           transition: opacity .2s, transform .15s;
         }
-        .btn-login:hover { opacity: .9 }
-        .btn-login:active { transform: scale(.98) }
+        .btn-login:hover:not(:disabled) { opacity: .9 }
+        .btn-login:active:not(:disabled) { transform: scale(.98) }
         .btn-login:disabled { background: rgba(255,255,255,.08); box-shadow: none; cursor: default }
       `}</style>
 
-      {/* Canvas de fundo */}
-      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0 }} />
+      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, display: 'block' }} />
 
-      {/* Gradiente central */}
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 60% 50% at 50% 40%, rgba(192,0,26,.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-      {/* Conteúdo */}
-      <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
 
         {/* Logo */}
-        <div className="logo-wrap" style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div className="logo-float" style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
             <div style={{ position: 'absolute', inset: 0, borderRadius: 20, background: '#C0001A', animation: 'pulse-ring 2s ease-out infinite', opacity: .3 }} />
             <div style={{ position: 'absolute', inset: 0, borderRadius: 20, background: '#C0001A', animation: 'pulse-ring 2s ease-out infinite .4s', opacity: .2 }} />
@@ -195,17 +202,16 @@ export default function Login({ onLogin }: Props) {
 
         {/* Card */}
         <div className="login-card" style={{ width: '100%', maxWidth: 360, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: '28px 28px 24px', backdropFilter: 'blur(24px)', boxShadow: '0 32px 80px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06)' }}>
-          {/* Linha vermelha topo */}
           <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, #C0001A, transparent)', borderRadius: 99, marginBottom: 24, opacity: .6 }} />
 
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Utilizador</label>
-              <input className="input-field" type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="username" required autoFocus autoComplete="username" />
+              <input className="input-login" type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="username" required autoFocus autoComplete="username" />
             </div>
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Password</label>
-              <input className="input-field" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required autoComplete="current-password" />
+              <input className="input-login" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required autoComplete="current-password" />
             </div>
 
             {erro && (
