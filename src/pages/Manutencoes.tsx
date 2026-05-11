@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import {
   ClipboardList, Camera, FileText, CheckCircle, XCircle,
   MinusCircle, Download, ChevronDown, ChevronUp, Loader2,
-  RotateCcw, Search, Calendar, BarChart2, ArrowRight
+  RotateCcw, Search, Calendar, ArrowRight
 } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { FICHAS_TEMPLATES } from '../data/fichasTemplates'
@@ -135,7 +135,7 @@ function gerarPDFPreenchido(cabecalho: Cabecalho, tarefas: Tarefa[]) {
   if (win) { win.document.write(html); win.document.close(); setTimeout(() => win.print(), 600) }
 }
 
-export default function Manutencoes({ equipamentos }: Props) {
+export default function Manutencoes({ equipamentos: _equipamentos }: Props) {
   const mesAtual = new Date().getMonth() + 1
   const [modo, setModo] = useState<'dashboard' | 'selecionar' | 'preencher'>('dashboard')
   const [tarefas, setTarefas] = useState<Tarefa[]>([])
