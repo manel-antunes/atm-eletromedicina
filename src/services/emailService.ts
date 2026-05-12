@@ -2,7 +2,19 @@ import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina-production.up.railway.app'
- function parseData(dataStr: string): Date | null {
+
+function getToken() {
+  return localStorage.getItem('token') ?? ''
+}
+
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${getToken()}`,
+  }
+}
+
+function parseData(dataStr: string): Date | null {
   if (!dataStr || dataStr === 'undefined') return null
   const numerico = Number(dataStr)
   if (!isNaN(numerico) && numerico > 40000) {
@@ -51,12 +63,16 @@ export function prepararAlertas(equipamentos: Equipamento[], filtros: { incluirV
     .filter(Boolean)
 }
 
-export async function enviarAlertasEmail(equipamentos: Equipamento[], destinatarios?: string[], filtros?: { incluirVencidas: boolean; incluirUrgentes: boolean; incluirEmBreve: boolean }) {
+export async function enviarAlertasEmail(
+  equipamentos: Equipamento[],
+  destinatarios?: string[],
+  filtros?: { incluirVencidas: boolean; incluirUrgentes: boolean; incluirEmBreve: boolean }
+) {
   const filtrosPadrao = filtros ?? { incluirVencidas: true, incluirUrgentes: true, incluirEmBreve: true }
   const alertas = prepararAlertas(equipamentos, filtrosPadrao)
   const res = await fetch(`${API_URL}/api/enviar-alertas`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify({ alertas, destinatarios }),
   })
   if (!res.ok) throw new Error('Falha ao enviar alertas')
@@ -67,31 +83,41 @@ export async function atualizarCache(equipamentos: Equipamento[]) {
   const alertas = prepararAlertas(equipamentos, { incluirVencidas: true, incluirUrgentes: true, incluirEmBreve: true })
   await fetch(`${API_URL}/api/alertas-cache`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify({ alertas }),
   })
 }
 
 export async function testarEmail(): Promise<boolean> {
-  const res = await fetch(`${API_URL}/api/testar-email`, { method: 'POST' })
+  const res = await fetch(`${API_URL}/api/testar-email`, {
+    method: 'POST',
+    headers: authHeaders(),
+  })
   return res.ok
 }
 
 export async function carregarConfig() {
-  const res = await fetch(`${API_URL}/api/config`)
+  const res = await fetch(`${API_URL}/api/config`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) throw new Error('Erro ao carregar config')
   return res.json()
 }
 
 export async function guardarConfig(config: unknown) {
   const res = await fetch(`${API_URL}/api/config`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify(config),
   })
+  if (!res.ok) throw new Error('Erro ao guardar config')
   return res.json()
 }
 
 export async function carregarHistorico() {
-  const res = await fetch(`${API_URL}/api/historico`)
+  const res = await fetch(`${API_URL}/api/historico`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) throw new Error('Erro ao carregar histórico')
   return res.json()
 }
