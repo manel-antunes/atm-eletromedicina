@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import * as cron from 'node-cron'
 import { Resend } from 'resend'
 import jwt from 'jsonwebtoken'
+import webpush from 'web-push'
 
 import { pool, inicializarDB } from './database'
 
@@ -15,6 +16,14 @@ app.use(express.json({ limit: '10mb' }))
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const JWT_SECRET = process.env.JWT_SECRET ?? 'atm-eletromedicina-2026'
+
+// ── VAPID ──────────────────────────────────────────────────
+webpush.setVapidDetails(
+  'mailto:atm@eletromedicina.pt',
+  process.env.VAPID_PUBLIC_KEY ?? '',
+  process.env.VAPID_PRIVATE_KEY ?? ''
+)
+let subscricoesPush: webpush.PushSubscription[] = []
 
 // ── UTILIZADORES ──────────────────────────────────────────
 const UTILIZADORES = [
@@ -347,6 +356,43 @@ app.post('/api/descricao-ia', autenticar, async (req, res) => {
   }
   if (candidatos.length === 0) candidatos = basePadrao
   res.json({ descricao: candidatos[Math.floor(Math.random() * candidatos.length)] })
+})
+
+// ── PUSH NOTIFICATIONS ─────────────────────────────────────
+app.post('/api/push/subscrever', autenticar, (req, res) => {
+  const sub = req.body as webpush.PushSubscription
+  const jaExiste = subscricoesPush.some(s => s.endpoint === sub.endpoint)
+  if (!jaExiste) subscricoesPush.push(sub)
+  res.json({ sucesso: true, total: subscricoesPush.length })
+})
+
+app.post('/api/push/notificar', autenticar, async (req, res) => {
+  const { vencidas, urgentes, emBreve } = req.body
+  const total = (vencidas ?? 0) + (urgentes ?? 0) + (emBreve ?? 0)
+  if (total === 0) return res.json({ sucesso: true, enviados: 0 })
+
+  const partes = [
+    vencidas  > 0 ? `${vencidas} vencida${vencidas  > 1 ? 's' : ''}` : '',
+    urgentes  > 0 ? `${urgentes} urgente${urgentes  > 1 ? 's' : ''}` : '',
+    emBreve   > 0 ? `${emBreve} em breve`                            : '',
+  ].filter(Boolean).join(' · ')
+
+  const payload = JSON.stringify({
+    titulo: '⚠️ ATM — Alertas de calibração',
+    corpo: partes,
+    tag: 'atm-calibracao',
+    url: '/?page=relatorios',
+  })
+
+  const resultados = await Promise.allSettled(
+    subscricoesPush.map(sub => webpush.sendNotification(sub, payload))
+  )
+
+  // Remove subscrições expiradas
+  subscricoesPush = subscricoesPush.filter((_, i) => resultados[i].status === 'fulfilled')
+
+  const enviados = resultados.filter(r => r.status === 'fulfilled').length
+  res.json({ sucesso: true, enviados })
 })
 
 // ── ARRANQUE ───────────────────────────────────────────────

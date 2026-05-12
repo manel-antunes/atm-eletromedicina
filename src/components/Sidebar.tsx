@@ -2,6 +2,7 @@ import { LayoutDashboard, ClipboardCheck, ClipboardList, Package, ArrowLeftRight
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import logoAtm from '../assets/logo-atm.png'
+import NotificacoesPush from './NotificacoesPush'
 
 interface Props {
   paginaAtiva: string
@@ -84,6 +85,11 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos, nomeUtil
           </button>
         ))}
       </nav>
+
+      {/* Notificações Push */}
+      <div className="px-3 pb-2">
+        <NotificacoesPush />
+      </div>
 
       {/* Footer com utilizador e logout */}
       <div className="px-3 py-3 border-t border-white/10">
