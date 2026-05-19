@@ -1,4 +1,4 @@
-const API_URL = 'https://atm-eletromedicina-production.up.railway.app'
+const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 
 function getHeaders(): Record<string, string> {
   const token = localStorage.getItem('atm_token')
