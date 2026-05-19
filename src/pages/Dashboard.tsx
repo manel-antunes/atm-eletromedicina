@@ -561,8 +561,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
                 { label: 'Base dados',  valor: 'PostgreSQL',                    cor: '#38bdf8' },
                 { label: 'Frontend',    valor: 'React + TypeScript',            cor: '#a78bfa' },
                 { label: 'Backend',     valor: 'Node.js + Express',             cor: '#fb923c' },
-                { label: 'Deploy',      valor: 'Vercel + 
-render',              cor: '#f472b6' },
+                { label: 'Deploy',      valor: 'Vercel + Railway',              cor: '#f472b6' },
                 { label: 'URL',         valor: 'atm-eletromedicina.vercel.app', cor: '#94a3b8' },
               ].map(info => (
                 <div key={info.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
