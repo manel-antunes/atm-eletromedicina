@@ -50,6 +50,7 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos, nomeUtil
     { id: 'contactos',   label: 'Contactos',    icon: Phone,           badge: 0 },
     { id: 'mapa',        label: 'Mapa',         icon: Map,             badge: 0 },
     { id: 'manutencoes', label: 'OTs',          icon: ClipboardList,   badge: 0 },
+    { id: 'preventivas', label: 'Preventivas', icon: ClipboardList, badge: 0 },
   ]
 
   return (

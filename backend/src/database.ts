@@ -113,7 +113,37 @@ export async function inicializarDB(): Promise<void> {
         incluir_em_breve BOOLEAN DEFAULT TRUE
       )
     `)
-
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS preventivas_plano (
+    id SERIAL PRIMARY KEY,
+    mes INTEGER NOT NULL,
+    ano INTEGER NOT NULL,
+    total INTEGER DEFAULT 0,
+    criado_em TIMESTAMP DEFAULT NOW()
+  )
+`)
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS preventivas_equipamentos (
+    id SERIAL PRIMARY KEY,
+    plano_id INTEGER REFERENCES preventivas_plano(id),
+    mes INTEGER NOT NULL,
+    ano INTEGER NOT NULL,
+    cod_ativo TEXT,
+    nome TEXT,
+    marca TEXT,
+    modelo TEXT,
+    numero_serie TEXT,
+    cod_localizacao TEXT,
+    localizacao TEXT,
+    setor TEXT,
+    area TEXT,
+    concluido BOOLEAN DEFAULT FALSE,
+    concluido_em TIMESTAMP,
+    concluido_por TEXT,
+    observacoes TEXT,
+    criado_em TIMESTAMP DEFAULT NOW()
+  )
+`)
     console.log('✅ Base de dados inicializada!')
   } finally {
     client.release()

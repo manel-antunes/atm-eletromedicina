@@ -6,6 +6,7 @@ import Topbar from './components/Topbar'
 import Dashboard from './pages/Dashboard'
 import Calibracoes from './pages/Calibracoes'
 import Inventario from './pages/Inventario'
+import PlanoPreventivas from './pages/PlanoPreventivas'
 import Cedencias from './pages/Cedencias'
 import Relatorios from './pages/Relatorios'
 import DetalheEquipamento from './pages/DetalheEquipamento'
@@ -187,6 +188,7 @@ if (carregando) {
       case 'documentos':  return <Documentos equipamentos={equipamentos} />
       case 'contactos':   return <Contactos equipamentos={equipamentos} />
       case 'mapa':        return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
+      case 'preventivas': return <PlanoPreventivas />
       case 'manutencoes': return <Manutencoes equipamentos={equipamentos} />
       default:            return null
     }

@@ -394,6 +394,62 @@ app.post('/api/push/notificar', autenticar, async (req, res) => {
   const enviados = resultados.filter(r => r.status === 'fulfilled').length
   res.json({ sucesso: true, enviados })
 })
+// ── PLANO DE PREVENTIVAS ───────────────────────────────────
+app.post('/api/preventivas/importar', autenticar, async (req, res) => {
+  const { mes, ano, equipamentos } = req.body
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query(`DELETE FROM preventivas_equipamentos WHERE mes=$1 AND ano=$2`, [mes, ano])
+    await client.query(`DELETE FROM preventivas_plano WHERE mes=$1 AND ano=$2`, [mes, ano])
+    const plano = await client.query(
+      `INSERT INTO preventivas_plano (mes, ano, total) VALUES ($1,$2,$3) RETURNING id`,
+      [mes, ano, equipamentos.length]
+    )
+    const planoId = plano.rows[0].id
+    for (const eq of equipamentos) {
+      await client.query(
+        `INSERT INTO preventivas_equipamentos (plano_id,mes,ano,cod_ativo,nome,marca,modelo,numero_serie,cod_localizacao,localizacao,setor,area)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        [planoId, mes, ano, eq.codAtivo, eq.nome, eq.marca, eq.modelo, eq.numeroSerie, eq.codLocalizacao, eq.localizacao, eq.setor, eq.area]
+      )
+    }
+    await client.query('COMMIT')
+    res.json({ sucesso: true, total: equipamentos.length })
+  } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ erro: String(err) }) }
+  finally { client.release() }
+})
+
+app.get('/api/preventivas/:mes/:ano', autenticar, async (req, res) => {
+  try {
+    const equipamentos = await pool.query(
+      `SELECT * FROM preventivas_equipamentos WHERE mes=$1 AND ano=$2 ORDER BY setor, nome`,
+      [req.params.mes, req.params.ano]
+    )
+    res.json(equipamentos.rows)
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
+})
+
+app.patch('/api/preventivas/:id/concluir', autenticar, async (req: any, res) => {
+  const { observacoes } = req.body
+  try {
+    await pool.query(
+      `UPDATE preventivas_equipamentos SET concluido=TRUE, concluido_em=NOW(), concluido_por=$1, observacoes=$2 WHERE id=$3`,
+      [req.utilizador.nome, observacoes ?? '', req.params.id]
+    )
+    res.json({ sucesso: true })
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
+})
+
+app.patch('/api/preventivas/:id/desconcluir', autenticar, async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE preventivas_equipamentos SET concluido=FALSE, concluido_em=NULL, concluido_por=NULL WHERE id=$1`,
+      [req.params.id]
+    )
+    res.json({ sucesso: true })
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
+})
 
 // ── ARRANQUE ───────────────────────────────────────────────
 const PORT = process.env.PORT ?? 3001
