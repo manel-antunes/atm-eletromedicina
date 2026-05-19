@@ -26,7 +26,6 @@ export default function ImportarExcel({ onImportar }: Props) {
     resize()
     window.addEventListener('resize', resize)
 
-    // Nós conectados — tema de rede biomédica
     interface Node {
       x: number; y: number; vx: number; vy: number
       r: number; alpha: number; pulseOffset: number
@@ -41,7 +40,6 @@ export default function ImportarExcel({ onImportar }: Props) {
       pulseOffset: Math.random() * Math.PI * 2,
     }))
 
-    // Ondas circulares a emanar do centro
     const waves: { r: number; alpha: number; speed: number }[] = Array.from({ length: 4 }, (_, i) => ({
       r: i * 180,
       alpha: 0.12 - i * 0.02,
@@ -54,7 +52,13 @@ export default function ImportarExcel({ onImportar }: Props) {
     function draw() {
       const w = canvas!.width
       const h = canvas!.height
-      const cx = w * 0.22  // centro das ondas no painel esquerdo
+
+      if (w <= 0 || h <= 0) {
+        animId = requestAnimationFrame(draw)
+        return
+      }
+
+      const cx = w * 0.22
       const cy = h * 0.5
 
       ctx!.fillStyle = 'rgba(10,6,6,0.18)'
@@ -65,15 +69,19 @@ export default function ImportarExcel({ onImportar }: Props) {
         wave.r += wave.speed
         if (wave.r > Math.max(w, h) * 1.2) wave.r = 0
 
-        const gradient = ctx!.createRadialGradient(cx, cy, wave.r - 2, cx, cy, wave.r + 2)
-        gradient.addColorStop(0, `rgba(192,0,26,0)`)
-        gradient.addColorStop(0.5, `rgba(192,0,26,${wave.alpha * (1 - wave.r / (Math.max(w,h)*1.2))})`)
-        gradient.addColorStop(1, `rgba(192,0,26,0)`)
-        ctx!.beginPath()
-        ctx!.arc(cx, cy, wave.r, 0, Math.PI * 2)
-        ctx!.strokeStyle = `rgba(192,0,26,${wave.alpha * (1 - wave.r / (Math.max(w,h)*1.2))})`
-        ctx!.lineWidth = 1.5
-        ctx!.stroke()
+        try {
+          const innerR = Math.max(0, wave.r - 2)
+          const outerR = Math.max(innerR + 1, wave.r + 2)
+          const gradient = ctx!.createRadialGradient(cx, cy, innerR, cx, cy, outerR)
+          gradient.addColorStop(0, `rgba(192,0,26,0)`)
+          gradient.addColorStop(0.5, `rgba(192,0,26,${wave.alpha * (1 - wave.r / (Math.max(w, h) * 1.2))})`)
+          gradient.addColorStop(1, `rgba(192,0,26,0)`)
+          ctx!.beginPath()
+          ctx!.arc(cx, cy, wave.r, 0, Math.PI * 2)
+          ctx!.strokeStyle = `rgba(192,0,26,${wave.alpha * (1 - wave.r / (Math.max(w, h) * 1.2))})`
+          ctx!.lineWidth = 1.5
+          ctx!.stroke()
+        } catch {}
       })
 
       // Nós
@@ -105,13 +113,15 @@ export default function ImportarExcel({ onImportar }: Props) {
       }
 
       // Vignette
-      const r0 = Math.max(0, h * 0.2)
-const r1 = Math.max(r0 + 1, h)
-const vig = ctx!.createRadialGradient(w/2, h/2, r0, w/2, h/2, r1)
-      vig.addColorStop(0, 'rgba(10,6,6,0)')
-      vig.addColorStop(1, 'rgba(10,6,6,0.75)')
-      ctx!.fillStyle = vig
-      ctx!.fillRect(0, 0, w, h)
+      try {
+        const r0 = Math.max(0, h * 0.2)
+        const r1 = Math.max(r0 + 1, h)
+        const vig = ctx!.createRadialGradient(w/2, h/2, r0, w/2, h/2, r1)
+        vig.addColorStop(0, 'rgba(10,6,6,0)')
+        vig.addColorStop(1, 'rgba(10,6,6,0.75)')
+        ctx!.fillStyle = vig
+        ctx!.fillRect(0, 0, w, h)
+      } catch {}
 
       t++
       animId = requestAnimationFrame(draw)
@@ -196,10 +206,8 @@ const vig = ctx!.createRadialGradient(w/2, h/2, r0, w/2, h/2, r1)
         .drop-zone:hover { border-color:rgba(192,0,26,.5); background:rgba(192,0,26,.06) }
       `}</style>
 
-      {/* Canvas animado */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, display: 'block' }} />
 
-      {/* Layout */}
       <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex' }}>
 
         {/* Painel esquerdo */}
@@ -215,8 +223,6 @@ const vig = ctx!.createRadialGradient(w/2, h/2, r0, w/2, h/2, r1)
             <p style={{ color: 'rgba(255,255,255,.45)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
               Sistema de gestão de equipamentos de teste e calibração para a equipa de Eletromedicina da ATM.
             </p>
-
-            {/* Stats */}
             <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
                 { label: 'Equipamentos geridos', valor: '49+' },
@@ -236,29 +242,20 @@ const vig = ctx!.createRadialGradient(w/2, h/2, r0, w/2, h/2, r1)
         {/* Painel direito */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
           <div className="fade-up" style={{ width: '100%', maxWidth: 440 }}>
-
-            {/* Card principal */}
             <div style={{ background: 'rgba(10,6,6,0.85)', border: '1px solid rgba(192,0,26,.2)', borderRadius: 24, padding: '40px 36px', backdropFilter: 'blur(32px)', boxShadow: '0 40px 100px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.04)' }}>
-
-              {/* Linha topo */}
               <div style={{ height: 2, background: 'linear-gradient(90deg,transparent,rgba(192,0,26,.8),transparent)', borderRadius: 99, marginBottom: 32 }} />
-
-              {/* Ícone */}
               <div style={{ position: 'relative', display: 'inline-block', marginBottom: 24 }}>
                 <div style={{ position: 'absolute', inset: -4, borderRadius: 20, border: '1px solid rgba(192,0,26,.3)', animation: 'pulse-ring 2s ease-out infinite' }} />
                 <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(192,0,26,.15)', border: '1px solid rgba(192,0,26,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <FileSpreadsheet size={28} color="#ff3333" />
                 </div>
               </div>
-
               <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: '0 0 8px', letterSpacing: '-0.3px' }}>
                 Importar Lista de Equipamentos
               </h2>
               <p style={{ color: 'rgba(255,255,255,.35)', fontSize: 13, margin: '0 0 28px', lineHeight: 1.6 }}>
                 Seleciona o ficheiro Excel (.xlsx) exportado do SAP para carregar os equipamentos.
               </p>
-
-              {/* Drop zone */}
               <div className="drop-zone" onClick={() => inputRef.current?.click()}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '12px 0' }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(192,0,26,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -278,9 +275,7 @@ const vig = ctx!.createRadialGradient(w/2, h/2, r0, w/2, h/2, r1)
                   </button>
                 </div>
               </div>
-
               <input ref={inputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleFicheiro} />
-
               <p style={{ textAlign: 'center', color: 'rgba(255,255,255,.15)', fontSize: 11, marginTop: 20 }}>
                 Os dados são guardados na base de dados
               </p>
