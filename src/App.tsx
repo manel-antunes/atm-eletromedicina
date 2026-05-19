@@ -23,7 +23,7 @@ import ErroBackend from './components/ErroBackend'
 import { useToast } from './hooks/useToast'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
 
-const API_URL = 'https://atm-eletromedicina-production.up.railway.app'
+const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 
 const titulos: Record<string, string> = {
   dashboard:    'Dashboard Geral',
