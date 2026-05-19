@@ -1,6 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina-production.up.railway.app'
+const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 const VAPID_PUBLIC = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? ''
-
 function getToken() {
   return localStorage.getItem('token') ?? ''
 }

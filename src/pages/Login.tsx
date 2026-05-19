@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 
-const API_URL = 'https://atm-eletromedicina-production.up.railway.app'
+const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 
 interface Props {
   onLogin: (token: string, nome: string) => void

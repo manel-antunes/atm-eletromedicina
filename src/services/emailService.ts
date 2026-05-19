@@ -1,7 +1,7 @@
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina-production.up.railway.app'
+const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 
 function getToken() {
   return localStorage.getItem('token') ?? ''

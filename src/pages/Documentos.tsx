@@ -15,8 +15,7 @@ interface Documento {
   criado_em: string
 }
 
-const API_URL = 'https://atm-eletromedicina-production.up.railway.app'
-
+const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 function formatarTamanho(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
