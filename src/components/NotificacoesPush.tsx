@@ -4,7 +4,7 @@ import { subscreverPush, cancelarPush, temPermissao } from '../services/pushServ
 
 export default function NotificacoesPush() {
   const [ativo, setAtivo] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false)   
 
   useEffect(() => {
     setAtivo(temPermissao())
