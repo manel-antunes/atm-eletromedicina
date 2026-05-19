@@ -26,16 +26,14 @@ export default function Login({ onLogin }: Props) {
     resize()
     window.addEventListener('resize', resize)
 
-    // ECG pattern — simula batimento cardíaco real
     const ecgPattern = [
-      0, 0, 0, 0, 0.02, -0.02, 0.05, -0.05, 0.05, 0,     // linha base
-      0, 0, 0, 0.1, 0.25, -0.1, 0.05, 0,                   // onda P
-      0, 0, 0, 0, 0, 0.05, -0.15, 1.0, -0.35, 0.1, 0.05,  // complexo QRS
-      0, 0, 0, 0, 0.12, 0.18, 0.2, 0.18, 0.12, 0.05, 0,   // onda T
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     // linha base
+      0, 0, 0, 0, 0.02, -0.02, 0.05, -0.05, 0.05, 0,
+      0, 0, 0, 0.1, 0.25, -0.1, 0.05, 0,
+      0, 0, 0, 0, 0, 0.05, -0.15, 1.0, -0.35, 0.1, 0.05,
+      0, 0, 0, 0, 0.12, 0.18, 0.2, 0.18, 0.12, 0.05, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ]
 
-    // Várias linhas de ECG em paralelo
     const numLinhas = 5
     const offsets: number[] = Array.from({ length: numLinhas }, (_, i) => i * (ecgPattern.length / numLinhas) * 8)
     let animId: number
@@ -45,11 +43,14 @@ export default function Login({ onLogin }: Props) {
       const w = canvas!.width
       const h = canvas!.height
 
-      // Fundo escuro com fade
+      if (w <= 0 || h <= 0) {
+        animId = requestAnimationFrame(draw)
+        return
+      }
+
       ctx!.fillStyle = 'rgba(6,9,16,0.15)'
       ctx!.fillRect(0, 0, w, h)
 
-      // Grid
       ctx!.lineWidth = 0.5
       for (let x = 0; x < w; x += 40) {
         ctx!.strokeStyle = x % 200 === 0 ? 'rgba(192,0,26,0.06)' : 'rgba(192,0,26,0.025)'
@@ -60,14 +61,12 @@ export default function Login({ onLogin }: Props) {
         ctx!.beginPath(); ctx!.moveTo(0, y); ctx!.lineTo(w, y); ctx!.stroke()
       }
 
-      // Desenha múltiplas linhas de ECG
       for (let l = 0; l < numLinhas; l++) {
         const centerY = (h / (numLinhas + 1)) * (l + 1)
         const amplitude = h / (numLinhas * 2.2)
         const speed = 2.5 + l * 0.3
         const lineOffset = offsets[l] + t * speed
 
-        // Opacidade varia por linha — central mais brilhante
         const dist = Math.abs(l - (numLinhas - 1) / 2) / ((numLinhas - 1) / 2)
         const alpha = 0.8 - dist * 0.5
 
@@ -84,12 +83,10 @@ export default function Login({ onLogin }: Props) {
           const v2 = ecgPattern[(idx + 1) % patLen]
           const val = v1 + (v2 - v1) * frac
           const y = centerY - val * amplitude
-
           x === 0 ? ctx!.moveTo(x, y) : ctx!.lineTo(x, y)
         }
         ctx!.stroke()
 
-        // Ponto de cursor a percorrer a linha central
         if (l === Math.floor(numLinhas / 2)) {
           const cursorX = (t * (2.5 + l * 0.3) * 2) % w
           const patLen = ecgPattern.length
@@ -98,16 +95,17 @@ export default function Login({ onLogin }: Props) {
           const val = ecgPattern[idx % patLen]
           const cursorY = centerY - val * amplitude
 
-          // Glow no cursor
-if (cursorX >= 0 && cursorY >= 0) {
-  const gradient = ctx!.createRadialGradient(cursorX, cursorY, 0, cursorX, cursorY, 20)
-  gradient.addColorStop(0, 'rgba(192,0,26,0.8)')
-  gradient.addColorStop(1, 'rgba(192,0,26,0)')
-  ctx!.beginPath()
-  ctx!.arc(cursorX, cursorY, 20, 0, Math.PI * 2)
-  ctx!.fillStyle = gradient
-  ctx!.fill()
-}
+          if (isFinite(cursorX) && isFinite(cursorY) && cursorX >= 0 && cursorY >= 0) {
+            try {
+              const gradient = ctx!.createRadialGradient(cursorX, cursorY, 0, cursorX, cursorY, 20)
+              gradient.addColorStop(0, 'rgba(192,0,26,0.8)')
+              gradient.addColorStop(1, 'rgba(192,0,26,0)')
+              ctx!.beginPath()
+              ctx!.arc(cursorX, cursorY, 20, 0, Math.PI * 2)
+              ctx!.fillStyle = gradient
+              ctx!.fill()
+            } catch {}
+          }
 
           ctx!.beginPath()
           ctx!.arc(cursorX, cursorY, 4, 0, Math.PI * 2)
@@ -116,18 +114,19 @@ if (cursorX >= 0 && cursorY >= 0) {
         }
       }
 
-      // Overlay escuro nas bordas (vignette)
-      const vignette = ctx!.createRadialGradient(w/2, h/2, h*0.3, w/2, h/2, h*0.9)
-      vignette.addColorStop(0, 'rgba(6,9,16,0)')
-      vignette.addColorStop(1, 'rgba(6,9,16,0.7)')
-      ctx!.fillStyle = vignette
-      ctx!.fillRect(0, 0, w, h)
+      // Vignette
+      try {
+        const vignette = ctx!.createRadialGradient(w/2, h/2, h*0.3, w/2, h/2, h*0.9)
+        vignette.addColorStop(0, 'rgba(6,9,16,0)')
+        vignette.addColorStop(1, 'rgba(6,9,16,0.7)')
+        ctx!.fillStyle = vignette
+        ctx!.fillRect(0, 0, w, h)
+      } catch {}
 
       t += 0.4
       animId = requestAnimationFrame(draw)
     }
 
-    // Limpa o fundo primeiro
     ctx.fillStyle = '#060910'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     draw()
@@ -189,14 +188,11 @@ if (cursorX >= 0 && cursorY >= 0) {
         .btn:disabled { background: rgba(255,255,255,.07); box-shadow: none; cursor: default }
       `}</style>
 
-      {/* Canvas ECG full-screen */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, display: 'block' }} />
 
-      {/* Conteúdo centrado */}
       <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div className="login-fade" style={{ width: '100%', maxWidth: 380 }}>
 
-          {/* Logo */}
           <div className="logo-anim" style={{ textAlign: 'center', marginBottom: 36 }}>
             <div className="logo-heart" style={{ position: 'relative', display: 'inline-block', marginBottom: 18 }}>
               <div style={{ position: 'absolute', inset: -4, borderRadius: 24, border: '1px solid rgba(192,0,26,.4)', animation: 'pulse-ring 1.5s ease-out infinite' }} />
@@ -215,10 +211,7 @@ if (cursorX >= 0 && cursorY >= 0) {
             </div>
           </div>
 
-          {/* Card de login */}
           <div style={{ background: 'rgba(6,9,16,0.85)', border: '1px solid rgba(192,0,26,.2)', borderRadius: 20, padding: '32px', backdropFilter: 'blur(32px)', boxShadow: '0 40px 100px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05), 0 0 0 1px rgba(192,0,26,.05)' }}>
-
-            {/* Linha decorativa topo */}
             <div style={{ height: '2px', background: 'linear-gradient(90deg, transparent 0%, rgba(192,0,26,.8) 50%, transparent 100%)', borderRadius: 99, marginBottom: 28 }} />
 
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
