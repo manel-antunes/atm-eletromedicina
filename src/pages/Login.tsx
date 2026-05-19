@@ -99,13 +99,15 @@ export default function Login({ onLogin }: Props) {
           const cursorY = centerY - val * amplitude
 
           // Glow no cursor
-          const gradient = ctx!.createRadialGradient(cursorX, cursorY, 0, cursorX, cursorY, 20)
-          gradient.addColorStop(0, 'rgba(192,0,26,0.8)')
-          gradient.addColorStop(1, 'rgba(192,0,26,0)')
-          ctx!.beginPath()
-          ctx!.arc(cursorX, cursorY, 20, 0, Math.PI * 2)
-          ctx!.fillStyle = gradient
-          ctx!.fill()
+if (cursorX >= 0 && cursorY >= 0) {
+  const gradient = ctx!.createRadialGradient(cursorX, cursorY, 0, cursorX, cursorY, 20)
+  gradient.addColorStop(0, 'rgba(192,0,26,0.8)')
+  gradient.addColorStop(1, 'rgba(192,0,26,0)')
+  ctx!.beginPath()
+  ctx!.arc(cursorX, cursorY, 20, 0, Math.PI * 2)
+  ctx!.fillStyle = gradient
+  ctx!.fill()
+}
 
           ctx!.beginPath()
           ctx!.arc(cursorX, cursorY, 4, 0, Math.PI * 2)
