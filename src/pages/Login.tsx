@@ -115,8 +115,10 @@ export default function Login({ onLogin }: Props) {
       }
 
       // Vignette
-      try {
-        const vignette = ctx!.createRadialGradient(w/2, h/2, h*0.3, w/2, h/2, h*0.9)
+try {
+  const r0 = Math.max(0, h * 0.3)
+  const r1 = Math.max(r0 + 1, h * 0.9)
+  const vignette = ctx!.createRadialGradient(w/2, h/2, r0, w/2, h/2, r1)
         vignette.addColorStop(0, 'rgba(6,9,16,0)')
         vignette.addColorStop(1, 'rgba(6,9,16,0.7)')
         ctx!.fillStyle = vignette
