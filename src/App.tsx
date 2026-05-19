@@ -21,6 +21,7 @@ import ToastContainer from './components/Toast'
 import EstadoOffline from './components/EstadoOffline'
 import ErroBackend from './components/ErroBackend'
 import { useToast } from './hooks/useToast'
+import LoadingATM from './components/LoadingATM'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
@@ -142,14 +143,9 @@ function App() {
   }
 
   // A verificar token
-  if (verificandoToken) {
-    return (
-      <div className="h-screen flex items-center justify-center" style={{ background: '#0A0F1E' }}>
-        <div style={{ width: 36, height: 36, border: '3px solid rgba(192,0,26,0.3)', borderTop: '3px solid #C0001A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-      </div>
-    )
-  }
+if (verificandoToken) {
+  return <LoadingATM mensagem="A verificar sessão..." />
+}
 
   // Não autenticado
   if (!token) {
@@ -162,17 +158,9 @@ function App() {
   }
 
   // A carregar
-  if (carregando) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div style={{ width: 40, height: 40, border: '3px solid #e2e8f0', borderTop: '3px solid #C0001A', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-          <p className="text-sm text-gray-400">A carregar...</p>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-      </div>
-    )
-  }
+if (carregando) {
+  return <LoadingATM mensagem="A carregar equipamentos..." />
+}
 
   // Sem equipamentos ou a reimportar
   if (equipamentos.length === 0 && !erroBackend) {
