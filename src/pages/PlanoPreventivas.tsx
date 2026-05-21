@@ -367,7 +367,7 @@ export default function PlanoPreventivas() {
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
               {fichaModal ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {fichaModal.tarefas.map((tarefa, i) => {
+                  {fichaModal.tarefas.map((tarefa) => {
                     const resp = respostas[tarefa.codigo] ?? { estado: null, valor: '', comentario: '' }
                     const corEstado = resp.estado === 'ok' ? '#16a34a' : resp.estado === 'nok' ? '#dc2626' : resp.estado === 'na' ? '#64748b' : null
                     return (
