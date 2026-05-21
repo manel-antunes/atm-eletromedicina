@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Upload, CheckCircle, Clock, ChevronRight, X, FileSpreadsheet, Search, Filter, RotateCcw, ClipboardList, AlertTriangle, CheckSquare, MinusSquare } from 'lucide-react'
+import { Upload, CheckCircle, ChevronRight, X, FileSpreadsheet, Search, Filter, RotateCcw, ClipboardList, AlertTriangle} from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { FICHAS_TEMPLATES } from '../data/fichasTemplates'
 
