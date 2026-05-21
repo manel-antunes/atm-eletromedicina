@@ -113,6 +113,7 @@ export default function PlanoPreventivas() {
     reader.onload = async (ev) => {
       try {
         const dados = new Uint8Array(ev.target?.result as ArrayBuffer)
+        const SETORES_PROPRIOS = ['MEGOPMCOPMEQ', 'MEGOPMCOPMPR', 'MEGOPMGARTEQ']
         const wb = XLSX.read(dados, { type: 'array' })
         const ws = wb.Sheets[wb.SheetNames[0]]
         const linhas = XLSX.utils.sheet_to_json(ws, { header: 1 }) as string[][]
@@ -131,7 +132,7 @@ export default function PlanoPreventivas() {
             setor: String(l[17] ?? '').trim(),
             area: String(l[19] ?? '').trim(),
           }))
-          .filter(e => e.codAtivo !== '' && e.codAtivo !== 'undefined')
+          .filter(e => e.codAtivo !== '' && e.codAtivo !== 'undefined' && SETORES_PROPRIOS.some(s => e.setor.includes(s)))
         let mes = mesAtivo, ano = anoAtivo
         const nomeFich = ficheiro.name.toUpperCase()
         MESES.forEach((m, i) => { if (nomeFich.includes(m.toUpperCase().substring(0, 3))) mes = i + 1 })
