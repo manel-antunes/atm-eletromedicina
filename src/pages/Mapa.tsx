@@ -79,7 +79,7 @@ function criarIcone(estado: string, count: number) {
         color: white;
         font-weight: 800;
         font-size: ${count > 9 ? 11 : 13}px;
-        font-family: monospace;
+      
       ">${count}</div>
     `,
     className: '',

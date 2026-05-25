@@ -89,7 +89,7 @@ function gerarPDFPreenchido(cabecalho: Cabecalho, tarefas: Tarefa[]) {
     na: tarefas.filter(t=>t.valor==='NA').length,
   }
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
-<style>body{font-family:Arial,sans-serif;margin:0;padding:20px}table{width:100%;border-collapse:collapse}.campo{display:grid;grid-template-columns:1fr 1fr;border:1px solid #e2e8f0;margin-bottom:8px}.ci{padding:6px 10px;border-right:1px solid #e2e8f0}.ci:last-child{border-right:none}.cl2{font-size:9px;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:.08em}.cv{font-size:11px;color:#0f172a;margin-top:2px;min-height:14px}</style>
+<style>body{margin:0;padding:20px}table{width:100%;border-collapse:collapse}.campo{display:grid;grid-template-columns:1fr 1fr;border:1px solid #e2e8f0;margin-bottom:8px}.ci{padding:6px 10px;border-right:1px solid #e2e8f0}.ci:last-child{border-right:none}.cl2{font-size:9px;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:.08em}.cv{font-size:11px;color:#0f172a;margin-top:2px;min-height:14px}</style>
 </head><body>
 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;border-bottom:2px solid #e2e8f0;padding-bottom:10px">
   <div style="font-size:24px;font-weight:900;color:#0066cc">≡ cuf</div>

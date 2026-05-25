@@ -96,14 +96,14 @@ function gerarHTML(alertas: Alerta[]): string {
   }
 
   const hoje = new Date().toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-  return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f8fafc;">
   <div style="max-width:700px;margin:0 auto;padding:32px 16px;">
     <div style="background:#C0001A;border-radius:12px;padding:24px 32px;margin-bottom:24px;">
-      <span style="color:#fff;font-size:36px;font-weight:900;font-family:Arial Black,Arial,sans-serif;letter-spacing:-1px;line-height:1;">ATM</span>
+      <span style="color:#fff;font-size:36px;font-weight:900;">ATM</span>
       <p style="color:rgba(255,255,255,0.7);font-size:11px;margin:4px 0 0;">Manutenção Total · Eletromedicina</p>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;">
-      ${[{label:'Vencidas',valor:vencidos.length,cor:'#dc2626',bg:'#fef2f2'},{label:'Urgentes',valor:urgentes.length,cor:'#ea580c',bg:'#fff7ed'},{label:'Em breve',valor:avisos.length,cor:'#d97706',bg:'#fffbeb'}].map(s=>`<div style="background:${s.bg};border:1px solid ${s.cor}22;border-radius:10px;padding:16px;text-align:center;"><p style="color:${s.cor};font-size:28px;font-weight:800;font-family:monospace;margin:0;">${s.valor}</p><p style="color:${s.cor};font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:4px 0 0;">${s.label}</p></div>`).join('')}
+      ${[{label:'Vencidas',valor:vencidos.length,cor:'#dc2626',bg:'#fef2f2'},{label:'Urgentes',valor:urgentes.length,cor:'#ea580c',bg:'#fff7ed'},{label:'Em breve',valor:avisos.length,cor:'#d97706',bg:'#fffbeb'}].map(s=>`<div style="background:${s.bg};border:1px solid ${s.cor}22;border-radius:10px;padding:16px;text-align:center;"><p style="color:${s.cor};font-size:28px;font-weight:800;margin:0;">${s.valor}</p><p style="color:${s.cor};font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:4px 0 0;">${s.label}</p></div>`).join('')}
     </div>
     ${secao('Calibrações Vencidas', vencidos, '#dc2626')}
     ${secao('Calibrações Urgentes', urgentes, '#ea580c')}
@@ -287,7 +287,7 @@ app.post('/api/testar-email', autenticar, async (_req, res) => {
   const config = await carregarConfig()
   try {
     await enviarEmail(config.destinatarios, '✅ ATM — Teste de configuração',
-      `<div style="font-family:sans-serif;padding:32px;max-width:500px;margin:0 auto;"><h2 style="color:#C0001A;">ATM Eletromedicina</h2><p>O sistema de notificações está a funcionar corretamente.</p><p style="color:#94a3b8;font-size:12px;">Enviado em ${new Date().toLocaleString('pt-PT')}</p></div>`)
+      `<div style=";padding:32px;max-width:500px;margin:0 auto;"><h2 style="color:#C0001A;">ATM Eletromedicina</h2><p>O sistema de notificações está a funcionar corretamente.</p><p style="color:#94a3b8;font-size:12px;">Enviado em ${new Date().toLocaleString('pt-PT')}</p></div>`)
     res.json({ sucesso: true })
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
