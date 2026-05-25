@@ -23,6 +23,7 @@ import ErroBackend from './components/ErroBackend'
 import { useToast } from './hooks/useToast'
 import LoadingATM from './components/LoadingATM'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
+import Hospital3D from './pages/Hospital3D'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 
@@ -38,6 +39,7 @@ const titulos: Record<string, string> = {
   contactos:    'Contactos de Marcas',
   mapa:         'Mapa de Equipamentos',
   preventivas:  'Plano de Manutenção Preventiva',
+  hospital3d: 'Hospital 3D',
 }
 
 function useIsMobile() {
@@ -188,6 +190,7 @@ if (carregando) {
       case 'contactos':   return <Contactos equipamentos={equipamentos} />
       case 'mapa':        return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       case 'preventivas': return <PlanoPreventivas />
+      case 'hospital3d': return <Hospital3D equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
 
       default:            return null
     }
