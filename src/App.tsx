@@ -16,7 +16,6 @@ import Documentos from './pages/Documentos'
 import Contactos from './pages/Contactos'
 import Mapa from './pages/Mapa'
 import Calendario from './pages/Calendario'
-import Manutencoes from './pages/Manutencoes'
 import Login from './pages/Login'
 import ToastContainer from './components/Toast'
 import EstadoOffline from './components/EstadoOffline'
@@ -38,7 +37,7 @@ const titulos: Record<string, string> = {
   documentos:   'Documentos',
   contactos:    'Contactos de Marcas',
   mapa:         'Mapa de Equipamentos',
-  manutencoes:  'Ordens de Trabalho',
+  preventivas:  'Plano de Manutenção Preventiva',
 }
 
 function useIsMobile() {
@@ -189,7 +188,7 @@ if (carregando) {
       case 'contactos':   return <Contactos equipamentos={equipamentos} />
       case 'mapa':        return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       case 'preventivas': return <PlanoPreventivas />
-      case 'manutencoes': return <Manutencoes equipamentos={equipamentos} />
+
       default:            return null
     }
   }
