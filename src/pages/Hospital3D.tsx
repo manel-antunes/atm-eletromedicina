@@ -5,7 +5,7 @@ import { differenceInDays, parse, isValid } from 'date-fns'
 
 interface Props {
   equipamentos: Equipamento[]
-  onVerDetalhe?: (eq: Equipamento) => void
+  onVerDetalhe?: (_eq: Equipamento) => void
 }
 
 function parseData(dataStr: string): Date | null {
