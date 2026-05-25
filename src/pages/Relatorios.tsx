@@ -160,11 +160,13 @@ export default function Relatorios({ equipamentos }: Props) {
     catch { setTesteEstado('erro'); setTimeout(() => setTesteEstado('idle'), 4000) }
   }
 
-  async function handleGuardarConfig() {
-    await guardarConfig(config)
-    setConfigGuardada(true)
-    setTimeout(() => setConfigGuardada(false), 3000)
-  }
+async function handleGuardarConfig() {
+  await guardarConfig(config)
+  const novaConfig = await carregarConfig()
+  setConfig(novaConfig)
+  setConfigGuardada(true)
+  setTimeout(() => setConfigGuardada(false), 3000)
+}
 
   function adicionarEmail() {
     if (!novoEmail || !novoEmail.includes('@')) return
