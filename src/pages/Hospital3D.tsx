@@ -5,7 +5,7 @@ import { differenceInDays, parse, isValid } from 'date-fns'
 
 interface Props {
   equipamentos: Equipamento[]
-  onVerDetalhe?: (_eq: Equipamento) => void
+  onVerDetalhe?: (eq: Equipamento) => void
 }
 
 function parseData(dataStr: string): Date | null {
@@ -84,7 +84,7 @@ function getLocalizacao(loc: string) {
   return chave ? LOCALIZACOES[chave] : null
 }
 
-export default function Hospital3D({ equipamentos, onVerDetalhe }: Props) {
+export default function Hospital3D({ equipamentos }: Props) {
   const mountRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<THREE.Scene | null>(null)
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
@@ -338,17 +338,17 @@ function onMouseMoveRay(e: MouseEvent) {
     }
     window.addEventListener('resize', onResize)
 
-return () => {
-  cancelAnimationFrame(frameRef.current)
-  if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement)
-  renderer.dispose()
-  mount.removeEventListener('mousedown', onMouseDown)
-  window.removeEventListener('mousemove', onMouseMove)
-  window.removeEventListener('mousemove', onMouseMoveRay)
-  window.removeEventListener('mouseup', onMouseUp)
-  mount.removeEventListener('wheel', onWheel)
-  window.removeEventListener('resize', onResize)
-}
+    return () => {
+      cancelAnimationFrame(frameRef.current)
+      mount.removeChild(renderer.domElement)
+      renderer.dispose()
+      mount.removeEventListener('mousedown', onMouseDown)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mousemove', onMouseMoveRay)
+      window.removeEventListener('mouseup', onMouseUp)
+      mount.removeEventListener('wheel', onWheel)
+      window.removeEventListener('resize', onResize)
+    }
   }, [equipamentos, filtro])
 
   return (
