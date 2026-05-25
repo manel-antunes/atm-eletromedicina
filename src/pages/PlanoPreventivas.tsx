@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { Upload, CheckCircle, X, FileSpreadsheet, Search, Filter, RotateCcw, ClipboardList, AlertTriangle, MapPin } from 'lucide-react'
+import { Upload, CheckCircle, X, FileSpreadsheet, Search, Filter, RotateCcw, ClipboardList, AlertTriangle, MapPin, Camera, Loader } from 'lucide-react'
 import * as XLSX from 'xlsx'
+import { createWorker } from 'tesseract.js'
 import { FICHAS_TEMPLATES } from '../data/fichasTemplates'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
@@ -62,7 +63,10 @@ export default function PlanoPreventivas() {
   const [respostas, setRespostas] = useState<Record<string, RespostaTarefa>>({})
   const [obsModal, setObsModal] = useState('')
   const [guardando, setGuardando] = useState(false)
+  const [scanando, setScanando] = useState(false)
+  const [scanProgresso, setScanProgresso] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const scanRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { carregarPlano() }, [mesAtivo, anoAtivo])
 
@@ -106,6 +110,32 @@ export default function PlanoPreventivas() {
       setModalEq(null)
     } catch { }
     finally { setGuardando(false) }
+  }
+
+  async function handleScan(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setScanando(true)
+    setScanProgresso(0)
+    try {
+      const worker = await createWorker('por', 1, {
+        logger: (m: { status: string; progress: number }) => {
+          if (m.status === 'recognizing text') {
+            setScanProgresso(Math.round(m.progress * 100))
+          }
+        },
+      })
+      const { data: { text } } = await worker.recognize(file)
+      await worker.terminate()
+      const textoLimpo = text.trim().replace(/\n{3,}/g, '\n\n')
+      setObsModal(prev => prev ? `${prev}\n\n--- SCAN OCR ---\n${textoLimpo}` : `--- SCAN OCR ---\n${textoLimpo}`)
+    } catch (err) {
+      console.error('Erro OCR:', err)
+    } finally {
+      setScanando(false)
+      setScanProgresso(0)
+      e.target.value = ''
+    }
   }
 
   function handleExcel(e: React.ChangeEvent<HTMLInputElement>) {
@@ -306,7 +336,6 @@ export default function PlanoPreventivas() {
           const concluidosSetor = eqs.filter(e => e.concluido).length
           return (
             <div key={setor}>
-              {/* Header setor */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <span style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{setor}</span>
                 <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
@@ -317,8 +346,6 @@ export default function PlanoPreventivas() {
                   <span style={{ fontSize: 10, color: concluidosSetor === eqs.length ? '#16a34a' : '#94a3b8', fontWeight: 600 }}>{concluidosSetor}/{eqs.length}</span>
                 </div>
               </div>
-
-              {/* Grelha 2 colunas */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 5 }}>
                 {eqs.map(eq => (
                   <div
@@ -436,9 +463,42 @@ export default function PlanoPreventivas() {
                   <p style={{ fontSize: 12 }}>Sem ficha de manutenção associada</p>
                 </div>
               )}
+
+              {/* Observações + Scan */}
               <div style={{ marginTop: 16 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Observações gerais</p>
-                <textarea value={obsModal} onChange={e => setObsModal(e.target.value)} placeholder="Notas sobre esta intervenção..." style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', fontSize: 12, resize: 'vertical', minHeight: 72, outline: 'none', color: '#0f172a', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Observações / OT em papel</p>
+                  <button
+                    onClick={() => scanRef.current?.click()}
+                    disabled={scanando}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: scanando ? 'rgba(192,0,26,0.06)' : 'rgba(192,0,26,0.08)', border: '1px solid rgba(192,0,26,0.2)', borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 600, color: '#C0001A', cursor: scanando ? 'wait' : 'pointer' }}
+                  >
+                    {scanando ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Camera size={12} />}
+                    {scanando ? `A processar... ${scanProgresso}%` : 'Scan OT em papel'}
+                  </button>
+                  <input
+                    ref={scanRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: 'none' }}
+                    onChange={handleScan}
+                  />
+                </div>
+
+                {/* Barra de progresso do scan */}
+                {scanando && (
+                  <div style={{ marginBottom: 8, height: 3, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${scanProgresso}%`, background: '#C0001A', borderRadius: 99, transition: 'width 0.3s' }} />
+                  </div>
+                )}
+
+                <textarea
+                  value={obsModal}
+                  onChange={e => setObsModal(e.target.value)}
+                  placeholder="Notas sobre esta intervenção... (ou usa o scan para extrair texto de uma OT em papel)"
+                  style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', fontSize: 12, resize: 'vertical', minHeight: 80, outline: 'none', color: '#0f172a', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                />
               </div>
             </div>
 
