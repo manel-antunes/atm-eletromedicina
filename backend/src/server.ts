@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import * as cron from 'node-cron'
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 import jwt from 'jsonwebtoken'
 import webpush from 'web-push'
 
@@ -14,8 +14,16 @@ const app = express()
 app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const JWT_SECRET = process.env.JWT_SECRET ?? 'atm-eletromedicina-2026'
+
+// ── GMAIL SMTP ─────────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+})
 
 // ── VAPID ──────────────────────────────────────────────────
 webpush.setVapidDetails(
@@ -133,7 +141,12 @@ let cronJob: cron.ScheduledTask | null = null
 let ultimosAlertasCache: Alerta[] = []
 
 async function enviarEmail(destinatarios: string[], subject: string, html: string) {
-  await resend.emails.send({ from: 'ATM Eletromedicina <onboarding@resend.dev>', to: destinatarios, subject, html })
+  await transporter.sendMail({
+    from: `"ATM Eletromedicina" <${process.env.GMAIL_USER}>`,
+    to: destinatarios.join(', '),
+    subject,
+    html,
+  })
 }
 
 async function iniciarCron() {
@@ -287,7 +300,7 @@ app.post('/api/testar-email', autenticar, async (_req, res) => {
   const config = await carregarConfig()
   try {
     await enviarEmail(config.destinatarios, '✅ ATM — Teste de configuração',
-      `<div style=";padding:32px;max-width:500px;margin:0 auto;"><h2 style="color:#C0001A;">ATM Eletromedicina</h2><p>O sistema de notificações está a funcionar corretamente.</p><p style="color:#94a3b8;font-size:12px;">Enviado em ${new Date().toLocaleString('pt-PT')}</p></div>`)
+      `<div style="padding:32px;max-width:500px;margin:0 auto;"><h2 style="color:#C0001A;">ATM Eletromedicina</h2><p>O sistema de notificações está a funcionar corretamente.</p><p style="color:#94a3b8;font-size:12px;">Enviado em ${new Date().toLocaleString('pt-PT')}</p></div>`)
     res.json({ sucesso: true })
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
@@ -387,13 +400,11 @@ app.post('/api/push/notificar', autenticar, async (req, res) => {
   const resultados = await Promise.allSettled(
     subscricoesPush.map(sub => webpush.sendNotification(sub, payload))
   )
-
-  // Remove subscrições expiradas
   subscricoesPush = subscricoesPush.filter((_, i) => resultados[i].status === 'fulfilled')
-
   const enviados = resultados.filter(r => r.status === 'fulfilled').length
   res.json({ sucesso: true, enviados })
 })
+
 // ── PLANO DE PREVENTIVAS ───────────────────────────────────
 app.post('/api/preventivas/importar', autenticar, async (req, res) => {
   const { mes, ano, equipamentos } = req.body
