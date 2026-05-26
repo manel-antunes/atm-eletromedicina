@@ -461,6 +461,37 @@ app.patch('/api/preventivas/:id/desconcluir', autenticar, async (req, res) => {
     res.json({ sucesso: true })
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
+app.post('/api/preventivas/importar-anual', autenticar, async (req, res) => {
+  const { ano, meses } = req.body
+  // meses = [{ mes: 1, equipamentos: [...] }, { mes: 2, equipamentos: [...] }, ...]
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    // Apaga todo o ano
+    await client.query(`DELETE FROM preventivas_equipamentos WHERE ano=$1`, [ano])
+    await client.query(`DELETE FROM preventivas_plano WHERE ano=$1`, [ano])
+
+    for (const { mes, equipamentos: eqs } of meses) {
+      if (!eqs.length) continue
+      const plano = await client.query(
+        `INSERT INTO preventivas_plano (mes, ano, total) VALUES ($1,$2,$3) RETURNING id`,
+        [mes, ano, eqs.length]
+      )
+      const planoId = plano.rows[0].id
+      for (const eq of eqs) {
+        await client.query(
+          `INSERT INTO preventivas_equipamentos (plano_id,mes,ano,cod_ativo,nome,marca,modelo,numero_serie,cod_localizacao,localizacao,setor,area)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          [planoId, mes, ano, eq.codAtivo, eq.nome, eq.marca, eq.modelo, eq.numeroSerie ?? '', eq.codLocalizacao ?? '', eq.localizacao, eq.setor, eq.area ?? '']
+        )
+      }
+    }
+    await client.query('COMMIT')
+    const total = meses.reduce((acc: number, m: any) => acc + m.equipamentos.length, 0)
+    res.json({ sucesso: true, total, meses: meses.length })
+  } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ erro: String(err) }) }
+  finally { client.release() }
+})  
 
 // ── ARRANQUE ───────────────────────────────────────────────
 const PORT = process.env.PORT ?? 3001

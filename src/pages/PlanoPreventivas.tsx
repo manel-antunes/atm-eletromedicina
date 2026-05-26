@@ -6,6 +6,7 @@ import { FICHAS_TEMPLATES } from '../data/fichasTemplates'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 const SETORES_PROPRIOS = ['MEGOPMCOPMEQ', 'MEGOPMCOPMPR', 'MEGOPMGARTEQ']
+const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 function getToken() { return localStorage.getItem('atm_token') ?? '' }
 function authHeaders() {
@@ -59,6 +60,7 @@ export default function PlanoPreventivas() {
   const [filtroPendentes, setFiltroPendentes] = useState(false)
   const [loading, setLoading] = useState(false)
   const [importando, setImportando] = useState(false)
+  const [importProgress, setImportProgress] = useState('')
   const [modalEq, setModalEq] = useState<Equipamento | null>(null)
   const [respostas, setRespostas] = useState<Record<string, RespostaTarefa>>({})
   const [obsModal, setObsModal] = useState('')
@@ -120,61 +122,105 @@ export default function PlanoPreventivas() {
     try {
       const worker = await createWorker('por', 1, {
         logger: (m: { status: string; progress: number }) => {
-          if (m.status === 'recognizing text') {
-            setScanProgresso(Math.round(m.progress * 100))
-          }
+          if (m.status === 'recognizing text') setScanProgresso(Math.round(m.progress * 100))
         },
       })
       const { data: { text } } = await worker.recognize(file)
       await worker.terminate()
       const textoLimpo = text.trim().replace(/\n{3,}/g, '\n\n')
       setObsModal(prev => prev ? `${prev}\n\n--- SCAN OCR ---\n${textoLimpo}` : `--- SCAN OCR ---\n${textoLimpo}`)
-    } catch (err) {
-      console.error('Erro OCR:', err)
-    } finally {
-      setScanando(false)
-      setScanProgresso(0)
-      e.target.value = ''
-    }
+    } catch (err) { console.error('Erro OCR:', err) }
+    finally { setScanando(false); setScanProgresso(0); e.target.value = '' }
   }
 
-  function handleExcel(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleExcelAnual(e: React.ChangeEvent<HTMLInputElement>) {
     const ficheiro = e.target.files?.[0]
     if (!ficheiro) return
     setImportando(true)
+    setImportProgress('A ler ficheiro...')
     const reader = new FileReader()
     reader.onload = async (ev) => {
       try {
         const dados = new Uint8Array(ev.target?.result as ArrayBuffer)
         const wb = XLSX.read(dados, { type: 'array' })
         const ws = wb.Sheets[wb.SheetNames[0]]
-        const linhas = XLSX.utils.sheet_to_json(ws, { header: 1 }) as string[][]
-        let headerIdx = linhas.findIndex(l => l.some(c => String(c).includes('Cód. Ativo') || String(c).includes('Cod. Ativo')))
-        if (headerIdx === -1) headerIdx = 3
-        const eqs = linhas.slice(headerIdx + 1)
-          .filter(l => l[0] && String(l[0]).trim().length > 2)
-          .map(l => ({
-            codAtivo: String(l[0] ?? '').trim(),
-            nome: String(l[4] ?? '').trim(),
-            marca: String(l[8] ?? '').trim(),
-            modelo: String(l[12] ?? '').trim(),
-            numeroSerie: String(l[13] ?? '').trim(),
-            codLocalizacao: String(l[14] ?? '').trim(),
-            localizacao: String(l[15] ?? '').trim(),
-            setor: String(l[17] ?? '').trim(),
-            area: String(l[19] ?? '').trim(),
-          }))
-          .filter(e => e.codAtivo !== '' && e.codAtivo !== 'undefined' && SETORES_PROPRIOS.some(s => e.setor.includes(s)))
-        let mes = mesAtivo, ano = anoAtivo
-        const nomeFich = ficheiro.name.toUpperCase()
-        MESES.forEach((m, i) => { if (nomeFich.includes(m.toUpperCase().substring(0, 3))) mes = i + 1 })
-        const res = await fetch(`${API_URL}/api/preventivas/importar`, {
-          method: 'POST', headers: authHeaders(),
-          body: JSON.stringify({ mes, ano, equipamentos: eqs }),
+        const linhas = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
+
+        // Detectar ano do ficheiro
+        let ano = anoAtivo
+        const primeiraLinha = String(linhas[0]?.[0] ?? '')
+        const anoMatch = primeiraLinha.match(/\d{4}/)
+        if (anoMatch) ano = parseInt(anoMatch[0])
+
+        // Parsear blocos por mês
+        const mesesData: { mes: number; equipamentos: any[] }[] = []
+        let mesAtual = 0
+        let eqsMesAtual: any[] = []
+
+        for (const linha of linhas) {
+          const val0 = String(linha[0] ?? '').trim()
+
+          // Detetar header de mês
+          const mesIdx = MESES_PT.findIndex(m => val0.startsWith(m))
+          if (mesIdx !== -1) {
+            // Guardar mês anterior
+            if (mesAtual > 0 && eqsMesAtual.length > 0) {
+              mesesData.push({ mes: mesAtual, equipamentos: eqsMesAtual })
+            }
+            mesAtual = mesIdx + 1
+            eqsMesAtual = []
+            continue
+          }
+
+          // Ignorar headers e linhas vazias
+          if (!val0 || val0 === 'Cód. Ativo' || val0.startsWith('Manutenção')) continue
+          if (mesAtual === 0) continue
+
+          const setor = String(linha[6] ?? '').trim()
+          if (!SETORES_PROPRIOS.some(s => setor.includes(s))) continue
+
+          eqsMesAtual.push({
+            codAtivo: val0,
+            nome: String(linha[1] ?? '').trim(),
+            marca: String(linha[2] ?? '').trim(),
+            modelo: String(linha[3] ?? '').trim(),
+            numeroSerie: String(linha[4] ?? '').trim(),
+            codLocalizacao: '',
+            localizacao: String(linha[5] ?? '').trim(),
+            setor: setor,
+            area: String(linha[7] ?? '').trim(),
+          })
+        }
+
+        // Guardar último mês
+        if (mesAtual > 0 && eqsMesAtual.length > 0) {
+          mesesData.push({ mes: mesAtual, equipamentos: eqsMesAtual })
+        }
+
+        const totalEqs = mesesData.reduce((acc, m) => acc + m.equipamentos.length, 0)
+        setImportProgress(`A importar ${totalEqs} equipamentos em ${mesesData.length} meses...`)
+
+        const res = await fetch(`${API_URL}/api/preventivas/importar-anual`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ ano, meses: mesesData }),
         })
-        if (res.ok) { setMesAtivo(mes); setAnoAtivo(ano); await carregarPlano() }
-      } catch (err) { console.error(err) }
-      finally { setImportando(false) }
+
+        if (res.ok) {
+          setAnoAtivo(ano)
+          await carregarPlano()
+          setImportProgress('')
+        } else {
+          setImportProgress('Erro na importação')
+          setTimeout(() => setImportProgress(''), 3000)
+        }
+      } catch (err) {
+        console.error(err)
+        setImportProgress('Erro ao processar ficheiro')
+        setTimeout(() => setImportProgress(''), 3000)
+      } finally {
+        setImportando(false)
+      }
     }
     reader.readAsArrayBuffer(ficheiro)
     e.target.value = ''
@@ -222,7 +268,7 @@ export default function PlanoPreventivas() {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#f1f5f9' }}>
 
-      {/* Header compacto */}
+      {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1a0a0f 100%)', padding: '14px 24px', borderBottom: '1px solid rgba(192,0,26,0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: total > 0 ? 10 : 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
@@ -252,10 +298,15 @@ export default function PlanoPreventivas() {
             <select value={anoAtivo} onChange={e => setAnoAtivo(Number(e.target.value))} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', padding: '5px 8px', fontSize: 12, outline: 'none', cursor: 'pointer' }}>
               {[2024,2025,2026,2027].map(a => <option key={a} value={a} style={{ background: '#1e293b' }}>{a}</option>)}
             </select>
-            <button onClick={() => inputRef.current?.click()} disabled={importando} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#C0001A', border: 'none', borderRadius: 8, color: '#fff', padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              <Upload size={13} />{importando ? 'A importar...' : 'Importar Excel'}
+            <button
+              onClick={() => inputRef.current?.click()}
+              disabled={importando}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#C0001A', border: 'none', borderRadius: 8, color: '#fff', padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: importando ? 'wait' : 'pointer', opacity: importando ? 0.8 : 1 }}
+            >
+              <Upload size={13} />
+              {importando ? (importProgress || 'A importar...') : 'Importar Plano Anual'}
             </button>
-            <input ref={inputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleExcel} />
+            <input ref={inputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleExcelAnual} />
           </div>
         </div>
         {total > 0 && (
@@ -315,9 +366,9 @@ export default function PlanoPreventivas() {
               <FileSpreadsheet size={28} color="#C0001A" style={{ opacity: 0.5 }} />
             </div>
             <p style={{ color: '#0f172a', fontSize: 14, fontWeight: 700, margin: '0 0 6px' }}>Sem plano para este mês</p>
-            <p style={{ color: '#94a3b8', fontSize: 12, margin: '0 0 16px' }}>Importa o Excel do SAP para carregar os equipamentos</p>
+            <p style={{ color: '#94a3b8', fontSize: 12, margin: '0 0 16px' }}>Importa o ficheiro anual do SAP para carregar os equipamentos</p>
             <button onClick={() => inputRef.current?.click()} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#C0001A', border: 'none', borderRadius: 8, color: '#fff', padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              <Upload size={13} />Importar Excel do SAP
+              <Upload size={13} />Importar Plano Anual
             </button>
           </div>
         )}
@@ -388,8 +439,6 @@ export default function PlanoPreventivas() {
           onClick={e => { if (e.target === e.currentTarget) setModalEq(null) }}
         >
           <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 720, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 40px 100px rgba(0,0,0,0.4)' }}>
-
-            {/* Header modal */}
             <div style={{ background: 'linear-gradient(135deg, #0A0F1E, #1a0a0f)', padding: '20px 24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -430,7 +479,6 @@ export default function PlanoPreventivas() {
               )}
             </div>
 
-            {/* Corpo modal */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
               {fichaModal ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -464,7 +512,6 @@ export default function PlanoPreventivas() {
                 </div>
               )}
 
-              {/* Observações + Scan */}
               <div style={{ marginTop: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Observações / OT em papel</p>
@@ -476,33 +523,17 @@ export default function PlanoPreventivas() {
                     {scanando ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Camera size={12} />}
                     {scanando ? `A processar... ${scanProgresso}%` : 'Scan OT em papel'}
                   </button>
-                  <input
-                    ref={scanRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    style={{ display: 'none' }}
-                    onChange={handleScan}
-                  />
+                  <input ref={scanRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleScan} />
                 </div>
-
-                {/* Barra de progresso do scan */}
                 {scanando && (
                   <div style={{ marginBottom: 8, height: 3, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${scanProgresso}%`, background: '#C0001A', borderRadius: 99, transition: 'width 0.3s' }} />
                   </div>
                 )}
-
-                <textarea
-                  value={obsModal}
-                  onChange={e => setObsModal(e.target.value)}
-                  placeholder="Notas sobre esta intervenção... (ou usa o scan para extrair texto de uma OT em papel)"
-                  style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', fontSize: 12, resize: 'vertical', minHeight: 80, outline: 'none', color: '#0f172a', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                />
+                <textarea value={obsModal} onChange={e => setObsModal(e.target.value)} placeholder="Notas sobre esta intervenção..." style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', fontSize: 12, resize: 'vertical', minHeight: 80, outline: 'none', color: '#0f172a', boxSizing: 'border-box', fontFamily: 'inherit' }} />
               </div>
             </div>
 
-            {/* Footer modal */}
             <div style={{ borderTop: '1px solid #e2e8f0', padding: '14px 24px', display: 'flex', gap: 10, justifyContent: 'flex-end', background: '#f8fafc' }}>
               <button onClick={() => setModalEq(null)} style={{ border: '1px solid #e2e8f0', background: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#64748b' }}>
                 Cancelar
