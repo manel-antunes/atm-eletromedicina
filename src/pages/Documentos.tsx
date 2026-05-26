@@ -16,6 +16,12 @@ interface Documento {
 }
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
+
+function getToken() { return localStorage.getItem('atm_token') ?? '' }
+function authHeaders() {
+  return { 'Authorization': `Bearer ${getToken()}` }
+}
+
 function formatarTamanho(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -39,11 +45,14 @@ export default function Documentos({ equipamentos }: Props) {
 
   async function carregarDocs() {
     try {
-      const res = await fetch(`${API_URL}/api/documentos`)
+      const res = await fetch(`${API_URL}/api/documentos`, {
+        headers: authHeaders(),
+      })
       const dados = await res.json()
-      setDocumentos(dados)
-    } catch {}
-    finally { setCarregando(false) }
+      setDocumentos(Array.isArray(dados) ? dados : [])
+    } catch {
+      setDocumentos([])
+    } finally { setCarregando(false) }
   }
 
   async function handleUpload() {
@@ -63,7 +72,10 @@ export default function Documentos({ equipamentos }: Props) {
 
       const res = await fetch(`${API_URL}/api/documentos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders(),
+        },
         body: JSON.stringify({
           equipamentoSAP: equipamentoSAP || null,
           nome: ficheiro.name,
@@ -91,8 +103,6 @@ export default function Documentos({ equipamentos }: Props) {
     setFicheiro(f)
     setEquipAutoDetectado(null)
     if (!f) return
-
-    // Extrai número SAP do nome do ficheiro (sequência de 9+ dígitos)
     const match = f.name.match(/\d{9,}/)
     if (match) {
       const sap = match[0]
@@ -114,7 +124,10 @@ export default function Documentos({ equipamentos }: Props) {
 
   async function handleEliminar(id: number) {
     if (!window.confirm('Tens a certeza que queres eliminar este documento?')) return
-    await fetch(`${API_URL}/api/documentos/${id}`, { method: 'DELETE' })
+    await fetch(`${API_URL}/api/documentos/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    })
     await carregarDocs()
   }
 
@@ -152,7 +165,6 @@ export default function Documentos({ equipamentos }: Props) {
               className="flex-1 text-sm outline-none bg-transparent text-gray-700 placeholder-gray-400"
             />
           </div>
-
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2">
             <select
               value={filtroEquip}
@@ -166,15 +178,8 @@ export default function Documentos({ equipamentos }: Props) {
             </select>
           </div>
         </div>
-
         <button
-          onClick={() => {
-            setModalAberto(true)
-            setErro('')
-            setFicheiro(null)
-            setEquipamentoSAP('')
-            setEquipAutoDetectado(null)
-          }}
+          onClick={() => { setModalAberto(true); setErro(''); setFicheiro(null); setEquipamentoSAP(''); setEquipAutoDetectado(null) }}
           className="flex items-center gap-2 text-xs font-semibold text-white px-4 py-2.5 rounded-xl transition-all flex-shrink-0"
           style={{ background: '#C0001A' }}
         >
@@ -232,18 +237,10 @@ export default function Documentos({ equipamentos }: Props) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleDownload(doc)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          title="Download"
-                        >
+                        <button onClick={() => handleDownload(doc)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Download">
                           <Download size={13} />
                         </button>
-                        <button
-                          onClick={() => handleEliminar(doc.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="Eliminar"
-                        >
+                        <button onClick={() => handleEliminar(doc.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Eliminar">
                           <Trash2 size={13} />
                         </button>
                       </div>
@@ -262,15 +259,9 @@ export default function Documentos({ equipamentos }: Props) {
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-sm font-bold text-gray-800">Adicionar certificado</h2>
-              <button
-                onClick={() => { setModalAberto(false); setErro(''); setFicheiro(null); setEquipAutoDetectado(null) }}
-                className="text-gray-400 hover:text-gray-600 text-lg"
-              >✕</button>
+              <button onClick={() => { setModalAberto(false); setErro(''); setFicheiro(null); setEquipAutoDetectado(null) }} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
             </div>
-
             <div className="px-6 py-4 space-y-4">
-
-              {/* Upload — primeiro para autodetectar equipamento */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-2">
                   Ficheiro <span className="text-red-500">*</span>
@@ -292,16 +283,8 @@ export default function Documentos({ equipamentos }: Props) {
                       <span className="text-xs text-gray-300 mt-1">PDF, DOC, XLS — máx. 10MB</span>
                     </>
                   )}
-                  <input
-                    ref={inputRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg"
-                    className="hidden"
-                    onChange={e => handleFicheiro(e.target.files?.[0] ?? null)}
-                  />
+                  <input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg" className="hidden" onChange={e => handleFicheiro(e.target.files?.[0] ?? null)} />
                 </label>
-
-                {/* Feedback autodetecção */}
                 {ficheiro && equipAutoDetectado && (
                   <div className="mt-2 flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
@@ -311,17 +294,11 @@ export default function Documentos({ equipamentos }: Props) {
                   </div>
                 )}
                 {ficheiro && !equipAutoDetectado && (
-                  <p className="mt-2 text-xs text-gray-400 italic">
-                    Nenhum equipamento detetado pelo nome — seleciona manualmente abaixo.
-                  </p>
+                  <p className="mt-2 text-xs text-gray-400 italic">Nenhum equipamento detetado pelo nome — seleciona manualmente abaixo.</p>
                 )}
               </div>
-
-              {/* Equipamento — pré-selecionado ou manual */}
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-2">
-                  Equipamento (opcional)
-                </label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-2">Equipamento (opcional)</label>
                 <select
                   value={equipamentoSAP}
                   onChange={e => { setEquipamentoSAP(e.target.value); setEquipAutoDetectado(null) }}
@@ -329,29 +306,17 @@ export default function Documentos({ equipamentos }: Props) {
                 >
                   <option value="">Documento geral (sem equipamento)</option>
                   {equipamentos.map(eq => (
-                    <option key={eq.numeroSAP} value={eq.numeroSAP}>
-                      {eq.descricao} — {eq.numeroSAP}
-                    </option>
+                    <option key={eq.numeroSAP} value={eq.numeroSAP}>{eq.descricao} — {eq.numeroSAP}</option>
                   ))}
                 </select>
               </div>
-
               {erro && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{erro}</p>}
             </div>
-
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-              <button
-                onClick={() => { setModalAberto(false); setErro(''); setFicheiro(null); setEquipAutoDetectado(null) }}
-                className="text-xs font-semibold text-gray-500 px-4 py-2 rounded-xl border border-gray-200 hover:border-gray-300 transition-all"
-              >
+              <button onClick={() => { setModalAberto(false); setErro(''); setFicheiro(null); setEquipAutoDetectado(null) }} className="text-xs font-semibold text-gray-500 px-4 py-2 rounded-xl border border-gray-200 hover:border-gray-300 transition-all">
                 Cancelar
               </button>
-              <button
-                onClick={handleUpload}
-                disabled={enviando}
-                className="text-xs font-semibold text-white px-4 py-2 rounded-xl transition-all"
-                style={{ background: enviando ? '#94a3b8' : '#C0001A' }}
-              >
+              <button onClick={handleUpload} disabled={enviando} className="text-xs font-semibold text-white px-4 py-2 rounded-xl transition-all" style={{ background: enviando ? '#94a3b8' : '#C0001A' }}>
                 {enviando ? 'A fazer upload...' : 'Guardar documento'}
               </button>
             </div>
