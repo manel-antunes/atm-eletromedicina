@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import type { Equipamento } from './data/equipamentos'
 import ImportarExcel from './components/ImportarExcel'
-import Sidebar from './components/Sidebar'
+import SidebarCollapsible from './components/SidebarCollapsible'
+import BottomNav from './components/BottomNav'
+import CommandPalette from './components/CommandPalette'
 import Topbar from './components/Topbar'
 import Dashboard from './pages/Dashboard'
 import Calibracoes from './pages/Calibracoes'
@@ -25,6 +27,7 @@ import LoadingATM from './components/LoadingATM'
 import QRCodes from './pages/QRCodes'
 import FichaPublica from './pages/FichaPublica'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
+import { differenceInDays, isValid } from 'date-fns'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 
@@ -53,8 +56,23 @@ function useIsMobile() {
   return isMobile
 }
 
+function contarAlertas(equipamentos: Equipamento[]): number {
+  return equipamentos.filter(eq => {
+    const dataStr = eq.dataCalibracao
+    if (!dataStr || dataStr === 'undefined') return true
+    const numerico = Number(dataStr)
+    let data: Date | null = null
+    if (!isNaN(numerico) && numerico > 40000) {
+      data = new Date((numerico - 25569) * 86400 * 1000)
+    } else {
+      data = new Date(dataStr)
+    }
+    if (!isValid(data)) return true
+    return differenceInDays(data, new Date()) <= 60
+  }).length
+}
+
 function App() {
-  // Rota pública /eq/:sap — antes de qualquer hook
   if (window.location.pathname.startsWith('/eq/')) {
     return <FichaPublica />
   }
@@ -64,11 +82,11 @@ function App() {
   const [paginaAtiva, setPaginaAtiva] = useState('dashboard')
   const [equipDetalhe, setEquipDetalhe] = useState<Equipamento | null>(null)
   const [apresentacao, setApresentacao] = useState(false)
-  const [sidebarAberta, setSidebarAberta] = useState(false)
   const [erroBackend, setErroBackend] = useState(false)
   const [token, setToken] = useState<string | null>(localStorage.getItem('atm_token'))
   const [nomeUtilizador, setNomeUtilizador] = useState(localStorage.getItem('atm_nome') ?? '')
   const [verificandoToken, setVerificandoToken] = useState(true)
+  const [commandPaletteAberta, setCommandPaletteAberta] = useState(false)
   const { toasts, mostrar, remover } = useToast()
   const isMobile = useIsMobile()
 
@@ -117,6 +135,18 @@ function App() {
       .finally(() => setCarregando(false))
   }, [token, verificandoToken])
 
+  // Ctrl+K para command palette
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setCommandPaletteAberta(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   function handleLogin(novoToken: string, nome: string) {
     setToken(novoToken)
     setNomeUtilizador(nome)
@@ -145,7 +175,6 @@ function App() {
   function navegar(pagina: string) {
     setPaginaAtiva(pagina)
     setEquipDetalhe(null)
-    setSidebarAberta(false)
   }
 
   if (verificandoToken) return <LoadingATM mensagem="A verificar sessão..." />
@@ -192,6 +221,7 @@ function App() {
   }
 
   const isCalendario = paginaAtiva === 'calendario' && !equipDetalhe
+  const alertas = contarAlertas(equipamentos)
 
   return (
     <>
@@ -205,35 +235,26 @@ function App() {
         <ModoApresentacao equipamentos={equipamentos} onFechar={() => setApresentacao(false)} />
       )}
 
-      {/* Overlay mobile */}
-      {isMobile && sidebarAberta && (
-        <div
-          onClick={() => setSidebarAberta(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40 }}
-        />
-      )}
+      {/* Command Palette */}
+      <CommandPalette
+        aberto={commandPaletteAberta}
+        onFechar={() => setCommandPaletteAberta(false)}
+        onNavegar={navegar}
+      />
 
       <div style={{ display: 'flex', height: '100vh', background: '#f3f4f6', overflow: 'hidden' }}>
 
-        {/* Sidebar */}
-        <div style={{
-          position: isMobile ? 'fixed' : 'relative',
-          top: 0,
-          left: 0,
-          height: '100%',
-          zIndex: isMobile ? 50 : 'auto',
-          transform: isMobile ? (sidebarAberta ? 'translateX(0)' : 'translateX(-100%)') : 'none',
-          transition: 'transform 0.3s ease',
-          flexShrink: 0,
-        }}>
-          <Sidebar
+        {/* Sidebar colapsável — só desktop */}
+        {!isMobile && (
+          <SidebarCollapsible
             paginaAtiva={paginaAtiva}
             onNavegar={navegar}
             equipamentos={equipamentos}
             nomeUtilizador={nomeUtilizador}
             onLogout={handleLogout}
+            onCommandPalette={() => setCommandPaletteAberta(true)}
           />
-        </div>
+        )}
 
         {/* Conteúdo principal */}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minWidth: 0 }}>
@@ -244,18 +265,27 @@ function App() {
             equipamentos={equipamentos}
             onVerDetalhe={(eq) => setEquipDetalhe(eq)}
             onApresentacao={() => setApresentacao(true)}
-            onMenuToggle={() => setSidebarAberta(!sidebarAberta)}
+            onMenuToggle={() => setCommandPaletteAberta(true)}
             isMobile={isMobile}
           />
           <main style={{
             flex: 1,
             overflow: isCalendario ? 'hidden' : 'auto',
-            padding: isCalendario ? 0 : (isMobile ? '12px' : '20px'),
+            padding: isCalendario ? 0 : (isMobile ? '12px 12px 80px' : '20px'),
           }}>
             {renderPagina()}
           </main>
         </div>
       </div>
+
+      {/* Bottom nav — só mobile */}
+      {isMobile && (
+        <BottomNav
+          paginaAtiva={paginaAtiva}
+          onNavegar={navegar}
+          alertas={alertas}
+        />
+      )}
 
       <ToastContainer toasts={toasts} onRemover={remover} />
     </>
