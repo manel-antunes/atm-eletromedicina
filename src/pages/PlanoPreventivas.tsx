@@ -83,7 +83,6 @@ export default function PlanoPreventivas() {
   }
 
   function abrirModal(eq: Equipamento) {
-    if (eq.concluido) return
     setModalEq(eq)
     setObsModal(eq.observacoes ?? '')
     const ficha = encontrarFicha(eq.nome)
@@ -116,6 +115,13 @@ export default function PlanoPreventivas() {
       setTimeout(() => setRecemConcluido(null), 1500)
     } catch { }
     finally { setGuardando(false) }
+  }
+
+  async function handleDesconcluir(eq: Equipamento, e: React.MouseEvent) {
+    e.stopPropagation()
+    e.preventDefault()
+    await fetch(`${API_URL}/api/preventivas/${eq.id}/desconcluir`, { method: 'PATCH', headers: authHeaders() })
+    await carregarPlano()
   }
 
   async function handleScan(e: React.ChangeEvent<HTMLInputElement>) {
@@ -217,13 +223,6 @@ export default function PlanoPreventivas() {
     }
     reader.readAsArrayBuffer(ficheiro)
     e.target.value = ''
-  }
-
-  async function handleDesconcluir(eq: Equipamento, e: React.MouseEvent) {
-    e.stopPropagation()
-    e.preventDefault()
-    await fetch(`${API_URL}/api/preventivas/${eq.id}/desconcluir`, { method: 'PATCH', headers: authHeaders() })
-    await carregarPlano()
   }
 
   const setores = ['Todos', ...Array.from(new Set(equipamentos.map(e => e.setor).filter(Boolean)))]
@@ -397,12 +396,13 @@ export default function PlanoPreventivas() {
                   return (
                     <div
                       key={eq.id}
-                      onClick={() => abrirModal(eq)}
+                      onClick={() => { if (!eq.concluido) abrirModal(eq) }}
                       className={isRecemConcluido ? 'card-concluido' : ''}
                       style={{
                         background: isRecemConcluido ? '#f0fdf4' : '#fff',
                         border: `1px solid ${isRecemConcluido ? '#16a34a' : eq.concluido ? '#bbf7d0' : '#e2e8f0'}`,
-                        borderRadius: 10, padding: '9px 12px', cursor: eq.concluido ? 'default' : 'pointer',
+                        borderRadius: 10, padding: '9px 12px',
+                        cursor: eq.concluido ? 'default' : 'pointer',
                         display: 'flex', alignItems: 'center', gap: 10,
                         transition: 'all 0.4s ease',
                         opacity: eq.concluido && !isRecemConcluido ? 0.7 : 1,
@@ -412,14 +412,17 @@ export default function PlanoPreventivas() {
                       onMouseLeave={e => { if (!isRecemConcluido) { (e.currentTarget as HTMLElement).style.borderColor = eq.concluido ? '#bbf7d0' : '#e2e8f0'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' } }}
                     >
                       <button
-                        onClick={e => handleDesconcluir(eq, e)}
+                        onClick={e => {
+                          e.stopPropagation()
+                          if (eq.concluido) handleDesconcluir(eq, e)
+                          else abrirModal(eq)
+                        }}
                         style={{
                           width: 18, height: 18, borderRadius: 5, flexShrink: 0,
                           border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`,
                           background: eq.concluido ? '#16a34a' : 'transparent',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          transition: 'all 0.15s', cursor: eq.concluido ? 'pointer' : 'default',
-                          padding: 0,
+                          transition: 'all 0.15s', cursor: 'pointer', padding: 0,
                         }}
                       >
                         {eq.concluido && <CheckCircle size={11} color="#fff" />}
