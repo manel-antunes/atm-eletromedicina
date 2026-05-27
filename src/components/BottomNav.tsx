@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LayoutDashboard, ClipboardCheck, Stethoscope, FileText, MoreHorizontal, X, ClipboardList, Package, ArrowLeftRight, Brain, FolderOpen, Phone, Map, Calendar, QrCode } from 'lucide-react'
+import { LayoutDashboard, ClipboardCheck, Stethoscope, FileText, MoreHorizontal, X, Package, ArrowLeftRight, Brain, FolderOpen, Phone, Map, Calendar, QrCode } from 'lucide-react'
 
 const PRINCIPAIS = [
   { id: 'dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
