@@ -22,22 +22,37 @@ import EstadoOffline from './components/EstadoOffline'
 import ErroBackend from './components/ErroBackend'
 import { useToast } from './hooks/useToast'
 import LoadingATM from './components/LoadingATM'
+import QRCodes from './pages/QRCodes'
+import FichaPublica from './pages/FichaPublica'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 
+// Rota pública — mostra ficha sem autenticação
+if (window.location.pathname.startsWith('/eq/')) {
+  const root = document.getElementById('root')
+  if (root) {
+    import('./pages/FichaPublica').then(({ default: FichaPublica }) => {
+      import('react-dom/client').then(({ createRoot }) => {
+        createRoot(root).render(<FichaPublica />)
+      })
+    })
+  }
+}
+
 const titulos: Record<string, string> = {
-  dashboard:    'Dashboard Geral',
-  calibracoes:  'Calibrações',
-  inventario:   'Inventário de Equipamentos',
-  cedencias:    'Cedências',
-  relatorios:   'Relatórios',
-  ia:           'Análise Inteligente',
-  calendario:   'Calendário',
-  documentos:   'Documentos',
-  contactos:    'Contactos de Marcas',
-  mapa:         'Mapa de Equipamentos',
-  
+  dashboard:   'Dashboard Geral',
+  calibracoes: 'Calibrações',
+  inventario:  'Inventário de Equipamentos',
+  cedencias:   'Cedências',
+  relatorios:  'Relatórios',
+  ia:          'Análise Inteligente',
+  calendario:  'Calendário',
+  documentos:  'Documentos',
+  contactos:   'Contactos de Marcas',
+  mapa:        'Mapa de Equipamentos',
+  qrcodes:     'QR Codes',
+  preventivas: 'Plano de Preventivas',
 }
 
 function useIsMobile() {
@@ -63,6 +78,10 @@ function App() {
   const [verificandoToken, setVerificandoToken] = useState(true)
   const { toasts, mostrar, remover } = useToast()
   const isMobile = useIsMobile()
+
+  // Rota pública /eq/:sap
+  const isPublic = window.location.pathname.startsWith('/eq/')
+  if (isPublic) return <FichaPublica />
 
   // Verifica token
   useEffect(() => {
@@ -142,12 +161,8 @@ function App() {
     setSidebarAberta(false)
   }
 
-  // A verificar token
-if (verificandoToken) {
-  return <LoadingATM mensagem="A verificar sessão..." />
-}
+  if (verificandoToken) return <LoadingATM mensagem="A verificar sessão..." />
 
-  // Não autenticado
   if (!token) {
     return (
       <>
@@ -157,12 +172,8 @@ if (verificandoToken) {
     )
   }
 
-  // A carregar
-if (carregando) {
-  return <LoadingATM mensagem="A carregar equipamentos..." />
-}
+  if (carregando) return <LoadingATM mensagem="A carregar equipamentos..." />
 
-  // Sem equipamentos ou a reimportar
   if (equipamentos.length === 0 && !erroBackend) {
     return (
       <>
@@ -188,6 +199,7 @@ if (carregando) {
       case 'contactos':   return <Contactos equipamentos={equipamentos} />
       case 'mapa':        return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       case 'preventivas': return <PlanoPreventivas />
+      case 'qrcodes':     return <QRCodes equipamentos={equipamentos} />
       default:            return null
     }
   }
@@ -225,9 +237,7 @@ if (carregando) {
           <Topbar
             titulo={equipDetalhe ? equipDetalhe.descricao : titulos[paginaAtiva]}
             totalEquipamentos={equipamentos.length}
-            onReimportar={() => {
-              setEquipamentos([])
-            }}
+            onReimportar={() => { setEquipamentos([]) }}
             equipamentos={equipamentos}
             onVerDetalhe={(eq) => setEquipDetalhe(eq)}
             onApresentacao={() => setApresentacao(true)}

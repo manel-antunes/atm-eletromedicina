@@ -492,6 +492,49 @@ app.post('/api/preventivas/importar-anual', autenticar, async (req, res) => {
   } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ erro: String(err) }) }
   finally { client.release() }
 })  
+// ── ROTA PÚBLICA EQUIPAMENTO (sem auth) ───────────────────
+app.get('/api/pub/equipamento/:sap', async (req, res) => {
+  try {
+    const { sap } = req.params
+    // Tenta equipamentos de calibração
+    const eqCalib = await pool.query('SELECT * FROM equipamentos WHERE numero_sap=$1', [sap])
+    if (eqCalib.rows.length > 0) {
+      const eq = eqCalib.rows[0]
+      return res.json({
+        tipo: 'calibracao',
+        numeroSAP: eq.numero_sap,
+        descricao: eq.descricao,
+        marca: eq.marca,
+        modelo: eq.modelo,
+        numeroSerie: eq.numero_serie,
+        localizacao: eq.localizacao,
+        dataCalibracao: eq.data_calibracao,
+        periodicidade: eq.periodicidade,
+        responsavel: eq.responsavel,
+      })
+    }
+    // Tenta equipamentos de preventivas
+    const eqPrev = await pool.query(
+      'SELECT DISTINCT ON (cod_ativo) * FROM preventivas_equipamentos WHERE cod_ativo=$1 ORDER BY cod_ativo, ano DESC, mes DESC',
+      [sap]
+    )
+    if (eqPrev.rows.length > 0) {
+      const eq = eqPrev.rows[0]
+      return res.json({
+        tipo: 'preventiva',
+        numeroSAP: eq.cod_ativo,
+        descricao: eq.nome,
+        marca: eq.marca,
+        modelo: eq.modelo,
+        numeroSerie: eq.numero_serie,
+        localizacao: eq.localizacao,
+        setor: eq.setor,
+        area: eq.area,
+      })
+    }
+    res.status(404).json({ erro: 'Equipamento não encontrado' })
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
+})
 
 // ── ARRANQUE ───────────────────────────────────────────────
 const PORT = process.env.PORT ?? 3001
