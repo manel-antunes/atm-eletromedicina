@@ -22,11 +22,14 @@ interface EqItem {
   tipo: 'calibracao' | 'preventiva'
 }
 
+const LIMITE = 8
+
 export default function QRCodes({ equipamentos }: Props) {
   const [pesquisa, setPesquisa] = useState('')
   const [eqsPreventivas, setEqsPreventivas] = useState<EqItem[]>([])
   const [qrUrls, setQrUrls] = useState<Record<string, string>>({})
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
+  const [expandidos, setExpandidos] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
 
   const todosEqs: EqItem[] = [
@@ -45,6 +48,11 @@ export default function QRCodes({ equipamentos }: Props) {
     eq.sap.toLowerCase().includes(pesquisa.toLowerCase()) ||
     (eq.localizacao?.toLowerCase().includes(pesquisa.toLowerCase()) ?? false)
   )
+
+  const porTipo = {
+    calibracao: filtrados.filter(e => e.tipo === 'calibracao'),
+    preventiva: filtrados.filter(e => e.tipo === 'preventiva'),
+  }
 
   useEffect(() => {
     const mes = new Date().getMonth() + 1
@@ -71,30 +79,39 @@ export default function QRCodes({ equipamentos }: Props) {
       .finally(() => setLoading(false))
   }, [])
 
-useEffect(() => {
-  const gerar = async () => {
-    const novos: Record<string, string> = {}
-    for (const eq of filtrados) {
-      if (!qrUrls[eq.sap]) {
-        try {
-          const url = `${BASE_URL}/eq/${eq.sap}`
-          novos[eq.sap] = await QRCode.toDataURL(url, {
-            width: 200, margin: 1,
-            color: { dark: '#0f172a', light: '#ffffff' },
-          })
-        } catch { }
+  useEffect(() => {
+    const gerar = async () => {
+      const novos: Record<string, string> = {}
+      for (const eq of filtrados) {
+        if (!qrUrls[eq.sap]) {
+          try {
+            const url = `${BASE_URL}/eq/${eq.sap}`
+            novos[eq.sap] = await QRCode.toDataURL(url, {
+              width: 200, margin: 1,
+              color: { dark: '#0f172a', light: '#ffffff' },
+            })
+          } catch { }
+        }
       }
+      if (Object.keys(novos).length > 0) setQrUrls(prev => ({ ...prev, ...novos }))
     }
-    if (Object.keys(novos).length > 0) setQrUrls(prev => ({ ...prev, ...novos }))
-  }
-  gerar()
-}, [filtrados.length, pesquisa])
+    gerar()
+  }, [filtrados.length, pesquisa])
 
   function toggleSelecionado(sap: string) {
     setSelecionados(prev => {
       const novo = new Set(prev)
       if (novo.has(sap)) novo.delete(sap)
       else novo.add(sap)
+      return novo
+    })
+  }
+
+  function toggleExpandido(label: string) {
+    setExpandidos(prev => {
+      const novo = new Set(prev)
+      if (novo.has(label)) novo.delete(label)
+      else novo.add(label)
       return novo
     })
   }
@@ -146,6 +163,65 @@ useEffect(() => {
     if (win) { win.document.write(html); win.document.close() }
   }
 
+  function renderGrelha(eqs: EqItem[], label: string) {
+    if (eqs.length === 0) return null
+    const expandido = expandidos.has(label)
+    const visiveis = expandido ? eqs : eqs.slice(0, LIMITE)
+
+    return (
+      <div key={label} style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
+          <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+          <span style={{ fontSize: 11, color: '#94a3b8' }}>{eqs.length} equipamentos</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+          {visiveis.map(eq => {
+            const sel = selecionados.has(eq.sap)
+            return (
+              <div
+                key={eq.sap}
+                onClick={() => toggleSelecionado(eq.sap)}
+                style={{
+                  background: '#fff',
+                  border: `2px solid ${sel ? '#C0001A' : '#e2e8f0'}`,
+                  borderRadius: 14, padding: '14px 12px',
+                  cursor: 'pointer', textAlign: 'center',
+                  transition: 'all 0.15s',
+                  boxShadow: sel ? '0 0 0 3px rgba(192,0,26,0.1)' : 'none',
+                }}
+              >
+                {qrUrls[eq.sap] ? (
+                  <img src={qrUrls[eq.sap]} alt={eq.sap} style={{ width: 110, height: 110, borderRadius: 8 }} />
+                ) : (
+                  <div style={{ width: 110, height: 110, background: '#f8fafc', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                    <QrCode size={32} color="#cbd5e1" />
+                  </div>
+                )}
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#0f172a', margin: '8px 0 2px', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
+                  {eq.descricao}
+                </p>
+                <p style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace', margin: '0 0 4px' }}>{eq.sap}</p>
+                <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: eq.tipo === 'calibracao' ? '#fef2f2' : '#eff6ff', color: eq.tipo === 'calibracao' ? '#dc2626' : '#3b82f6' }}>
+                  {eq.tipo === 'calibracao' ? 'Calibração' : 'Preventiva'}
+                </span>
+                {sel && <div style={{ marginTop: 6, fontSize: 10, color: '#C0001A', fontWeight: 700 }}>✓ Selecionado</div>}
+              </div>
+            )
+          })}
+        </div>
+        {eqs.length > LIMITE && (
+          <button
+            onClick={() => toggleExpandido(label)}
+            style={{ marginTop: 12, width: '100%', border: '1px solid #e2e8f0', background: '#fff', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#64748b', cursor: 'pointer' }}
+          >
+            {expandido ? 'Mostrar menos' : `Ver mais ${eqs.length - LIMITE} equipamentos`}
+          </button>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#f1f5f9' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -191,7 +267,7 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Grelha */}
+      {/* Conteúdo */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#94a3b8' }}>
@@ -204,43 +280,10 @@ useEffect(() => {
             <p style={{ fontSize: 12 }}>Nenhum equipamento encontrado</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
-            {filtrados.map(eq => {
-              const sel = selecionados.has(eq.sap)
-              return (
-                <div
-                  key={eq.sap}
-                  onClick={() => toggleSelecionado(eq.sap)}
-                  style={{
-                    background: '#fff',
-                    border: `2px solid ${sel ? '#C0001A' : '#e2e8f0'}`,
-                    borderRadius: 14, padding: '14px 12px',
-                    cursor: 'pointer', textAlign: 'center',
-                    transition: 'all 0.15s',
-                    boxShadow: sel ? '0 0 0 3px rgba(192,0,26,0.1)' : 'none',
-                  }}
-                >
-                  {qrUrls[eq.sap] ? (
-                    <img src={qrUrls[eq.sap]} alt={eq.sap} style={{ width: 110, height: 110, borderRadius: 8 }} />
-                  ) : (
-                    <div style={{ width: 110, height: 110, background: '#f8fafc', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                      <QrCode size={32} color="#cbd5e1" />
-                    </div>
-                  )}
-                  <p style={{ fontSize: 11, fontWeight: 700, color: '#0f172a', margin: '8px 0 2px', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
-                    {eq.descricao}
-                  </p>
-                  <p style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace', margin: '0 0 4px' }}>{eq.sap}</p>
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: eq.tipo === 'calibracao' ? '#fef2f2' : '#eff6ff', color: eq.tipo === 'calibracao' ? '#dc2626' : '#3b82f6' }}>
-                    {eq.tipo === 'calibracao' ? 'Calibração' : 'Preventiva'}
-                  </span>
-                  {sel && (
-                    <div style={{ marginTop: 6, fontSize: 10, color: '#C0001A', fontWeight: 700 }}>✓ Selecionado</div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+          <>
+            {renderGrelha(porTipo.calibracao, 'Calibração')}
+            {renderGrelha(porTipo.preventiva, 'Preventiva')}
+          </>
         )}
       </div>
     </div>
