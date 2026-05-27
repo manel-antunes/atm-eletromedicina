@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { Upload, CheckCircle, X, FileSpreadsheet, Search, Filter, RotateCcw, ClipboardList, AlertTriangle, MapPin, Camera, Loader } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Upload, CheckCircle, X, FileSpreadsheet, Search, Filter, RotateCcw, ClipboardList, AlertTriangle, MapPin, Camera, Loader, PenLine, Trash2, Clock } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { createWorker } from 'tesseract.js'
 import { FICHAS_TEMPLATES } from '../data/fichasTemplates'
@@ -12,6 +12,13 @@ const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Ag
 function getToken() { return localStorage.getItem('atm_token') ?? '' }
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }
+}
+
+function diasRestantesMes(mes: number, ano: number) {
+  const hoje = new Date()
+  const fimMes = new Date(ano, mes, 0)
+  const diff = Math.ceil((fimMes.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
+  return Math.max(0, diff)
 }
 
 interface Equipamento {
@@ -48,6 +55,129 @@ function encontrarFicha(nome: string) {
   }) ?? FICHAS_TEMPLATES.find(f => f.id === 'equipamento_eletromedicina_geral')
 }
 
+// Componente canvas de assinatura
+function AssinaturaCanvas({ onAssinar, assinatura, onLimpar }: {
+  onAssinar: (dataUrl: string) => void
+  assinatura: string | null
+  onLimpar: () => void
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const desenhando = useRef(false)
+  const temTraco = useRef(false)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.strokeStyle = '#0f172a'
+    ctx.lineWidth = 2
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+  }, [])
+
+  function getPos(e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) {
+    const rect = canvas.getBoundingClientRect()
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    if ('touches' in e) {
+      return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY,
+      }
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    }
+  }
+
+  function iniciar(e: React.MouseEvent | React.TouchEvent) {
+    e.preventDefault()
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    desenhando.current = true
+    temTraco.current = true
+    const pos = getPos(e, canvas)
+    ctx.beginPath()
+    ctx.moveTo(pos.x, pos.y)
+  }
+
+  function desenhar(e: React.MouseEvent | React.TouchEvent) {
+    e.preventDefault()
+    if (!desenhando.current) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const pos = getPos(e, canvas)
+    ctx.lineTo(pos.x, pos.y)
+    ctx.stroke()
+  }
+
+  function terminar() {
+    if (!desenhando.current) return
+    desenhando.current = false
+    const canvas = canvasRef.current
+    if (!canvas || !temTraco.current) return
+    onAssinar(canvas.toDataURL('image/png'))
+  }
+
+  function limpar() {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    temTraco.current = false
+    onLimpar()
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <PenLine size={12} /> Assinatura do técnico
+        </p>
+        <button onClick={limpar} style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none', color: '#94a3b8', fontSize: 11, cursor: 'pointer' }}>
+          <Trash2 size={11} /> Limpar
+        </button>
+      </div>
+      <div style={{ position: 'relative', border: `2px dashed ${assinatura ? '#16a34a' : '#e2e8f0'}`, borderRadius: 12, overflow: 'hidden', background: '#fafafa', transition: 'border-color 0.2s' }}>
+        <canvas
+          ref={canvasRef}
+          width={640}
+          height={120}
+          onMouseDown={iniciar}
+          onMouseMove={desenhar}
+          onMouseUp={terminar}
+          onMouseLeave={terminar}
+          onTouchStart={iniciar}
+          onTouchMove={desenhar}
+          onTouchEnd={terminar}
+          style={{ width: '100%', height: 100, display: 'block', cursor: 'crosshair', touchAction: 'none' }}
+        />
+        {!assinatura && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+            <p style={{ color: '#cbd5e1', fontSize: 12 }}>Assine aqui com o rato ou dedo</p>
+          </div>
+        )}
+        {assinatura && (
+          <div style={{ position: 'absolute', top: 6, right: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <CheckCircle size={12} color="#16a34a" />
+            <span style={{ fontSize: 10, color: '#16a34a', fontWeight: 600 }}>Assinado</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function PlanoPreventivas() {
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([])
   const [mesAtivo, setMesAtivo] = useState(new Date().getMonth() + 1)
@@ -65,9 +195,11 @@ export default function PlanoPreventivas() {
   const [obsModal, setObsModal] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [erroOT, setErroOT] = useState('')
+  const [assinatura, setAssinatura] = useState<string | null>(null)
   const [scanando, setScanando] = useState(false)
   const [scanProgresso, setScanProgresso] = useState(0)
   const [recemConcluido, setRecemConcluido] = useState<number | null>(null)
+  const [alertaDismissed, setAlertaDismissed] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const scanRef = useRef<HTMLInputElement>(null)
 
@@ -87,6 +219,7 @@ export default function PlanoPreventivas() {
     setModalEq(eq)
     setObsModal(eq.observacoes ?? '')
     setErroOT('')
+    setAssinatura(null)
     const ficha = encontrarFicha(eq.nome)
     const init: Record<string, RespostaTarefa> = {}
     ficha?.tarefas.forEach(t => { init[t.codigo] = { estado: null, valor: '', comentario: '' } })
@@ -111,6 +244,11 @@ export default function PlanoPreventivas() {
         setErroOT(`${porPreencher.length} tarefa(s) por preencher antes de concluir.`)
         return
       }
+    }
+
+    if (!assinatura) {
+      setErroOT('É necessário assinar antes de concluir a OT.')
+      return
     }
 
     setErroOT('')
@@ -182,9 +320,7 @@ export default function PlanoPreventivas() {
           const val0 = String(linha[0] ?? '').trim()
           const mesIdx = MESES_PT.findIndex(m => val0.startsWith(m))
           if (mesIdx !== -1) {
-            if (mesAtualIdx > 0 && eqsMesAtual.length > 0) {
-              mesesData.push({ mes: mesAtualIdx, equipamentos: eqsMesAtual })
-            }
+            if (mesAtualIdx > 0 && eqsMesAtual.length > 0) mesesData.push({ mes: mesAtualIdx, equipamentos: eqsMesAtual })
             mesAtualIdx = mesIdx + 1
             eqsMesAtual = []
             continue
@@ -205,34 +341,23 @@ export default function PlanoPreventivas() {
             area: String(linha[7] ?? '').trim(),
           })
         }
-        if (mesAtualIdx > 0 && eqsMesAtual.length > 0) {
-          mesesData.push({ mes: mesAtualIdx, equipamentos: eqsMesAtual })
-        }
+        if (mesAtualIdx > 0 && eqsMesAtual.length > 0) mesesData.push({ mes: mesAtualIdx, equipamentos: eqsMesAtual })
 
         const totalEqs = mesesData.reduce((acc, m) => acc + m.equipamentos.length, 0)
         setImportProgress(`A importar ${totalEqs} equipamentos em ${mesesData.length} meses...`)
 
         const res = await fetch(`${API_URL}/api/preventivas/importar-anual`, {
-          method: 'POST',
-          headers: authHeaders(),
+          method: 'POST', headers: authHeaders(),
           body: JSON.stringify({ ano, meses: mesesData }),
         })
 
-        if (res.ok) {
-          setAnoAtivo(ano)
-          await carregarPlano()
-          setImportProgress('')
-        } else {
-          setImportProgress('Erro na importação')
-          setTimeout(() => setImportProgress(''), 3000)
-        }
+        if (res.ok) { setAnoAtivo(ano); await carregarPlano(); setImportProgress('') }
+        else { setImportProgress('Erro na importação'); setTimeout(() => setImportProgress(''), 3000) }
       } catch (err) {
         console.error(err)
         setImportProgress('Erro ao processar ficheiro')
         setTimeout(() => setImportProgress(''), 3000)
-      } finally {
-        setImportando(false)
-      }
+      } finally { setImportando(false) }
     }
     reader.readAsArrayBuffer(ficheiro)
     e.target.value = ''
@@ -255,6 +380,9 @@ export default function PlanoPreventivas() {
   const total = equipamentos.length
   const pct = total > 0 ? Math.round((concluidos / total) * 100) : 0
   const temFiltrosAtivos = pesquisa || filtroSetor !== 'Todos' || filtroTipo !== 'Todos' || filtroLocalizacao !== 'Todas' || filtroPendentes
+  const pendentes = total - concluidos
+  const diasRestantes = diasRestantesMes(mesAtivo, anoAtivo)
+  const mostrarAlerta = !alertaDismissed && total > 0 && pendentes > 0 && diasRestantes <= 5 && mesAtivo === new Date().getMonth() + 1 && anoAtivo === new Date().getFullYear()
 
   const porSetor = filtrados.reduce((acc, eq) => {
     const s = eq.setor || 'Sem setor'
@@ -281,6 +409,10 @@ export default function PlanoPreventivas() {
           border-color: #16a34a !important;
         }
         @keyframes spin { to { transform: rotate(360deg) } }
+        @keyframes alerta-slide {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
 
       {/* Header */}
@@ -295,7 +427,7 @@ export default function PlanoPreventivas() {
               <div style={{ display: 'flex', gap: 14 }}>
                 {[
                   { label: 'Concluídos', valor: concluidos, cor: '#4ade80' },
-                  { label: 'Pendentes', valor: total - concluidos, cor: '#f87171' },
+                  { label: 'Pendentes', valor: pendentes, cor: '#f87171' },
                   { label: 'Localizações', valor: localizacoes.length - 1, cor: '#a78bfa' },
                 ].map(k => (
                   <div key={k.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -329,6 +461,26 @@ export default function PlanoPreventivas() {
           </div>
         )}
       </div>
+
+      {/* Alerta fim de mês */}
+      {mostrarAlerta && (
+        <div style={{ animation: 'alerta-slide 0.3s ease-out', background: diasRestantes === 0 ? '#7f1d1d' : diasRestantes <= 2 ? '#92400e' : '#78350f', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+            <Clock size={14} color="#fbbf24" />
+            <span style={{ color: '#fef3c7', fontSize: 12, fontWeight: 700 }}>
+              {diasRestantes === 0
+                ? `Último dia do mês! ${pendentes} equipamento(s) por concluir.`
+                : `${diasRestantes} dia(s) para o fim do mês · ${pendentes} equipamento(s) pendentes`}
+            </span>
+          </div>
+          <button onClick={() => setFiltroPendentes(true)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, color: '#fef3c7', fontSize: 11, fontWeight: 600, padding: '4px 10px', cursor: 'pointer' }}>
+            Ver pendentes
+          </button>
+          <button onClick={() => setAlertaDismissed(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 4, display: 'flex' }}>
+            <X size={13} />
+          </button>
+        </div>
+      )}
 
       {/* Filtros */}
       {total > 0 && (
@@ -429,20 +581,9 @@ export default function PlanoPreventivas() {
                       onMouseLeave={e => { if (!isRecemConcluido) { (e.currentTarget as HTMLElement).style.borderColor = eq.concluido ? '#bbf7d0' : '#e2e8f0'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' } }}
                     >
                       <button
-                        onClick={e => {
-                          e.stopPropagation()
-                          if (eq.concluido) handleDesconcluir(eq, e)
-                          else abrirModal(eq)
-                        }}
+                        onClick={e => { e.stopPropagation(); if (eq.concluido) handleDesconcluir(eq, e); else abrirModal(eq) }}
                         title={eq.concluido ? 'Clica para cancelar' : ''}
-                        style={{
-                          width: 18, height: 18, borderRadius: 5, flexShrink: 0,
-                          border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`,
-                          background: eq.concluido ? '#16a34a' : 'transparent',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          transition: 'all 0.15s', cursor: 'pointer', padding: 0,
-                          pointerEvents: 'all', position: 'relative', zIndex: 2,
-                        }}
+                        style={{ width: 18, height: 18, borderRadius: 5, flexShrink: 0, border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`, background: eq.concluido ? '#16a34a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', cursor: 'pointer', padding: 0, pointerEvents: 'all', position: 'relative', zIndex: 2 }}
                       >
                         {eq.concluido && <CheckCircle size={11} color="#fff" />}
                       </button>
@@ -477,6 +618,8 @@ export default function PlanoPreventivas() {
           onClick={e => { if (e.target === e.currentTarget) setModalEq(null) }}
         >
           <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 720, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 40px 100px rgba(0,0,0,0.4)' }}>
+
+            {/* Header modal */}
             <div style={{ background: 'linear-gradient(135deg, #0A0F1E, #1a0a0f)', padding: '20px 24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -517,6 +660,7 @@ export default function PlanoPreventivas() {
               )}
             </div>
 
+            {/* Corpo modal */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
               {fichaModal ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -550,6 +694,7 @@ export default function PlanoPreventivas() {
                 </div>
               )}
 
+              {/* Observações + Scan */}
               <div style={{ marginTop: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Observações / OT em papel</p>
@@ -564,7 +709,16 @@ export default function PlanoPreventivas() {
                     <div style={{ height: '100%', width: `${scanProgresso}%`, background: '#C0001A', borderRadius: 99, transition: 'width 0.3s' }} />
                   </div>
                 )}
-                <textarea value={obsModal} onChange={e => setObsModal(e.target.value)} placeholder="Notas sobre esta intervenção..." style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', fontSize: 12, resize: 'vertical', minHeight: 80, outline: 'none', color: '#0f172a', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                <textarea value={obsModal} onChange={e => setObsModal(e.target.value)} placeholder="Notas sobre esta intervenção..." style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', fontSize: 12, resize: 'vertical', minHeight: 72, outline: 'none', color: '#0f172a', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+              </div>
+
+              {/* Assinatura */}
+              <div style={{ marginTop: 16 }}>
+                <AssinaturaCanvas
+                  assinatura={assinatura}
+                  onAssinar={setAssinatura}
+                  onLimpar={() => setAssinatura(null)}
+                />
               </div>
             </div>
 
