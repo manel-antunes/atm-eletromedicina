@@ -149,11 +149,10 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
         })}
       </nav>
 
-      {/* Push */}
-      <div style={{ padding: expandida ? '0 8px 6px' : '0 8px 6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <NotificacoesPush />
-      </div>
-
+{/* Push */}
+<div style={{ padding: '0 8px 6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+  <NotificacoesPush compacto={!expandida} />
+</div>
       {/* Footer */}
       <div style={{ padding: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         {nomeUtilizador && (
