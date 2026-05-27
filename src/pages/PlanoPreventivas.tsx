@@ -405,7 +405,7 @@ export default function PlanoPreventivas() {
                         cursor: eq.concluido ? 'default' : 'pointer',
                         display: 'flex', alignItems: 'center', gap: 10,
                         transition: 'all 0.4s ease',
-                        opacity: eq.concluido && !isRecemConcluido ? 0.7 : 1,
+opacity: eq.concluido && !isRecemConcluido ? 0.85 : 1,
                         transform: isRecemConcluido ? 'scale(1.01)' : 'scale(1)',
                       }}
                       onMouseEnter={e => { if (!eq.concluido) { (e.currentTarget as HTMLElement).style.borderColor = '#C0001A'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px rgba(192,0,26,0.08)' } }}
@@ -417,13 +417,16 @@ export default function PlanoPreventivas() {
                           if (eq.concluido) handleDesconcluir(eq, e)
                           else abrirModal(eq)
                         }}
-                        style={{
-                          width: 18, height: 18, borderRadius: 5, flexShrink: 0,
-                          border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`,
-                          background: eq.concluido ? '#16a34a' : 'transparent',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          transition: 'all 0.15s', cursor: 'pointer', padding: 0,
-                        }}
+                       style={{
+  width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+  border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`,
+  background: eq.concluido ? '#16a34a' : 'transparent',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  transition: 'all 0.15s', cursor: 'pointer', padding: 0,
+  pointerEvents: 'all',
+  position: 'relative',
+  zIndex: 2,
+}}
                       >
                         {eq.concluido && <CheckCircle size={11} color="#fff" />}
                       </button>
