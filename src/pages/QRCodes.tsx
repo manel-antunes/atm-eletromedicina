@@ -71,24 +71,24 @@ export default function QRCodes({ equipamentos }: Props) {
       .finally(() => setLoading(false))
   }, [])
 
-  useEffect(() => {
-    const gerar = async () => {
-      const novos: Record<string, string> = {}
-      for (const eq of filtrados.slice(0, 50)) {
-        if (!qrUrls[eq.sap]) {
-          try {
-            const url = `${BASE_URL}/eq/${eq.sap}`
-            novos[eq.sap] = await QRCode.toDataURL(url, {
-              width: 200, margin: 1,
-              color: { dark: '#0f172a', light: '#ffffff' },
-            })
-          } catch { }
-        }
+useEffect(() => {
+  const gerar = async () => {
+    const novos: Record<string, string> = {}
+    for (const eq of filtrados) {
+      if (!qrUrls[eq.sap]) {
+        try {
+          const url = `${BASE_URL}/eq/${eq.sap}`
+          novos[eq.sap] = await QRCode.toDataURL(url, {
+            width: 200, margin: 1,
+            color: { dark: '#0f172a', light: '#ffffff' },
+          })
+        } catch { }
       }
-      if (Object.keys(novos).length > 0) setQrUrls(prev => ({ ...prev, ...novos }))
     }
-    gerar()
-  }, [filtrados.length, pesquisa])
+    if (Object.keys(novos).length > 0) setQrUrls(prev => ({ ...prev, ...novos }))
+  }
+  gerar()
+}, [filtrados.length, pesquisa])
 
   function toggleSelecionado(sap: string) {
     setSelecionados(prev => {
