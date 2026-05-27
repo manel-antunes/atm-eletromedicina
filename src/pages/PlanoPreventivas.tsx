@@ -256,15 +256,19 @@ export default function PlanoPreventivas() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#f1f5f9' }}>
-      <style>{`
-        @keyframes concluido-pulse {
-          0%   { box-shadow: 0 0 0 0 rgba(22,163,74,0.5); }
-          70%  { box-shadow: 0 0 0 10px rgba(22,163,74,0); }
-          100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); }
-        }
-        .card-concluido { animation: concluido-pulse 0.8s ease-out; }
-        @keyframes spin { to { transform: rotate(360deg) } }
-      `}</style>
+     <style>{`
+  @keyframes concluido-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(22,163,74,0.8); transform: scale(1); }
+    40%  { box-shadow: 0 0 0 12px rgba(22,163,74,0.3); transform: scale(1.02); }
+    100% { box-shadow: 0 0 0 20px rgba(22,163,74,0); transform: scale(1); }
+  }
+  .card-concluido {
+    animation: concluido-pulse 0.9s ease-out forwards;
+    background: #f0fdf4 !important;
+    border-color: #16a34a !important;
+  }
+  @keyframes spin { to { transform: rotate(360deg) } }
+`}</style>
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1a0a0f 100%)', padding: '14px 24px', borderBottom: '1px solid rgba(192,0,26,0.2)' }}>
