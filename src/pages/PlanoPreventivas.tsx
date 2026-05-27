@@ -83,6 +83,7 @@ export default function PlanoPreventivas() {
   }
 
   function abrirModal(eq: Equipamento) {
+    if (eq.concluido) return
     setModalEq(eq)
     setObsModal(eq.observacoes ?? '')
     const ficha = encontrarFicha(eq.nome)
@@ -218,17 +219,12 @@ export default function PlanoPreventivas() {
     e.target.value = ''
   }
 
-async function toggleConcluir(eq: Equipamento, e: React.MouseEvent) {
-  e.stopPropagation()
-  console.log('toggleConcluir', eq.concluido, eq.id)
-  if (eq.concluido) {
-    const res = await fetch(`${API_URL}/api/preventivas/${eq.id}/desconcluir`, { method: 'PATCH', headers: authHeaders() })
-    console.log('desconcluir status:', res.status)
+  async function handleDesconcluir(eq: Equipamento, e: React.MouseEvent) {
+    e.stopPropagation()
+    e.preventDefault()
+    await fetch(`${API_URL}/api/preventivas/${eq.id}/desconcluir`, { method: 'PATCH', headers: authHeaders() })
     await carregarPlano()
-  } else {
-    abrirModal(eq)
   }
-}
 
   const setores = ['Todos', ...Array.from(new Set(equipamentos.map(e => e.setor).filter(Boolean)))]
   const tipos = ['Todos', ...Array.from(new Set(equipamentos.map(e => e.nome).filter(Boolean))).sort()]
@@ -267,9 +263,7 @@ async function toggleConcluir(eq: Equipamento, e: React.MouseEvent) {
           70%  { box-shadow: 0 0 0 10px rgba(22,163,74,0); }
           100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); }
         }
-        .card-concluido {
-          animation: concluido-pulse 0.8s ease-out;
-        }
+        .card-concluido { animation: concluido-pulse 0.8s ease-out; }
         @keyframes spin { to { transform: rotate(360deg) } }
       `}</style>
 
@@ -303,11 +297,7 @@ async function toggleConcluir(eq: Equipamento, e: React.MouseEvent) {
             <select value={anoAtivo} onChange={e => setAnoAtivo(Number(e.target.value))} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', padding: '5px 8px', fontSize: 12, outline: 'none', cursor: 'pointer' }}>
               {[2024,2025,2026,2027].map(a => <option key={a} value={a} style={{ background: '#1e293b' }}>{a}</option>)}
             </select>
-            <button
-              onClick={() => inputRef.current?.click()}
-              disabled={importando}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#C0001A', border: 'none', borderRadius: 8, color: '#fff', padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: importando ? 'wait' : 'pointer', opacity: importando ? 0.8 : 1 }}
-            >
+            <button onClick={() => inputRef.current?.click()} disabled={importando} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#C0001A', border: 'none', borderRadius: 8, color: '#fff', padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: importando ? 'wait' : 'pointer', opacity: importando ? 0.8 : 1 }}>
               <Upload size={13} />
               {importando ? (importProgress || 'A importar...') : 'Importar Plano Anual'}
             </button>
@@ -412,22 +402,28 @@ async function toggleConcluir(eq: Equipamento, e: React.MouseEvent) {
                       style={{
                         background: isRecemConcluido ? '#f0fdf4' : '#fff',
                         border: `1px solid ${isRecemConcluido ? '#16a34a' : eq.concluido ? '#bbf7d0' : '#e2e8f0'}`,
-                        borderRadius: 10,
-                        padding: '9px 12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
+                        borderRadius: 10, padding: '9px 12px', cursor: eq.concluido ? 'default' : 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 10,
                         transition: 'all 0.4s ease',
                         opacity: eq.concluido && !isRecemConcluido ? 0.7 : 1,
                         transform: isRecemConcluido ? 'scale(1.01)' : 'scale(1)',
                       }}
-                      onMouseEnter={e => { if (!eq.concluido && !isRecemConcluido) { (e.currentTarget as HTMLElement).style.borderColor = '#C0001A'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px rgba(192,0,26,0.08)' } }}
+                      onMouseEnter={e => { if (!eq.concluido) { (e.currentTarget as HTMLElement).style.borderColor = '#C0001A'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px rgba(192,0,26,0.08)' } }}
                       onMouseLeave={e => { if (!isRecemConcluido) { (e.currentTarget as HTMLElement).style.borderColor = eq.concluido ? '#bbf7d0' : '#e2e8f0'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' } }}
                     >
-                      <div onClick={ev => toggleConcluir(eq, ev)} style={{ width: 18, height: 18, borderRadius: 5, flexShrink: 0, border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`, background: eq.concluido ? '#16a34a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', cursor: 'pointer' }}>
+                      <button
+                        onClick={e => handleDesconcluir(eq, e)}
+                        style={{
+                          width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+                          border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`,
+                          background: eq.concluido ? '#16a34a' : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.15s', cursor: eq.concluido ? 'pointer' : 'default',
+                          padding: 0,
+                        }}
+                      >
                         {eq.concluido && <CheckCircle size={11} color="#fff" />}
-                      </div>
+                      </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                           <span style={{ fontSize: 12, fontWeight: 700, color: eq.concluido ? '#64748b' : '#0f172a', textDecoration: eq.concluido ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{eq.nome}</span>
@@ -535,11 +531,7 @@ async function toggleConcluir(eq: Equipamento, e: React.MouseEvent) {
               <div style={{ marginTop: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Observações / OT em papel</p>
-                  <button
-                    onClick={() => scanRef.current?.click()}
-                    disabled={scanando}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: scanando ? 'rgba(192,0,26,0.06)' : 'rgba(192,0,26,0.08)', border: '1px solid rgba(192,0,26,0.2)', borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 600, color: '#C0001A', cursor: scanando ? 'wait' : 'pointer' }}
-                  >
+                  <button onClick={() => scanRef.current?.click()} disabled={scanando} style={{ display: 'flex', alignItems: 'center', gap: 6, background: scanando ? 'rgba(192,0,26,0.06)' : 'rgba(192,0,26,0.08)', border: '1px solid rgba(192,0,26,0.2)', borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 600, color: '#C0001A', cursor: scanando ? 'wait' : 'pointer' }}>
                     {scanando ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Camera size={12} />}
                     {scanando ? `A processar... ${scanProgresso}%` : 'Scan OT em papel'}
                   </button>
