@@ -100,23 +100,32 @@ export default function PlanoPreventivas() {
   }
 
   async function handleGuardarOT() {
-    if (!modalEq) return
-    setGuardando(true)
-    try {
-      await fetch(`${API_URL}/api/preventivas/${modalEq.id}/concluir`, {
-        method: 'PATCH',
-        headers: authHeaders(),
-        body: JSON.stringify({ observacoes: obsModal }),
-      })
-      const idConcluido = modalEq.id
-      setModalEq(null)
-      await carregarPlano()
-      setRecemConcluido(idConcluido)
-      setTimeout(() => setRecemConcluido(null), 1500)
-    } catch { }
-    finally { setGuardando(false) }
+  if (!modalEq) return
+
+  // Validar que todas as tarefas estão preenchidas
+  if (fichaModal) {
+    const porPreencher = fichaModal.tarefas.filter(t => !respostas[t.codigo]?.estado)
+    if (porPreencher.length > 0) {
+      alert(`Tens ${porPreencher.length} tarefa(s) por preencher.`)
+      return
+    }
   }
 
+  setGuardando(true)
+  try {
+    await fetch(`${API_URL}/api/preventivas/${modalEq.id}/concluir`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ observacoes: obsModal }),
+    })
+    const idConcluido = modalEq.id
+    setModalEq(null)
+    await carregarPlano()
+    setRecemConcluido(idConcluido)
+    setTimeout(() => setRecemConcluido(null), 1500)
+  } catch { }
+  finally { setGuardando(false) }
+}
   async function handleDesconcluir(eq: Equipamento, e: React.MouseEvent) {
     e.stopPropagation()
     e.preventDefault()
