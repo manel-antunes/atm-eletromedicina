@@ -7,6 +7,7 @@ import { FICHAS_TEMPLATES } from '../data/fichasTemplates'
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 const SETORES_PROPRIOS = ['MEGOPMCOPMEQ', 'MEGOPMCOPMPR', 'MEGOPMGARTEQ']
 const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 function getToken() { return localStorage.getItem('atm_token') ?? '' }
 function authHeaders() {
@@ -38,8 +39,6 @@ interface RespostaTarefa {
   comentario: string
 }
 
-const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-
 function encontrarFicha(nome: string) {
   const nomeLower = nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   return FICHAS_TEMPLATES.find(f => {
@@ -67,6 +66,7 @@ export default function PlanoPreventivas() {
   const [guardando, setGuardando] = useState(false)
   const [scanando, setScanando] = useState(false)
   const [scanProgresso, setScanProgresso] = useState(0)
+  const [recemConcluido, setRecemConcluido] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const scanRef = useRef<HTMLInputElement>(null)
 
@@ -108,8 +108,11 @@ export default function PlanoPreventivas() {
         headers: authHeaders(),
         body: JSON.stringify({ observacoes: obsModal }),
       })
-      await carregarPlano()
+      const idConcluido = modalEq.id
       setModalEq(null)
+      await carregarPlano()
+      setRecemConcluido(idConcluido)
+      setTimeout(() => setRecemConcluido(null), 1500)
     } catch { }
     finally { setGuardando(false) }
   }
@@ -146,39 +149,30 @@ export default function PlanoPreventivas() {
         const ws = wb.Sheets[wb.SheetNames[0]]
         const linhas = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
 
-        // Detectar ano do ficheiro
         let ano = anoAtivo
         const primeiraLinha = String(linhas[0]?.[0] ?? '')
         const anoMatch = primeiraLinha.match(/\d{4}/)
         if (anoMatch) ano = parseInt(anoMatch[0])
 
-        // Parsear blocos por mês
         const mesesData: { mes: number; equipamentos: any[] }[] = []
-        let mesAtual = 0
+        let mesAtualIdx = 0
         let eqsMesAtual: any[] = []
 
         for (const linha of linhas) {
           const val0 = String(linha[0] ?? '').trim()
-
-          // Detetar header de mês
           const mesIdx = MESES_PT.findIndex(m => val0.startsWith(m))
           if (mesIdx !== -1) {
-            // Guardar mês anterior
-            if (mesAtual > 0 && eqsMesAtual.length > 0) {
-              mesesData.push({ mes: mesAtual, equipamentos: eqsMesAtual })
+            if (mesAtualIdx > 0 && eqsMesAtual.length > 0) {
+              mesesData.push({ mes: mesAtualIdx, equipamentos: eqsMesAtual })
             }
-            mesAtual = mesIdx + 1
+            mesAtualIdx = mesIdx + 1
             eqsMesAtual = []
             continue
           }
-
-          // Ignorar headers e linhas vazias
           if (!val0 || val0 === 'Cód. Ativo' || val0.startsWith('Manutenção')) continue
-          if (mesAtual === 0) continue
-
+          if (mesAtualIdx === 0) continue
           const setor = String(linha[6] ?? '').trim()
           if (!SETORES_PROPRIOS.some(s => setor.includes(s))) continue
-
           eqsMesAtual.push({
             codAtivo: val0,
             nome: String(linha[1] ?? '').trim(),
@@ -187,14 +181,12 @@ export default function PlanoPreventivas() {
             numeroSerie: String(linha[4] ?? '').trim(),
             codLocalizacao: '',
             localizacao: String(linha[5] ?? '').trim(),
-            setor: setor,
+            setor,
             area: String(linha[7] ?? '').trim(),
           })
         }
-
-        // Guardar último mês
-        if (mesAtual > 0 && eqsMesAtual.length > 0) {
-          mesesData.push({ mes: mesAtual, equipamentos: eqsMesAtual })
+        if (mesAtualIdx > 0 && eqsMesAtual.length > 0) {
+          mesesData.push({ mes: mesAtualIdx, equipamentos: eqsMesAtual })
         }
 
         const totalEqs = mesesData.reduce((acc, m) => acc + m.equipamentos.length, 0)
@@ -267,6 +259,17 @@ export default function PlanoPreventivas() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#f1f5f9' }}>
+      <style>{`
+        @keyframes concluido-pulse {
+          0%   { box-shadow: 0 0 0 0 rgba(22,163,74,0.5); }
+          70%  { box-shadow: 0 0 0 10px rgba(22,163,74,0); }
+          100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); }
+        }
+        .card-concluido {
+          animation: concluido-pulse 0.8s ease-out;
+        }
+        @keyframes spin { to { transform: rotate(360deg) } }
+      `}</style>
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1a0a0f 100%)', padding: '14px 24px', borderBottom: '1px solid rgba(192,0,26,0.2)' }}>
@@ -355,7 +358,6 @@ export default function PlanoPreventivas() {
         {loading && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#94a3b8' }}>
             <div style={{ width: 28, height: 28, border: '3px solid #e2e8f0', borderTop: '3px solid #C0001A', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }} />
-            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
             <p style={{ fontSize: 12 }}>A carregar plano...</p>
           </div>
         )}
@@ -398,35 +400,51 @@ export default function PlanoPreventivas() {
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 5 }}>
-                {eqs.map(eq => (
-                  <div
-                    key={eq.id}
-                    onClick={() => abrirModal(eq)}
-                    style={{ background: '#fff', border: `1px solid ${eq.concluido ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: 10, padding: '9px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'all 0.15s', opacity: eq.concluido ? 0.7 : 1 }}
-                    onMouseEnter={e => { if (!eq.concluido) { (e.currentTarget as HTMLElement).style.borderColor = '#C0001A'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px rgba(192,0,26,0.08)' } }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = eq.concluido ? '#bbf7d0' : '#e2e8f0'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
-                  >
-                    <div onClick={e => toggleConcluir(eq, e)} style={{ width: 18, height: 18, borderRadius: 5, flexShrink: 0, border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`, background: eq.concluido ? '#16a34a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', cursor: 'pointer' }}>
-                      {eq.concluido && <CheckCircle size={11} color="#fff" />}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: eq.concluido ? '#64748b' : '#0f172a', textDecoration: eq.concluido ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{eq.nome}</span>
-                        {eq.area && <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 4px', borderRadius: 99, flexShrink: 0, background: eq.area.includes('Baixo') ? '#f0fdf4' : eq.area.includes('Médio') ? '#fffbeb' : '#fef2f2', color: eq.area.includes('Baixo') ? '#16a34a' : eq.area.includes('Médio') ? '#d97706' : '#dc2626' }}>{eq.area.split(' ')[0]}</span>}
+                {eqs.map(eq => {
+                  const isRecemConcluido = recemConcluido === eq.id
+                  return (
+                    <div
+                      key={eq.id}
+                      onClick={() => abrirModal(eq)}
+                      className={isRecemConcluido ? 'card-concluido' : ''}
+                      style={{
+                        background: isRecemConcluido ? '#f0fdf4' : '#fff',
+                        border: `1px solid ${isRecemConcluido ? '#16a34a' : eq.concluido ? '#bbf7d0' : '#e2e8f0'}`,
+                        borderRadius: 10,
+                        padding: '9px 12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        transition: 'all 0.4s ease',
+                        opacity: eq.concluido && !isRecemConcluido ? 0.7 : 1,
+                        transform: isRecemConcluido ? 'scale(1.01)' : 'scale(1)',
+                      }}
+                      onMouseEnter={e => { if (!eq.concluido && !isRecemConcluido) { (e.currentTarget as HTMLElement).style.borderColor = '#C0001A'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px rgba(192,0,26,0.08)' } }}
+                      onMouseLeave={e => { if (!isRecemConcluido) { (e.currentTarget as HTMLElement).style.borderColor = eq.concluido ? '#bbf7d0' : '#e2e8f0'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' } }}
+                    >
+                      <div onClick={ev => toggleConcluir(eq, ev)} style={{ width: 18, height: 18, borderRadius: 5, flexShrink: 0, border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`, background: eq.concluido ? '#16a34a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', cursor: 'pointer' }}>
+                        {eq.concluido && <CheckCircle size={11} color="#fff" />}
                       </div>
-                      <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
-                        <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>{eq.cod_ativo}</span>
-                        <span style={{ fontSize: 10, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><MapPin size={9} />{eq.localizacao}</span>
-                      </div>
-                      {eq.concluido && eq.concluido_por && (
-                        <div style={{ fontSize: 9, color: '#16a34a', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <CheckCircle size={9} />{eq.concluido_por}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: eq.concluido ? '#64748b' : '#0f172a', textDecoration: eq.concluido ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{eq.nome}</span>
+                          {eq.area && <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 4px', borderRadius: 99, flexShrink: 0, background: eq.area.includes('Baixo') ? '#f0fdf4' : eq.area.includes('Médio') ? '#fffbeb' : '#fef2f2', color: eq.area.includes('Baixo') ? '#16a34a' : eq.area.includes('Médio') ? '#d97706' : '#dc2626' }}>{eq.area.split(' ')[0]}</span>}
                         </div>
-                      )}
+                        <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                          <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>{eq.cod_ativo}</span>
+                          <span style={{ fontSize: 10, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><MapPin size={9} />{eq.localizacao}</span>
+                        </div>
+                        {eq.concluido && eq.concluido_por && (
+                          <div style={{ fontSize: 9, color: '#16a34a', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <CheckCircle size={9} />{eq.concluido_por}
+                          </div>
+                        )}
+                      </div>
+                      {!eq.concluido && <ClipboardList size={12} color="#C0001A" style={{ flexShrink: 0, opacity: 0.6 }} />}
                     </div>
-                    {!eq.concluido && <ClipboardList size={12} color="#C0001A" style={{ flexShrink: 0, opacity: 0.6 }} />}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )
