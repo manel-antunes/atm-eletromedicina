@@ -64,6 +64,7 @@ export default function PlanoPreventivas() {
   const [respostas, setRespostas] = useState<Record<string, RespostaTarefa>>({})
   const [obsModal, setObsModal] = useState('')
   const [guardando, setGuardando] = useState(false)
+  const [erroOT, setErroOT] = useState('')
   const [scanando, setScanando] = useState(false)
   const [scanProgresso, setScanProgresso] = useState(0)
   const [recemConcluido, setRecemConcluido] = useState<number | null>(null)
@@ -85,6 +86,7 @@ export default function PlanoPreventivas() {
   function abrirModal(eq: Equipamento) {
     setModalEq(eq)
     setObsModal(eq.observacoes ?? '')
+    setErroOT('')
     const ficha = encontrarFicha(eq.nome)
     const init: Record<string, RespostaTarefa> = {}
     ficha?.tarefas.forEach(t => { init[t.codigo] = { estado: null, valor: '', comentario: '' } })
@@ -93,6 +95,7 @@ export default function PlanoPreventivas() {
 
   function setEstado(codigo: string, estado: EstadoTarefa) {
     setRespostas(prev => ({ ...prev, [codigo]: { ...prev[codigo], estado } }))
+    setErroOT('')
   }
 
   function setValor(codigo: string, valor: string) {
@@ -100,32 +103,33 @@ export default function PlanoPreventivas() {
   }
 
   async function handleGuardarOT() {
-  if (!modalEq) return
+    if (!modalEq) return
 
-  // Validar que todas as tarefas estão preenchidas
-  if (fichaModal) {
-    const porPreencher = fichaModal.tarefas.filter(t => !respostas[t.codigo]?.estado)
-    if (porPreencher.length > 0) {
-      alert(`Tens ${porPreencher.length} tarefa(s) por preencher.`)
-      return
+    if (fichaModal) {
+      const porPreencher = fichaModal.tarefas.filter(t => !respostas[t.codigo]?.estado)
+      if (porPreencher.length > 0) {
+        setErroOT(`${porPreencher.length} tarefa(s) por preencher antes de concluir.`)
+        return
+      }
     }
+
+    setErroOT('')
+    setGuardando(true)
+    try {
+      await fetch(`${API_URL}/api/preventivas/${modalEq.id}/concluir`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ observacoes: obsModal }),
+      })
+      const idConcluido = modalEq.id
+      setModalEq(null)
+      await carregarPlano()
+      setRecemConcluido(idConcluido)
+      setTimeout(() => setRecemConcluido(null), 1500)
+    } catch { }
+    finally { setGuardando(false) }
   }
 
-  setGuardando(true)
-  try {
-    await fetch(`${API_URL}/api/preventivas/${modalEq.id}/concluir`, {
-      method: 'PATCH',
-      headers: authHeaders(),
-      body: JSON.stringify({ observacoes: obsModal }),
-    })
-    const idConcluido = modalEq.id
-    setModalEq(null)
-    await carregarPlano()
-    setRecemConcluido(idConcluido)
-    setTimeout(() => setRecemConcluido(null), 1500)
-  } catch { }
-  finally { setGuardando(false) }
-}
   async function handleDesconcluir(eq: Equipamento, e: React.MouseEvent) {
     e.stopPropagation()
     e.preventDefault()
@@ -265,19 +269,19 @@ export default function PlanoPreventivas() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#f1f5f9' }}>
-     <style>{`
-  @keyframes concluido-pulse {
-    0%   { box-shadow: 0 0 0 0 rgba(22,163,74,0.8); transform: scale(1); }
-    40%  { box-shadow: 0 0 0 12px rgba(22,163,74,0.3); transform: scale(1.02); }
-    100% { box-shadow: 0 0 0 20px rgba(22,163,74,0); transform: scale(1); }
-  }
-  .card-concluido {
-    animation: concluido-pulse 0.9s ease-out forwards;
-    background: #f0fdf4 !important;
-    border-color: #16a34a !important;
-  }
-  @keyframes spin { to { transform: rotate(360deg) } }
-`}</style>
+      <style>{`
+        @keyframes concluido-pulse {
+          0%   { box-shadow: 0 0 0 0 rgba(22,163,74,0.8); transform: scale(1); }
+          40%  { box-shadow: 0 0 0 12px rgba(22,163,74,0.3); transform: scale(1.02); }
+          100% { box-shadow: 0 0 0 20px rgba(22,163,74,0); transform: scale(1); }
+        }
+        .card-concluido {
+          animation: concluido-pulse 0.9s ease-out forwards;
+          background: #f0fdf4 !important;
+          border-color: #16a34a !important;
+        }
+        @keyframes spin { to { transform: rotate(360deg) } }
+      `}</style>
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1a0a0f 100%)', padding: '14px 24px', borderBottom: '1px solid rgba(192,0,26,0.2)' }}>
@@ -418,8 +422,8 @@ export default function PlanoPreventivas() {
                         cursor: eq.concluido ? 'default' : 'pointer',
                         display: 'flex', alignItems: 'center', gap: 10,
                         transition: 'all 0.4s ease',
-opacity: eq.concluido && !isRecemConcluido ? 0.85 : 1,
-                        transform: isRecemConcluido ? 'scale(1.01)' : 'scale(1)',
+                        opacity: eq.concluido && !isRecemConcluido ? 0.85 : 1,
+                        transform: isRecemConcluido ? 'scale(1.02)' : 'scale(1)',
                       }}
                       onMouseEnter={e => { if (!eq.concluido) { (e.currentTarget as HTMLElement).style.borderColor = '#C0001A'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px rgba(192,0,26,0.08)' } }}
                       onMouseLeave={e => { if (!isRecemConcluido) { (e.currentTarget as HTMLElement).style.borderColor = eq.concluido ? '#bbf7d0' : '#e2e8f0'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' } }}
@@ -430,16 +434,15 @@ opacity: eq.concluido && !isRecemConcluido ? 0.85 : 1,
                           if (eq.concluido) handleDesconcluir(eq, e)
                           else abrirModal(eq)
                         }}
-                       style={{
-  width: 18, height: 18, borderRadius: 5, flexShrink: 0,
-  border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`,
-  background: eq.concluido ? '#16a34a' : 'transparent',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  transition: 'all 0.15s', cursor: 'pointer', padding: 0,
-  pointerEvents: 'all',
-  position: 'relative',
-  zIndex: 2,
-}}
+                        title={eq.concluido ? 'Clica para cancelar' : ''}
+                        style={{
+                          width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+                          border: `2px solid ${eq.concluido ? '#16a34a' : '#cbd5e1'}`,
+                          background: eq.concluido ? '#16a34a' : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.15s', cursor: 'pointer', padding: 0,
+                          pointerEvents: 'all', position: 'relative', zIndex: 2,
+                        }}
                       >
                         {eq.concluido && <CheckCircle size={11} color="#fff" />}
                       </button>
@@ -565,7 +568,15 @@ opacity: eq.concluido && !isRecemConcluido ? 0.85 : 1,
               </div>
             </div>
 
-            <div style={{ borderTop: '1px solid #e2e8f0', padding: '14px 24px', display: 'flex', gap: 10, justifyContent: 'flex-end', background: '#f8fafc' }}>
+            {/* Footer modal */}
+            <div style={{ borderTop: '1px solid #e2e8f0', padding: '14px 24px', display: 'flex', gap: 10, alignItems: 'center', background: '#f8fafc' }}>
+              {erroOT && (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '6px 12px' }}>
+                  <AlertTriangle size={12} color="#dc2626" />
+                  <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>{erroOT}</span>
+                </div>
+              )}
+              {!erroOT && <div style={{ flex: 1 }} />}
               <button onClick={() => setModalEq(null)} style={{ border: '1px solid #e2e8f0', background: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#64748b' }}>
                 Cancelar
               </button>
