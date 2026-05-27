@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Upload, CheckCircle, X, FileSpreadsheet, Search, Filter, RotateCcw, ClipboardList, AlertTriangle, MapPin, Camera, Loader, PenLine, Trash2, Clock } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { createWorker } from 'tesseract.js'
