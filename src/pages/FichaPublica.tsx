@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, AlertTriangle, Clock, MapPin, Wrench, Calendar } from 'lucide-react'
+import { CheckCircle, AlertTriangle, Clock } from 'lucide-react'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import logoAtm from '../assets/logo-atm.png'
 
