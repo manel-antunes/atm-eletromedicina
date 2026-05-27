@@ -218,15 +218,17 @@ export default function PlanoPreventivas() {
     e.target.value = ''
   }
 
-  async function toggleConcluir(eq: Equipamento, e: React.MouseEvent) {
-    e.stopPropagation()
-    if (eq.concluido) {
-      await fetch(`${API_URL}/api/preventivas/${eq.id}/desconcluir`, { method: 'PATCH', headers: authHeaders() })
-      await carregarPlano()
-    } else {
-      abrirModal(eq)
-    }
+async function toggleConcluir(eq: Equipamento, e: React.MouseEvent) {
+  e.stopPropagation()
+  console.log('toggleConcluir', eq.concluido, eq.id)
+  if (eq.concluido) {
+    const res = await fetch(`${API_URL}/api/preventivas/${eq.id}/desconcluir`, { method: 'PATCH', headers: authHeaders() })
+    console.log('desconcluir status:', res.status)
+    await carregarPlano()
+  } else {
+    abrirModal(eq)
   }
+}
 
   const setores = ['Todos', ...Array.from(new Set(equipamentos.map(e => e.setor).filter(Boolean)))]
   const tipos = ['Todos', ...Array.from(new Set(equipamentos.map(e => e.nome).filter(Boolean))).sort()]
