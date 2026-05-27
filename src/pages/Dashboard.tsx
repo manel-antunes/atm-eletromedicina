@@ -68,7 +68,18 @@ const estadoConfig = {
   ok:      { label: 'Em dia',   bg: 'bg-green-50',   text: 'text-green-700',  border: 'border-green-200',  dot: 'bg-green-500',  badge: 'bg-green-100 text-green-700',  dotColor: '#22c55e' },
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return isMobile
+}
+
 export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
+  const isMobile = useIsMobile()
   const estados = equipamentos.map(eq => ({ eq, estado: getEstado(eq) }))
   const vencidos = estados.filter(e => e.estado === 'vencido')
   const urgentes = estados.filter(e => e.estado === 'urgente')
@@ -76,51 +87,31 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
   const emDia    = estados.filter(e => e.estado === 'ok')
   const alertas  = [...vencidos, ...urgentes, ...avisos]
 
-  const [vista, setVista] = useState<'tabela' | 'cards'>('tabela')
+  const [vista, setVista] = useState<'tabela' | 'cards'>('cards')
   const [cardExpandido, setCardExpandido] = useState<number | null>(null)
   const [tabelaExpandida, setTabelaExpandida] = useState(false)
   const [pesquisaTabela, setPesquisaTabela] = useState('')
-  const [ordenacao, setOrdenacao] = useState<{ coluna: string; direcao: 'asc' | 'desc' }>({
-    coluna: 'estado', direcao: 'asc'
-  })
+  const [ordenacao, setOrdenacao] = useState<{ coluna: string; direcao: 'asc' | 'desc' }>({ coluna: 'estado', direcao: 'asc' })
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollVelocidade = useRef(0)
   const scrollAnimacao = useRef<number>(0)
 
-  // Scroll vertical → horizontal suave com inércia
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-
-    const handler = (e: WheelEvent) => {
-      e.preventDefault()
-      scrollVelocidade.current += e.deltaY * 0.8
-    }
-
+    const handler = (e: WheelEvent) => { e.preventDefault(); scrollVelocidade.current += e.deltaY * 0.8 }
     const animar = () => {
-      if (Math.abs(scrollVelocidade.current) > 0.5) {
-        el.scrollLeft += scrollVelocidade.current * 0.12
-        scrollVelocidade.current *= 0.88
-      } else {
-        scrollVelocidade.current = 0
-      }
+      if (Math.abs(scrollVelocidade.current) > 0.5) { el.scrollLeft += scrollVelocidade.current * 0.12; scrollVelocidade.current *= 0.88 }
+      else scrollVelocidade.current = 0
       scrollAnimacao.current = requestAnimationFrame(animar)
     }
-
     scrollAnimacao.current = requestAnimationFrame(animar)
     el.addEventListener('wheel', handler, { passive: false })
-
-    return () => {
-      el.removeEventListener('wheel', handler)
-      cancelAnimationFrame(scrollAnimacao.current)
-    }
+    return () => { el.removeEventListener('wheel', handler); cancelAnimationFrame(scrollAnimacao.current) }
   }, [])
 
   function toggleOrdenacao(coluna: string) {
-    setOrdenacao(prev => ({
-      coluna,
-      direcao: prev.coluna === coluna && prev.direcao === 'asc' ? 'desc' : 'asc'
-    }))
+    setOrdenacao(prev => ({ coluna, direcao: prev.coluna === coluna && prev.direcao === 'asc' ? 'desc' : 'asc' }))
   }
 
   function ordenarEstados(lista: typeof estados) {
@@ -130,16 +121,9 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
         case 'descricao': return dir * a.eq.descricao.localeCompare(b.eq.descricao)
         case 'marca': return dir * `${a.eq.marca} ${a.eq.modelo}`.localeCompare(`${b.eq.marca} ${b.eq.modelo}`)
         case 'ultimaCalib':
-        case 'proximaCalib': {
-          const da = parseData(a.eq.dataCalibracao)?.getTime() ?? 0
-          const db = parseData(b.eq.dataCalibracao)?.getTime() ?? 0
-          return dir * (da - db)
-        }
+        case 'proximaCalib': { const da = parseData(a.eq.dataCalibracao)?.getTime() ?? 0; const db = parseData(b.eq.dataCalibracao)?.getTime() ?? 0; return dir * (da - db) }
         case 'localizacao': return dir * (a.eq.localizacao ?? '').localeCompare(b.eq.localizacao ?? '')
-        case 'estado': {
-          const ordem = { vencido: 0, urgente: 1, aviso: 2, ok: 3 }
-          return dir * (ordem[a.estado] - ordem[b.estado])
-        }
+        case 'estado': { const ordem = { vencido: 0, urgente: 1, aviso: 2, ok: 3 }; return dir * (ordem[a.estado] - ordem[b.estado]) }
         default: return 0
       }
     })
@@ -153,10 +137,10 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
 
-      {/* KPIs */}
-      <div className="grid grid-cols-4 gap-4">
+      {/* KPIs — 2 colunas mobile, 4 desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard
           label="Total" valor={equipamentos.length} sub="equipamentos"
           icon={<Package size={15} />}
@@ -211,12 +195,12 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
           return (
             <div className="mb-2">
               {atrasadas.map((c: { id: number; equipamentoNome: string; destino: string; dataRetornoPrevista: string }) => (
-                <div key={c.id} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div key={c.id} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f97316', flexShrink: 0 }} />
                     <div>
                       <p style={{ color: '#9a3412', fontSize: 13, fontWeight: 700 }}>{c.equipamentoNome}</p>
-                      <p style={{ color: '#ea580c', fontSize: 11, marginTop: 2, opacity: 0.7 }}>Cedido a {c.destino} — retorno previsto: {new Date(c.dataRetornoPrevista).toLocaleDateString('pt-PT')}</p>
+                      <p style={{ color: '#ea580c', fontSize: 11, marginTop: 2, opacity: 0.7 }}>Cedido a {c.destino} — retorno: {new Date(c.dataRetornoPrevista).toLocaleDateString('pt-PT')}</p>
                     </div>
                   </div>
                   <span style={{ background: '#ffedd5', color: '#9a3412', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>Retorno atrasado</span>
@@ -249,22 +233,24 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
                   key={eq.id}
                   className={`anim-fade-left delay-${Math.min(index + 1, 8)}`}
                   onClick={() => onVerDetalhe(eq)}
-                  style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 12, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s' }}
+                  style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 12, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', gap: 8, flexWrap: isMobile ? 'wrap' : 'nowrap' }}
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateX(4px)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)' }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateX(0)'; e.currentTarget.style.boxShadow = 'none' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                     <div className={estado === 'vencido' || estado === 'urgente' ? 'dot-piscar' : ''} style={{ width: 8, height: 8, borderRadius: '50%', background: c.dot, flexShrink: 0 }} />
-                    <div>
-                      <p style={{ color: c.titulo, fontSize: 13, fontWeight: 700 }}>{eq.descricao}</p>
-                      <p style={{ color: c.sub, fontSize: 11, marginTop: 2, opacity: 0.7 }}>{eq.marca} {eq.modelo} · {eq.numeroSAP} · {eq.localizacao}</p>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ color: c.titulo, fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.descricao}</p>
+                      <p style={{ color: c.sub, fontSize: 11, marginTop: 2, opacity: 0.7, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.marca} {eq.modelo} · {eq.numeroSAP}</p>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ color: c.titulo, fontSize: 12, fontWeight: 600 }}>{getDiasTexto(eq)}</p>
-                      <p style={{ color: c.sub, fontSize: 11, marginTop: 2, opacity: 0.7 }}>Próxima: {formatarData(eq.dataCalibracao)}</p>
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    {!isMobile && (
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ color: c.titulo, fontSize: 12, fontWeight: 600 }}>{getDiasTexto(eq)}</p>
+                        <p style={{ color: c.sub, fontSize: 11, marginTop: 2, opacity: 0.7 }}>Próxima: {formatarData(eq.dataCalibracao)}</p>
+                      </div>
+                    )}
                     <span style={{ background: c.badge.bg, color: c.badge.color, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap' }}>
                       {cfg.label}
                     </span>
@@ -281,46 +267,44 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Todos os equipamentos</h2>
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-            <button onClick={() => setVista('tabela')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'tabela' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
-              ☰ Tabela
-            </button>
+            {!isMobile && (
+              <button onClick={() => setVista('tabela')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'tabela' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+                ☰ Tabela
+              </button>
+            )}
             <button onClick={() => setVista('cards')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'cards' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
               ⊞ Cards
             </button>
           </div>
         </div>
 
-        {vista === 'tabela' ? (
+        {vista === 'tabela' && !isMobile ? (
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
             <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
               <Search size={13} className="text-gray-400 flex-shrink-0" />
               <input
-                type="text"
-                placeholder="Filtrar equipamentos..."
-                value={pesquisaTabela}
-                onChange={e => setPesquisaTabela(e.target.value)}
+                type="text" placeholder="Filtrar equipamentos..."
+                value={pesquisaTabela} onChange={e => setPesquisaTabela(e.target.value)}
                 className="flex-1 text-xs outline-none bg-transparent text-gray-600 placeholder-gray-400"
               />
-              {pesquisaTabela && (
-                <button onClick={() => setPesquisaTabela('')} className="text-gray-400 hover:text-gray-600"><X size={12} /></button>
-              )}
+              {pesquisaTabela && <button onClick={() => setPesquisaTabela('')} className="text-gray-400 hover:text-gray-600"><X size={12} /></button>}
               <span className="text-xs text-gray-400 font-mono flex-shrink-0">{equipFiltrados.length} equipamentos</span>
             </div>
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100">
                   {[
-                    { key: 'descricao',    label: 'Equipamento',    sortable: true },
-                    { key: 'marca',        label: 'Marca',          sortable: true },
-                    { key: 'proximaCalib', label: 'Próxima Calib.', sortable: true },
-                    { key: 'localizacao',  label: 'Local',          sortable: true },
-                    { key: 'estado',       label: 'Estado',         sortable: true },
+                    { key: 'descricao',    label: 'Equipamento' },
+                    { key: 'marca',        label: 'Marca' },
+                    { key: 'proximaCalib', label: 'Próxima Calib.' },
+                    { key: 'localizacao',  label: 'Local' },
+                    { key: 'estado',       label: 'Estado' },
                   ].map(col => (
-                    <th key={col.key} onClick={() => col.sortable && toggleOrdenacao(col.key)}
-                      className={`text-left px-4 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide select-none ${col.sortable ? 'cursor-pointer hover:text-gray-600' : ''}`}>
+                    <th key={col.key} onClick={() => toggleOrdenacao(col.key)}
+                      className="text-left px-4 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide select-none cursor-pointer hover:text-gray-600">
                       <span className="flex items-center gap-1">
                         {col.label}
-                        {col.sortable && <span className="text-gray-300">{ordenacao.coluna === col.key ? (ordenacao.direcao === 'asc' ? '↑' : '↓') : '↕'}</span>}
+                        <span className="text-gray-300">{ordenacao.coluna === col.key ? (ordenacao.direcao === 'asc' ? '↑' : '↓') : '↕'}</span>
                       </span>
                     </th>
                   ))}
@@ -361,9 +345,8 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
               </tbody>
             </table>
             {!tabelaExpandida && equipFiltrados.length > 5 ? (
-              <button onClick={() => setTabelaExpandida(true)} className="w-full py-3 text-xs font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all border-t border-gray-100 flex items-center justify-center gap-2 group">
-                <span>Ver todos os {equipFiltrados.length} equipamentos</span>
-                <span className="bg-gray-100 group-hover:bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full transition-colors">↓</span>
+              <button onClick={() => setTabelaExpandida(true)} className="w-full py-3 text-xs font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all border-t border-gray-100 flex items-center justify-center gap-2">
+                Ver todos os {equipFiltrados.length} equipamentos ↓
               </button>
             ) : tabelaExpandida ? (
               <button onClick={() => setTabelaExpandida(false)} className="w-full py-3 text-xs font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all border-t border-gray-100 flex items-center justify-center gap-2">
@@ -372,7 +355,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
             ) : null}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {ordenarEstados(estados).slice(0, tabelaExpandida ? undefined : 6).map(({ eq, estado }) => {
               const cfg = estadoConfig[estado]
               const proxima = parseData(eq.dataCalibracao)
@@ -435,31 +418,26 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
         )}
       </div>
 
-      {/* Scroll horizontal suave — Info empresa */}
+      {/* Scroll horizontal — Info empresa */}
       <div className="anim-fade-up">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Unidade de Eletromedicina</h2>
-          <p className="text-xs text-gray-300 italic">scroll vertical aqui → horizontal</p>
         </div>
+        <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
 
-        <div
-          ref={scrollRef}
-          className="flex gap-4 overflow-x-auto pb-3"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
           {/* Card estatísticas */}
-          <div className="flex-shrink-0 w-72 rounded-2xl overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+          <div className="flex-shrink-0 w-64 rounded-2xl overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ background: '#C0001A', padding: '12px 16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Estatísticas</p>
               <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginTop: 2 }}>Resumo da Unidade</p>
             </div>
             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'Total equipamentos',    valor: equipamentos.length,                                                                      cor: '#38bdf8' },
-                { label: 'Taxa de conformidade',  valor: `${Math.round((emDia.length / equipamentos.length) * 100)}%`,                            cor: '#4ade80' },
-                { label: 'Calibrações vencidas',  valor: vencidos.length,                                                                          cor: '#f87171' },
-                { label: 'A vencer em 30 dias',   valor: urgentes.length,                                                                          cor: '#fb923c' },
-                { label: 'A vencer em 60 dias',   valor: avisos.length,                                                                            cor: '#facc15' },
+                { label: 'Total equipamentos',   valor: equipamentos.length,                                                cor: '#38bdf8' },
+                { label: 'Taxa de conformidade', valor: `${Math.round((emDia.length / equipamentos.length) * 100)}%`,     cor: '#4ade80' },
+                { label: 'Calibrações vencidas', valor: vencidos.length,                                                   cor: '#f87171' },
+                { label: 'A vencer em 30 dias',  valor: urgentes.length,                                                   cor: '#fb923c' },
+                { label: 'A vencer em 60 dias',  valor: avisos.length,                                                     cor: '#facc15' },
               ].map(stat => (
                 <div key={stat.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{stat.label}</p>
@@ -478,28 +456,24 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
             { nome: 'ISQ',                   sigla: 'ISQ',    morada: 'Oeiras, Lisboa',                   cor: '#f59e0b' },
           ].map(local => {
             const eqLocal = equipamentos.filter(eq => (eq.localizacao ?? '').toUpperCase().includes(local.sigla))
-            const vencidosLocal = eqLocal.filter(eq => {
-              const proxima = parseData(eq.dataCalibracao)
-              if (!proxima) return true
-              return differenceInDays(proxima, new Date()) < 0
-            }).length
+            const vencidosLocal = eqLocal.filter(eq => { const p = parseData(eq.dataCalibracao); return !p || differenceInDays(p, new Date()) < 0 }).length
             const emDiaLocal = eqLocal.length - vencidosLocal
             const taxa = eqLocal.length > 0 ? Math.round((emDiaLocal / eqLocal.length) * 100) : 0
             return (
-              <div key={local.sigla} className="flex-shrink-0 w-64 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white">
+              <div key={local.sigla} className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white">
                 <div style={{ background: local.cor, padding: '12px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <p style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{local.nome}</p>
+                    <p style={{ color: '#fff', fontSize: 12, fontWeight: 700 }}>{local.nome}</p>
                     <span style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>{local.sigla}</span>
                   </div>
                   <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, marginTop: 3 }}>{local.morada}</p>
                 </div>
-                <div style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <p style={{ fontSize: 28, fontWeight: 800, fontFamily: 'monospace', color: '#0f172a' }}>{eqLocal.length}</p>
+                <div style={{ padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <p style={{ fontSize: 24, fontWeight: 800, fontFamily: 'monospace', color: '#0f172a' }}>{eqLocal.length}</p>
                     <p style={{ fontSize: 11, color: '#94a3b8' }}>equipamentos</p>
                   </div>
-                  <div style={{ marginBottom: 10 }}>
+                  <div style={{ marginBottom: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                       <span style={{ fontSize: 10, color: '#94a3b8' }}>Conformidade</span>
                       <span style={{ fontSize: 10, fontWeight: 700, color: taxa >= 80 ? '#22c55e' : taxa >= 60 ? '#eab308' : '#ef4444' }}>{taxa}%</span>
@@ -508,12 +482,12 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
                       <div style={{ height: '100%', width: `${taxa}%`, background: taxa >= 80 ? '#22c55e' : taxa >= 60 ? '#eab308' : '#ef4444', borderRadius: 99 }} />
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 8, padding: '6px 8px', textAlign: 'center' }}>
                       <p style={{ fontSize: 14, fontWeight: 800, color: '#16a34a', fontFamily: 'monospace' }}>{emDiaLocal}</p>
                       <p style={{ fontSize: 9, color: '#16a34a', textTransform: 'uppercase' }}>Em dia</p>
                     </div>
-                    <div style={{ flex: 1, background: vencidosLocal > 0 ? '#fef2f2' : '#f8fafc', borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
+                    <div style={{ flex: 1, background: vencidosLocal > 0 ? '#fef2f2' : '#f8fafc', borderRadius: 8, padding: '6px 8px', textAlign: 'center' }}>
                       <p style={{ fontSize: 14, fontWeight: 800, color: vencidosLocal > 0 ? '#dc2626' : '#94a3b8', fontFamily: 'monospace' }}>{vencidosLocal}</p>
                       <p style={{ fontSize: 9, color: vencidosLocal > 0 ? '#dc2626' : '#94a3b8', textTransform: 'uppercase' }}>Vencidas</p>
                     </div>
@@ -524,7 +498,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
           })}
 
           {/* Card equipa */}
-          <div className="flex-shrink-0 w-64 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white">
+          <div className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white">
             <div style={{ background: 'linear-gradient(135deg, #C0001A 0%, #7f1d1d 100%)', padding: '12px 16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Equipa</p>
               <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginTop: 2 }}>Eletromedicina ATM</p>
@@ -537,8 +511,8 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
                 { nome: 'ATM Eletromedicina v1.0',    cargo: 'Sistema de gestão',             cor: '#10b981' },
               ].map(m => (
                 <div key={m.nome} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: m.cor + '20', border: `1.5px solid ${m.cor}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: m.cor }}>{m.nome[0]}</span>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: m.cor + '20', border: `1.5px solid ${m.cor}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: m.cor }}>{m.nome[0]}</span>
                   </div>
                   <div>
                     <p style={{ fontSize: 11, fontWeight: 600, color: '#1e293b' }}>{m.nome}</p>
@@ -550,19 +524,19 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
           </div>
 
           {/* Card sistema */}
-          <div className="flex-shrink-0 w-64 rounded-2xl overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+          <div className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sistema</p>
               <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginTop: 2 }}>ATM Eletromedicina</p>
             </div>
             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                { label: 'Versão',      valor: 'v1.0',                          cor: '#4ade80' },
-                { label: 'Base dados',  valor: 'PostgreSQL',                    cor: '#38bdf8' },
-                { label: 'Frontend',    valor: 'React + TypeScript',            cor: '#a78bfa' },
-                { label: 'Backend',     valor: 'Node.js + Express',             cor: '#fb923c' },
-                { label: 'Deploy',      valor: 'Vercel + Railway',              cor: '#f472b6' },
-                { label: 'URL',         valor: 'atm-eletromedicina.vercel.app', cor: '#94a3b8' },
+                { label: 'Versão',     valor: 'v1.0',                          cor: '#4ade80' },
+                { label: 'Base dados', valor: 'PostgreSQL',                    cor: '#38bdf8' },
+                { label: 'Frontend',   valor: 'React + TypeScript',            cor: '#a78bfa' },
+                { label: 'Backend',    valor: 'Node.js + Express',             cor: '#fb923c' },
+                { label: 'Deploy',     valor: 'Vercel + Render',               cor: '#f472b6' },
+                { label: 'URL',        valor: 'atm-eletromedicina.vercel.app', cor: '#94a3b8' },
               ].map(info => (
                 <div key={info.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10 }}>{info.label}</p>
@@ -573,7 +547,6 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
           </div>
         </div>
       </div>
-
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardCheck, ClipboardList, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Map, Calendar, LogOut, QrCode } from 'lucide-react'
+import { LayoutDashboard, ClipboardCheck, ClipboardList, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Map, Calendar, LogOut, QrCode, Stethoscope } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import logoAtm from '../assets/logo-atm.png'
@@ -49,38 +49,43 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos, nomeUtil
     { id: 'documentos',  label: 'Documentos',   icon: FolderOpen,      badge: 0 },
     { id: 'contactos',   label: 'Contactos',    icon: Phone,           badge: 0 },
     { id: 'mapa',        label: 'Mapa',         icon: Map,             badge: 0 },
-    { id: 'qrcodes', label: 'QR Codes', icon: QrCode, badge: 0 },
-
-    { id: 'preventivas', label: 'Preventivas', icon: ClipboardList, badge: 0 },
+    { id: 'qrcodes',     label: 'QR Codes',     icon: QrCode,          badge: 0 },
+    { id: 'preventivas', label: 'Preventivas',  icon: Stethoscope,     badge: 0 },
   ]
 
   return (
-    <aside className="w-56 min-w-56 h-screen flex flex-col" style={{ background: '#C0001A' }}>
+    <aside style={{ width: 224, minWidth: 224, height: '100vh', display: 'flex', flexDirection: 'column', background: '#C0001A' }}>
       {/* Logo */}
-      <div className="px-5 pt-6 pb-5">
-        <img src={logoAtm} alt="ATM" className="w-28 object-contain brightness-0 invert mb-3" />
-        <div className="h-px w-full opacity-20" style={{ background: 'white' }} />
-        <p className="text-red-100 text-xs mt-3 opacity-70 uppercase tracking-widest font-semibold">
+      <div style={{ padding: '24px 20px 20px' }}>
+        <img src={logoAtm} alt="ATM" style={{ width: 112, objectFit: 'contain', filter: 'brightness(0) invert(1)', marginBottom: 12 }} />
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.2)', width: '100%' }} />
+        <p style={{ color: 'rgba(255,200,200,0.7)', fontSize: 10, marginTop: 12, textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600 }}>
           Eletromedicina
         </p>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+      <nav style={{ flex: 1, padding: '8px 12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {itens.map(({ id, label, icon: Icon, badge }) => (
           <button
             key={id}
             onClick={() => onNavegar(id)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-semibold transition-all rounded-lg ${
-              paginaAtiva === id
-                ? 'text-white bg-white/20'
-                : 'text-red-100 hover:text-white hover:bg-white/10'
-            }`}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 12px', fontSize: 12, fontWeight: 600,
+              borderRadius: 8, border: 'none', cursor: 'pointer',
+              background: paginaAtiva === id ? 'rgba(255,255,255,0.2)' : 'transparent',
+              color: paginaAtiva === id ? '#fff' : 'rgba(255,200,200,0.8)',
+              transition: 'all 0.15s',
+              textAlign: 'left',
+            }}
+            onMouseEnter={e => { if (paginaAtiva !== id) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)' }}
+            onMouseLeave={e => { if (paginaAtiva !== id) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
           >
-            <Icon size={15} className={paginaAtiva === id ? 'opacity-100' : 'opacity-60'} />
-            <span className="flex-1 text-left">{label}</span>
+            <Icon size={15} style={{ opacity: paginaAtiva === id ? 1 : 0.6, flexShrink: 0 }} />
+            <span style={{ flex: 1 }}>{label}</span>
             {badge > 0 && (
-              <span className="bg-white text-red-700 text-xs font-black px-1.5 py-0.5 rounded-full min-w-5 text-center leading-none">
+              <span style={{ background: '#fff', color: '#C0001A', fontSize: 10, fontWeight: 900, padding: '1px 6px', borderRadius: 99, minWidth: 20, textAlign: 'center' }}>
                 {badge > 99 ? '99+' : badge}
               </span>
             )}
@@ -89,37 +94,32 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos, nomeUtil
       </nav>
 
       {/* Notificações Push */}
-      <div className="px-3 pb-2">
+      <div style={{ padding: '0 12px 8px' }}>
         <NotificacoesPush />
       </div>
 
-      {/* Footer com utilizador e logout */}
-      <div className="px-3 py-3 border-t border-white/10">
+      {/* Footer */}
+      <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
         {nomeUtilizador && (
-          <div className="flex items-center justify-between px-2 py-2 rounded-lg hover:bg-white/5 transition-colors">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-bold text-white">
-                  {nomeUtilizador.charAt(0).toUpperCase()}
-                </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px', borderRadius: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{nomeUtilizador.charAt(0).toUpperCase()}</span>
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-white/80 truncate">{nomeUtilizador}</p>
-                <p className="text-xs text-white/30">Sessão ativa</p>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.8)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeUtilizador}</p>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', margin: 0 }}>Sessão ativa</p>
               </div>
             </div>
             {onLogout && (
-              <button
-                onClick={onLogout}
-                className="p-1.5 rounded-lg text-white/30 hover:text-white/80 hover:bg-white/10 transition-all flex-shrink-0"
-                title="Terminar sessão"
-              >
+              <button onClick={onLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 6, borderRadius: 8, display: 'flex' }}
+                title="Terminar sessão">
                 <LogOut size={13} />
               </button>
             )}
           </div>
         )}
-        <p className="text-red-200 text-xs opacity-30 font-mono px-2 mt-1">v1.0 · ATM 2026</p>
+        <p style={{ fontSize: 10, color: 'rgba(255,200,200,0.3)', fontFamily: 'monospace', padding: '0 8px', marginTop: 4 }}>v1.0 · ATM 2026</p>
       </div>
     </aside>
   )

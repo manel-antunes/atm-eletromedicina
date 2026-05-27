@@ -28,18 +28,6 @@ import { carregarEquipamentos, importarEquipamentos } from './services/api'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 
-// Rota pública — mostra ficha sem autenticação
-if (window.location.pathname.startsWith('/eq/')) {
-  const root = document.getElementById('root')
-  if (root) {
-    import('./pages/FichaPublica').then(({ default: FichaPublica }) => {
-      import('react-dom/client').then(({ createRoot }) => {
-        createRoot(root).render(<FichaPublica />)
-      })
-    })
-  }
-}
-
 const titulos: Record<string, string> = {
   dashboard:   'Dashboard Geral',
   calibracoes: 'Calibrações',
@@ -66,6 +54,11 @@ function useIsMobile() {
 }
 
 function App() {
+  // Rota pública /eq/:sap — antes de qualquer hook
+  if (window.location.pathname.startsWith('/eq/')) {
+    return <FichaPublica />
+  }
+
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([])
   const [carregando, setCarregando] = useState(true)
   const [paginaAtiva, setPaginaAtiva] = useState('dashboard')
@@ -79,11 +72,6 @@ function App() {
   const { toasts, mostrar, remover } = useToast()
   const isMobile = useIsMobile()
 
-  // Rota pública /eq/:sap
-  const isPublic = window.location.pathname.startsWith('/eq/')
-  if (isPublic) return <FichaPublica />
-
-  // Verifica token
   useEffect(() => {
     if (!token) { setVerificandoToken(false); return }
     fetch(`${API_URL}/api/me`, { headers: { Authorization: `Bearer ${token}` } })
@@ -99,7 +87,6 @@ function App() {
       .finally(() => setVerificandoToken(false))
   }, [])
 
-  // Carrega equipamentos
   useEffect(() => {
     if (!token || verificandoToken) return
     carregarEquipamentos()
@@ -218,12 +205,27 @@ function App() {
         <ModoApresentacao equipamentos={equipamentos} onFechar={() => setApresentacao(false)} />
       )}
 
+      {/* Overlay mobile */}
       {isMobile && sidebarAberta && (
-        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarAberta(false)} />
+        <div
+          onClick={() => setSidebarAberta(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40 }}
+        />
       )}
 
-      <div className="flex h-screen bg-gray-100 overflow-hidden">
-        <div className={`${isMobile ? `fixed top-0 left-0 h-full z-50 transition-transform duration-300 ${sidebarAberta ? 'translate-x-0' : '-translate-x-full'}` : 'relative'}`}>
+      <div style={{ display: 'flex', height: '100vh', background: '#f3f4f6', overflow: 'hidden' }}>
+
+        {/* Sidebar */}
+        <div style={{
+          position: isMobile ? 'fixed' : 'relative',
+          top: 0,
+          left: 0,
+          height: '100%',
+          zIndex: isMobile ? 50 : 'auto',
+          transform: isMobile ? (sidebarAberta ? 'translateX(0)' : 'translateX(-100%)') : 'none',
+          transition: 'transform 0.3s ease',
+          flexShrink: 0,
+        }}>
           <Sidebar
             paginaAtiva={paginaAtiva}
             onNavegar={navegar}
@@ -233,18 +235,23 @@ function App() {
           />
         </div>
 
-        <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+        {/* Conteúdo principal */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minWidth: 0 }}>
           <Topbar
             titulo={equipDetalhe ? equipDetalhe.descricao : titulos[paginaAtiva]}
             totalEquipamentos={equipamentos.length}
-            onReimportar={() => { setEquipamentos([]) }}
+            onReimportar={() => setEquipamentos([])}
             equipamentos={equipamentos}
             onVerDetalhe={(eq) => setEquipDetalhe(eq)}
             onApresentacao={() => setApresentacao(true)}
             onMenuToggle={() => setSidebarAberta(!sidebarAberta)}
             isMobile={isMobile}
           />
-          <main className={`flex-1 overflow-hidden ${isCalendario ? '' : 'overflow-y-auto p-3 md:p-5'}`}>
+          <main style={{
+            flex: 1,
+            overflow: isCalendario ? 'hidden' : 'auto',
+            padding: isCalendario ? 0 : (isMobile ? '12px' : '20px'),
+          }}>
             {renderPagina()}
           </main>
         </div>
