@@ -11,132 +11,12 @@ export default function Login({ onLogin }: Props) {
   const [password, setPassword] = useState('')
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [focusedField, setFocusedField] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    const ecgPattern = [
-      0, 0, 0, 0, 0.02, -0.02, 0.05, -0.05, 0.05, 0,
-      0, 0, 0, 0.1, 0.25, -0.1, 0.05, 0,
-      0, 0, 0, 0, 0, 0.05, -0.15, 1.0, -0.35, 0.1, 0.05,
-      0, 0, 0, 0, 0.12, 0.18, 0.2, 0.18, 0.12, 0.05, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    ]
-
-    const numLinhas = 5
-    const offsets: number[] = Array.from({ length: numLinhas }, (_, i) => i * (ecgPattern.length / numLinhas) * 8)
-    let animId: number
-    let t = 0
-
-    function draw() {
-      const w = canvas!.width
-      const h = canvas!.height
-
-      if (w <= 0 || h <= 0) {
-        animId = requestAnimationFrame(draw)
-        return
-      }
-
-      ctx!.fillStyle = 'rgba(6,9,16,0.15)'
-      ctx!.fillRect(0, 0, w, h)
-
-      ctx!.lineWidth = 0.5
-      for (let x = 0; x < w; x += 40) {
-        ctx!.strokeStyle = x % 200 === 0 ? 'rgba(192,0,26,0.06)' : 'rgba(192,0,26,0.025)'
-        ctx!.beginPath(); ctx!.moveTo(x, 0); ctx!.lineTo(x, h); ctx!.stroke()
-      }
-      for (let y = 0; y < h; y += 40) {
-        ctx!.strokeStyle = y % 200 === 0 ? 'rgba(192,0,26,0.06)' : 'rgba(192,0,26,0.025)'
-        ctx!.beginPath(); ctx!.moveTo(0, y); ctx!.lineTo(w, y); ctx!.stroke()
-      }
-
-      for (let l = 0; l < numLinhas; l++) {
-        const centerY = (h / (numLinhas + 1)) * (l + 1)
-        const amplitude = h / (numLinhas * 2.2)
-        const speed = 2.5 + l * 0.3
-        const lineOffset = offsets[l] + t * speed
-
-        const dist = Math.abs(l - (numLinhas - 1) / 2) / ((numLinhas - 1) / 2)
-        const alpha = 0.8 - dist * 0.5
-
-        ctx!.beginPath()
-        ctx!.lineWidth = l === Math.floor(numLinhas / 2) ? 2 : 1.2
-        ctx!.strokeStyle = `rgba(192,0,26,${alpha})`
-
-        for (let x = 0; x <= w; x += 2) {
-          const patLen = ecgPattern.length
-          const pos = ((x + lineOffset) / w * patLen * 3) % patLen
-          const idx = Math.floor(pos)
-          const frac = pos - idx
-          const v1 = ecgPattern[idx % patLen]
-          const v2 = ecgPattern[(idx + 1) % patLen]
-          const val = v1 + (v2 - v1) * frac
-          const y = centerY - val * amplitude
-          x === 0 ? ctx!.moveTo(x, y) : ctx!.lineTo(x, y)
-        }
-        ctx!.stroke()
-
-        if (l === Math.floor(numLinhas / 2)) {
-          const cursorX = (t * (2.5 + l * 0.3) * 2) % w
-          const patLen = ecgPattern.length
-          const pos = ((cursorX + lineOffset) / w * patLen * 3) % patLen
-          const idx = Math.floor(pos)
-          const val = ecgPattern[idx % patLen]
-          const cursorY = centerY - val * amplitude
-
-          if (isFinite(cursorX) && isFinite(cursorY) && cursorX >= 0 && cursorY >= 0) {
-            try {
-              const gradient = ctx!.createRadialGradient(cursorX, cursorY, 0, cursorX, cursorY, 20)
-              gradient.addColorStop(0, 'rgba(192,0,26,0.8)')
-              gradient.addColorStop(1, 'rgba(192,0,26,0)')
-              ctx!.beginPath()
-              ctx!.arc(cursorX, cursorY, 20, 0, Math.PI * 2)
-              ctx!.fillStyle = gradient
-              ctx!.fill()
-            } catch {}
-          }
-
-          ctx!.beginPath()
-          ctx!.arc(cursorX, cursorY, 4, 0, Math.PI * 2)
-          ctx!.fillStyle = '#ff1a1a'
-          ctx!.fill()
-        }
-      }
-
-      // Vignette
-try {
-  const r0 = Math.max(0, h * 0.3)
-  const r1 = Math.max(r0 + 1, h * 0.9)
-  const vignette = ctx!.createRadialGradient(w/2, h/2, r0, w/2, h/2, r1)
-        vignette.addColorStop(0, 'rgba(6,9,16,0)')
-        vignette.addColorStop(1, 'rgba(6,9,16,0.7)')
-        ctx!.fillStyle = vignette
-        ctx!.fillRect(0, 0, w, h)
-      } catch {}
-
-      t += 0.4
-      animId = requestAnimationFrame(draw)
-    }
-
-    ctx.fillStyle = '#060910'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    draw()
-
-    return () => {
-      cancelAnimationFrame(animId)
-      window.removeEventListener('resize', resize)
-    }
+    const t = setTimeout(() => setMounted(true), 100)
+    return () => clearTimeout(t)
   }, [])
 
   async function handleLogin(e: React.FormEvent) {
@@ -162,97 +42,424 @@ try {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#060910' }}>
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#F5F4F0', display: 'flex' }}>
       <style>{`
-        @keyframes fade-up { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes pulse-ring { 0%{transform:scale(1);opacity:.6} 70%{transform:scale(2.2);opacity:0} 100%{transform:scale(2.2);opacity:0} }
-        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-        @keyframes spin { to{transform:rotate(360deg)} }
-        @keyframes heartbeat { 0%,100%{transform:scale(1)} 14%{transform:scale(1.06)} 28%{transform:scale(1)} 42%{transform:scale(1.04)} 56%{transform:scale(1)} }
-        .login-fade { animation: fade-up .7s cubic-bezier(.16,1,.3,1) both }
-        .logo-anim { animation: float 3.5s ease-in-out infinite }
-        .logo-heart { animation: heartbeat 1.2s ease-in-out infinite }
-        .field {
-          width: 100%; padding: 12px 16px; border-radius: 10px; box-sizing: border-box;
-          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-          color: #fff; font-size: 14px; outline: none; transition: all .2s;
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+        @keyframes line-in {
+          from { transform: scaleX(0); }
+          to   { transform: scaleX(1); }
         }
-        .field::placeholder { color: rgba(255,255,255,0.2) }
-        .field:focus { border-color: rgba(192,0,26,.7); background: rgba(255,255,255,0.08); box-shadow: 0 0 0 3px rgba(192,0,26,.1) }
-        .btn {
-          width: 100%; padding: 13px; border: none; border-radius: 10px; cursor: pointer;
-          background: linear-gradient(135deg,#C0001A,#E30613); color: #fff;
-          font-size: 14px; font-weight: 700; letter-spacing: .3px;
-          box-shadow: 0 6px 28px rgba(192,0,26,.4); transition: all .2s;
+        @keyframes fade-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 36px rgba(192,0,26,.5) }
-        .btn:active:not(:disabled) { transform: translateY(0) scale(.98) }
-        .btn:disabled { background: rgba(255,255,255,.07); box-shadow: none; cursor: default }
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes slide-right {
+          from { transform: translateX(-100%); opacity: 0; }
+          to   { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes spin { to { transform: rotate(360deg) } }
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+
+        .login-field {
+          width: 100%;
+          background: transparent;
+          border: none;
+          border-bottom: 1px solid #1a1a1a;
+          padding: 12px 0;
+          font-size: 15px;
+          font-family: 'Inter', sans-serif;
+          font-weight: 300;
+          color: #1a1a1a;
+          outline: none;
+          transition: border-color 0.3s;
+          box-sizing: border-box;
+          letter-spacing: 0.02em;
+        }
+        .login-field::placeholder { color: #999; font-weight: 300; }
+        .login-field:focus { border-bottom-color: #C0001A; }
+
+        .login-btn {
+          background: #1a1a1a;
+          color: #F5F4F0;
+          border: none;
+          width: 100%;
+          padding: 16px;
+          font-family: 'Inter', sans-serif;
+          font-size: 11px;
+          font-weight: 500;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        .login-btn:hover:not(:disabled) { background: #C0001A; }
+        .login-btn:disabled { opacity: 0.4; cursor: default; }
       `}</style>
 
-      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, display: 'block' }} />
+      {/* Painel esquerdo — imagem editorial */}
+      <div style={{
+        flex: 1,
+        position: 'relative',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'flex-end',
+        padding: 48,
+      }}>
+        {/* Fundo com padrão geométrico médico */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(160deg, #0A0F1E 0%, #1a0509 60%, #C0001A 100%)',
+        }} />
 
-      <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div className="login-fade" style={{ width: '100%', maxWidth: 380 }}>
+        {/* Grid ECG decorativo */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.06 }} xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#fff" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
 
-          <div className="logo-anim" style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div className="logo-heart" style={{ position: 'relative', display: 'inline-block', marginBottom: 18 }}>
-              <div style={{ position: 'absolute', inset: -4, borderRadius: 24, border: '1px solid rgba(192,0,26,.4)', animation: 'pulse-ring 1.5s ease-out infinite' }} />
-              <div style={{ position: 'absolute', inset: -4, borderRadius: 24, border: '1px solid rgba(192,0,26,.2)', animation: 'pulse-ring 1.5s ease-out infinite .3s' }} />
-              <div style={{ width: 72, height: 72, borderRadius: 22, background: 'linear-gradient(135deg,#C0001A,#ff1a1a)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: '0 0 50px rgba(192,0,26,.6), 0 0 100px rgba(192,0,26,.2)' }}>
-                <span style={{ color: '#fff', fontSize: 22, fontWeight: 900, letterSpacing: '-1px' }}>ATM</span>
-              </div>
-            </div>
-            <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 700, margin: '0 0 8px', letterSpacing: '-0.5px', textShadow: '0 0 30px rgba(192,0,26,.4)' }}>
-              ATM Eletromedicina
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-              <div style={{ flex: 1, maxWidth: 40, height: '1px', background: 'linear-gradient(to left, rgba(192,0,26,.5), transparent)' }} />
-              <span style={{ color: 'rgba(255,255,255,.3)', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Sistema de Gestão · HPRT</span>
-              <div style={{ flex: 1, maxWidth: 40, height: '1px', background: 'linear-gradient(to right, rgba(192,0,26,.5), transparent)' }} />
-            </div>
-          </div>
+        {/* Número editorial gigante */}
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontFamily: "'Cormorant Garamond', serif",
+          fontSize: 'clamp(120px, 20vw, 280px)',
+          fontWeight: 300,
+          color: 'rgba(255,255,255,0.04)',
+          lineHeight: 1,
+          whiteSpace: 'nowrap',
+          letterSpacing: '-0.05em',
+          userSelect: 'none',
+          pointerEvents: 'none',
+        }}>
+          ATM
+        </div>
 
-          <div style={{ background: 'rgba(6,9,16,0.85)', border: '1px solid rgba(192,0,26,.2)', borderRadius: 20, padding: '32px', backdropFilter: 'blur(32px)', boxShadow: '0 40px 100px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05), 0 0 0 1px rgba(192,0,26,.05)' }}>
-            <div style={{ height: '2px', background: 'linear-gradient(90deg, transparent 0%, rgba(192,0,26,.8) 50%, transparent 100%)', borderRadius: 99, marginBottom: 28 }} />
+        {/* Linha ECG decorativa */}
+        <svg
+          viewBox="0 0 800 120"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: 0,
+            right: 0,
+            width: '100%',
+            transform: 'translateY(-50%)',
+            opacity: 0.15,
+          }}
+          preserveAspectRatio="none"
+        >
+          <polyline
+            points="0,60 80,60 100,60 110,20 120,100 130,10 140,110 150,60 160,60 240,60 260,60 270,45 280,75 290,60 370,60 390,60 400,20 410,100 420,10 430,110 440,60 450,60 530,60 550,60 560,45 570,75 580,60 660,60 680,60 690,20 700,100 710,10 720,110 730,60 740,60 800,60"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="1.5"
+          />
+        </svg>
 
-            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.35)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  Utilizador
-                </label>
-                <input className="field" type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="username" required autoFocus autoComplete="username" />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.35)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  Password
-                </label>
-                <input className="field" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required autoComplete="current-password" />
-              </div>
-
-              {erro && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(192,0,26,.1)', border: '1px solid rgba(192,0,26,.25)', borderRadius: 10, padding: '10px 14px' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />
-                  <span style={{ color: '#f87171', fontSize: 13 }}>{erro}</span>
-                </div>
-              )}
-
-              <button type="submit" disabled={loading} className="btn" style={{ marginTop: 4 }}>
-                {loading
-                  ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                      <div style={{ width: 15, height: 15, border: '2px solid rgba(255,255,255,.2)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />
-                      A entrar...
-                    </span>
-                  : 'Entrar →'
-                }
-              </button>
-            </form>
-          </div>
-
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,.1)', fontSize: 11, marginTop: 20, letterSpacing: '0.05em' }}>
-            ATM Manutenção Total · v1.0 · 2026
+        {/* Badges flutuantes */}
+        <div style={{
+          position: 'absolute',
+          top: 48,
+          left: 48,
+          opacity: mounted ? 1 : 0,
+          transition: 'opacity 0.8s ease 0.3s',
+        }}>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2em', textTransform: 'uppercase', margin: 0 }}>
+            ATM Manutenção Total
           </p>
+        </div>
+
+        <div style={{
+          position: 'absolute',
+          top: 48,
+          right: 48,
+          textAlign: 'right',
+          opacity: mounted ? 1 : 0,
+          transition: 'opacity 0.8s ease 0.5s',
+        }}>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2em', textTransform: 'uppercase', margin: 0 }}>
+            v1.0 · 2026
+          </p>
+        </div>
+
+        {/* Stats editoriais */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'translateY(0)' : 'translateY(30px)',
+          transition: 'all 1s cubic-bezier(0.16,1,0.3,1) 0.4s',
+        }}>
+          <div style={{ display: 'flex', gap: 48, marginBottom: 32 }}>
+            {[
+              { num: '52', label: 'Equipamentos' },
+              { num: '5', label: 'Hospitais' },
+              { num: '100%', label: 'Digital' },
+            ].map(stat => (
+              <div key={stat.label}>
+                <p style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  fontSize: 48,
+                  fontWeight: 300,
+                  color: '#fff',
+                  margin: 0,
+                  lineHeight: 1,
+                  letterSpacing: '-0.02em',
+                }}>{stat.num}</p>
+                <p style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: 10,
+                  fontWeight: 400,
+                  color: 'rgba(255,255,255,0.4)',
+                  margin: '6px 0 0',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}>{stat.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Linha decorativa */}
+          <div style={{
+            width: '100%',
+            height: 1,
+            background: 'rgba(255,255,255,0.15)',
+            marginBottom: 24,
+            transformOrigin: 'left',
+            animation: mounted ? 'line-in 1.2s cubic-bezier(0.16,1,0.3,1) 0.6s both' : 'none',
+          }} />
+
+          <p style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: 18,
+            fontStyle: 'italic',
+            fontWeight: 300,
+            color: 'rgba(255,255,255,0.5)',
+            margin: 0,
+            letterSpacing: '0.02em',
+          }}>
+            Sistema de Gestão de Eletromedicina
+          </p>
+        </div>
+
+        {/* Ticker horizontal */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 36,
+          background: '#C0001A',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+        }}>
+          <div style={{
+            display: 'flex',
+            gap: 0,
+            animation: 'marquee 20s linear infinite',
+            whiteSpace: 'nowrap',
+          }}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <span key={i} style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 10,
+                fontWeight: 500,
+                color: 'rgba(255,255,255,0.8)',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                padding: '0 32px',
+              }}>
+                ATM Eletromedicina · Hospital CUF Porto · Gestão de Calibrações · Manutenção Preventiva ·
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Painel direito — formulário */}
+      <div style={{
+        width: 420,
+        flexShrink: 0,
+        background: '#F5F4F0',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        padding: '64px 56px',
+        position: 'relative',
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? 'translateX(0)' : 'translateX(40px)',
+        transition: 'all 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s',
+      }}>
+
+        {/* Logo top */}
+        <div style={{ position: 'absolute', top: 40, left: 56 }}>
+          <p style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: 13,
+            fontWeight: 400,
+            color: '#1a1a1a',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            margin: 0,
+          }}>Eletromedicina</p>
+        </div>
+
+        {/* Título editorial */}
+        <div style={{ marginBottom: 56 }}>
+          <p style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: 10,
+            fontWeight: 500,
+            color: '#C0001A',
+            letterSpacing: '0.25em',
+            textTransform: 'uppercase',
+            margin: '0 0 16px',
+          }}>Acesso Restrito</p>
+
+          <h1 style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: 52,
+            fontWeight: 300,
+            color: '#1a1a1a',
+            margin: 0,
+            lineHeight: 1,
+            letterSpacing: '-0.02em',
+          }}>
+            Bem-vindo
+            <br />
+            <em style={{ fontStyle: 'italic', color: '#666' }}>de volta.</em>
+          </h1>
+
+          <div style={{
+            width: 40,
+            height: 1,
+            background: '#C0001A',
+            marginTop: 24,
+            transformOrigin: 'left',
+            animation: mounted ? 'line-in 0.8s cubic-bezier(0.16,1,0.3,1) 0.8s both' : 'none',
+          }} />
+        </div>
+
+        {/* Formulário */}
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          <div>
+            <label style={{
+              display: 'block',
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 9,
+              fontWeight: 500,
+              color: focusedField === 'user' ? '#C0001A' : '#999',
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              marginBottom: 8,
+              transition: 'color 0.3s',
+            }}>
+              Utilizador
+            </label>
+            <input
+              className="login-field"
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              onFocus={() => setFocusedField('user')}
+              onBlur={() => setFocusedField(null)}
+              placeholder="username"
+              required
+              autoFocus
+              autoComplete="username"
+            />
+          </div>
+
+          <div>
+            <label style={{
+              display: 'block',
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 9,
+              fontWeight: 500,
+              color: focusedField === 'pass' ? '#C0001A' : '#999',
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              marginBottom: 8,
+              transition: 'color 0.3s',
+            }}>
+              Password
+            </label>
+            <input
+              className="login-field"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              onFocus={() => setFocusedField('pass')}
+              onBlur={() => setFocusedField(null)}
+              placeholder="••••••••"
+              required
+              autoComplete="current-password"
+            />
+          </div>
+
+          {erro && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              borderLeft: '2px solid #C0001A',
+              paddingLeft: 12,
+            }}>
+              <span style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 12,
+                color: '#C0001A',
+                fontWeight: 400,
+              }}>{erro}</span>
+            </div>
+          )}
+
+          <button type="submit" disabled={loading} className="login-btn">
+            {loading ? (
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                <div style={{ width: 12, height: 12, border: '1.5px solid rgba(255,255,255,0.3)', borderTop: '1.5px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                A entrar
+              </span>
+            ) : (
+              'Entrar'
+            )}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <div style={{ position: 'absolute', bottom: 40, left: 56, right: 56 }}>
+          <div style={{ height: 1, background: '#e0deda', marginBottom: 20 }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 10,
+              color: '#999',
+              margin: 0,
+              letterSpacing: '0.05em',
+            }}>ATM Manutenção Total</p>
+            <p style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 10,
+              color: '#999',
+              margin: 0,
+              letterSpacing: '0.05em',
+            }}>Porto · 2026</p>
+          </div>
         </div>
       </div>
     </div>
