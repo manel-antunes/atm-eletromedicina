@@ -107,10 +107,10 @@ function App() {
       .catch(() => {})
       .finally(() => setVerificandoToken(false))
   }, [])
-
-  useEffect(() => {
-    if (!token || verificandoToken) return
-    setSincronizando(true)
+useEffect(() => {
+  if (!token || verificandoToken) return
+  setSincronizando(true)
+  setTimeout(() => {
     carregarEquipamentos()
       .then(dados => {
         setErroBackend(false)
@@ -138,7 +138,8 @@ function App() {
       })
       .catch(() => setErroBackend(true))
       .finally(() => { setCarregando(false); setSincronizando(false) })
-  }, [token, verificandoToken])
+  }, 3000) // 3 segundos de delay artificial
+}, [token, verificandoToken])
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
@@ -192,8 +193,7 @@ function App() {
     )
   }
 
-  if (carregando) return <LoadingATM mensagem="A carregar equipamentos..." />
-
+  
   if (equipamentos.length === 0 && !erroBackend) {
     return (
       <>
@@ -220,7 +220,6 @@ function App() {
       case 'mapa':        return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       case 'preventivas': return <PlanoPreventivas />
       case 'qrcodes':     return <QRCodes equipamentos={equipamentos} />
-      case 'dashboard': return <Dashboard equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} loading={sincronizando} />
       default:            return null
     }
   }
