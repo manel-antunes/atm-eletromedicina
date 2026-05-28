@@ -4,10 +4,12 @@ import { differenceInDays, parse, isValid } from 'date-fns'
 import { useState, useRef, useEffect } from 'react'
 import GraficoCalibracoes from '../components/GraficoCalibracoes'
 import KpiCard from '../components/KpiCard'
+import { SkeletonKpis, SkeletonTabela, SkeletonLine } from '../components/Skeleton'
 
 interface Props {
   equipamentos: Equipamento[]
   onVerDetalhe: (eq: Equipamento) => void
+  loading?: boolean
 }
 
 function parseData(dataStr: string): Date | null {
@@ -78,7 +80,53 @@ function useIsMobile() {
   return isMobile
 }
 
-export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
+// Skeleton do gráfico
+function SkeletonGrafico() {
+  return (
+    <div style={{ background: '#0f172a', borderRadius: 20, padding: '20px 24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <SkeletonLine width={120} height={10} />
+          <SkeletonLine width={80} height={28} />
+          <SkeletonLine width={140} height={10} />
+        </div>
+        <div style={{ display: 'flex', gap: 16 }}>
+          {[1,2,3,4].map(i => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+              <SkeletonLine width={40} height={9} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12, display: 'flex', alignItems: 'flex-end', padding: '16px', gap: 4, overflow: 'hidden' }}>
+        {Array.from({ length: 14 }).map((_, i) => (
+          <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 4, height: `${20 + Math.random() * 60}%`, animation: 'skeleton-shimmer 1.4s ease-in-out infinite', backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.06) 75%)', backgroundSize: '200% 100%' }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Skeleton alertas
+function SkeletonAlertas() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {[1,2,3].map(i => (
+        <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #f1f5f9' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f1f5f9', flexShrink: 0 }} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <SkeletonLine width="50%" height={12} />
+            <SkeletonLine width="70%" height={10} />
+          </div>
+          <SkeletonLine width={60} height={22} radius={99} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function Dashboard({ equipamentos, onVerDetalhe, loading = false }: Props) {
   const isMobile = useIsMobile()
   const estados = equipamentos.map(eq => ({ eq, estado: getEstado(eq) }))
   const vencidos = estados.filter(e => e.estado === 'vencido')
@@ -136,10 +184,34 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
     eq.numeroSAP.includes(pesquisaTabela)
   )
 
+  // SKELETON — mostra enquanto loading
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <style>{`
+          @keyframes skeleton-shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `}</style>
+        <SkeletonKpis />
+        <SkeletonGrafico />
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <SkeletonLine width={100} height={10} />
+            <SkeletonLine width={24} height={20} radius={99} />
+          </div>
+          <SkeletonAlertas />
+        </div>
+        <SkeletonTabela linhas={5} />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
 
-      {/* KPIs — 2 colunas mobile, 4 desktop */}
+      {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard
           label="Total" valor={equipamentos.length} sub="equipamentos"
@@ -424,8 +496,6 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Unidade de Eletromedicina</h2>
         </div>
         <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-
-          {/* Card estatísticas */}
           <div className="flex-shrink-0 w-64 rounded-2xl overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ background: '#C0001A', padding: '12px 16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Estatísticas</p>
@@ -433,11 +503,11 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
             </div>
             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'Total equipamentos',   valor: equipamentos.length,                                                cor: '#38bdf8' },
-                { label: 'Taxa de conformidade', valor: `${Math.round((emDia.length / equipamentos.length) * 100)}%`,     cor: '#4ade80' },
-                { label: 'Calibrações vencidas', valor: vencidos.length,                                                   cor: '#f87171' },
-                { label: 'A vencer em 30 dias',  valor: urgentes.length,                                                   cor: '#fb923c' },
-                { label: 'A vencer em 60 dias',  valor: avisos.length,                                                     cor: '#facc15' },
+                { label: 'Total equipamentos',   valor: equipamentos.length,                                             cor: '#38bdf8' },
+                { label: 'Taxa de conformidade', valor: `${Math.round((emDia.length / equipamentos.length) * 100)}%`,  cor: '#4ade80' },
+                { label: 'Calibrações vencidas', valor: vencidos.length,                                                cor: '#f87171' },
+                { label: 'A vencer em 30 dias',  valor: urgentes.length,                                                cor: '#fb923c' },
+                { label: 'A vencer em 60 dias',  valor: avisos.length,                                                  cor: '#facc15' },
               ].map(stat => (
                 <div key={stat.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{stat.label}</p>
@@ -446,8 +516,6 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
               ))}
             </div>
           </div>
-
-          {/* Cards por local */}
           {[
             { nome: 'Hospital CUF Porto',    sigla: 'HPRT',   morada: 'Estr. Circunvalação 14341, Porto', cor: '#3b82f6' },
             { nome: 'Hospital CUF Trindade', sigla: 'HTRD',   morada: 'R. da Trindade, Porto',            cor: '#8b5cf6' },
@@ -496,8 +564,6 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
               </div>
             )
           })}
-
-          {/* Card equipa */}
           <div className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white">
             <div style={{ background: 'linear-gradient(135deg, #C0001A 0%, #7f1d1d 100%)', padding: '12px 16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Equipa</p>
@@ -522,8 +588,6 @@ export default function Dashboard({ equipamentos, onVerDetalhe }: Props) {
               ))}
             </div>
           </div>
-
-          {/* Card sistema */}
           <div className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sistema</p>

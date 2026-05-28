@@ -220,6 +220,7 @@ function App() {
       case 'mapa':        return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       case 'preventivas': return <PlanoPreventivas />
       case 'qrcodes':     return <QRCodes equipamentos={equipamentos} />
+      case 'dashboard': return <Dashboard equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} loading={sincronizando} />
       default:            return null
     }
   }
