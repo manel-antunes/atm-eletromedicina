@@ -107,10 +107,10 @@ function App() {
       .catch(() => {})
       .finally(() => setVerificandoToken(false))
   }, [])
-useEffect(() => {
-  if (!token || verificandoToken) return
-  setSincronizando(true)
-  setTimeout(() => {
+
+  useEffect(() => {
+    if (!token || verificandoToken) return
+    setSincronizando(true)
     carregarEquipamentos()
       .then(dados => {
         setErroBackend(false)
@@ -138,8 +138,7 @@ useEffect(() => {
       })
       .catch(() => setErroBackend(true))
       .finally(() => { setCarregando(false); setSincronizando(false) })
-  }, 3000) // 3 segundos de delay artificial
-}, [token, verificandoToken])
+  }, [token, verificandoToken])
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
@@ -193,7 +192,8 @@ useEffect(() => {
     )
   }
 
-  
+  if (carregando) return <LoadingATM mensagem="A carregar equipamentos..." />
+
   if (equipamentos.length === 0 && !erroBackend) {
     return (
       <>
