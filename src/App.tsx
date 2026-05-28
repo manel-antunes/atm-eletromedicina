@@ -5,6 +5,7 @@ import SidebarCollapsible from './components/SidebarCollapsible'
 import BottomNav from './components/BottomNav'
 import CommandPalette from './components/CommandPalette'
 import Topbar from './components/Topbar'
+import PageTransition from './components/PageTransition'
 import Dashboard from './pages/Dashboard'
 import Calibracoes from './pages/Calibracoes'
 import Inventario from './pages/Inventario'
@@ -87,6 +88,8 @@ function App() {
   const [nomeUtilizador, setNomeUtilizador] = useState(localStorage.getItem('atm_nome') ?? '')
   const [verificandoToken, setVerificandoToken] = useState(true)
   const [commandPaletteAberta, setCommandPaletteAberta] = useState(false)
+  const [sincronizando, setSincronizando] = useState(false)
+  const [ultimaSync, setUltimaSync] = useState<Date | null>(null)
   const { toasts, mostrar, remover } = useToast()
   const isMobile = useIsMobile()
 
@@ -107,9 +110,11 @@ function App() {
 
   useEffect(() => {
     if (!token || verificandoToken) return
+    setSincronizando(true)
     carregarEquipamentos()
       .then(dados => {
         setErroBackend(false)
+        setUltimaSync(new Date())
         if (dados && dados.length > 0) {
           const mapped = dados.map((row: Record<string, string>, i: number) => ({
             id: i + 1,
@@ -132,10 +137,9 @@ function App() {
         }
       })
       .catch(() => setErroBackend(true))
-      .finally(() => setCarregando(false))
+      .finally(() => { setCarregando(false); setSincronizando(false) })
   }, [token, verificandoToken])
 
-  // Ctrl+K para command palette
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -235,7 +239,6 @@ function App() {
         <ModoApresentacao equipamentos={equipamentos} onFechar={() => setApresentacao(false)} />
       )}
 
-      {/* Command Palette */}
       <CommandPalette
         aberto={commandPaletteAberta}
         onFechar={() => setCommandPaletteAberta(false)}
@@ -267,13 +270,18 @@ function App() {
             onApresentacao={() => setApresentacao(true)}
             onMenuToggle={() => setCommandPaletteAberta(true)}
             isMobile={isMobile}
+            sincronizando={sincronizando}
+            ultimaSync={ultimaSync}
+            erroBackend={erroBackend}
           />
           <main style={{
             flex: 1,
             overflow: isCalendario ? 'hidden' : 'auto',
             padding: isCalendario ? 0 : (isMobile ? '12px 12px 80px' : '20px'),
           }}>
-            {renderPagina()}
+            <PageTransition paginaKey={equipDetalhe ? `detalhe-${equipDetalhe.id}` : paginaAtiva}>
+              {renderPagina()}
+            </PageTransition>
           </main>
         </div>
       </div>
