@@ -119,15 +119,6 @@ export default function Login({ onLogin }: Props) {
           background: 'linear-gradient(160deg, #0A0F1E 0%, #1a0509 60%, #C0001A 100%)',
         }} />
 
-        {/* Grid ECG decorativo */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.06 }} xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#fff" strokeWidth="0.5"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
 
         {/* Número editorial gigante */}
         <div style={{
@@ -138,7 +129,7 @@ export default function Login({ onLogin }: Props) {
           fontFamily: "'Cormorant Garamond', serif",
           fontSize: 'clamp(120px, 20vw, 280px)',
           fontWeight: 300,
-          color: 'rgba(255,255,255,0.55)',
+          color: 'rgba(255,255,255,0.35)',
           lineHeight: 1,
           whiteSpace: 'nowrap',
           letterSpacing: '-0.05em',
@@ -148,27 +139,7 @@ export default function Login({ onLogin }: Props) {
           ATM
         </div>
 
-        {/* Linha ECG decorativa */}
-        <svg
-          viewBox="0 0 800 120"
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: 0,
-            right: 0,
-            width: '100%',
-            transform: 'translateY(-50%)',
-            opacity: 0.15,
-          }}
-          preserveAspectRatio="none"
-        >
-          <polyline
-            points="0,60 80,60 100,60 110,20 120,100 130,10 140,110 150,60 160,60 240,60 260,60 270,45 280,75 290,60 370,60 390,60 400,20 410,100 420,10 430,110 440,60 450,60 530,60 550,60 560,45 570,75 580,60 660,60 680,60 690,20 700,100 710,10 720,110 730,60 740,60 800,60"
-            fill="none"
-            stroke="#fff"
-            strokeWidth="1.5"
-          />
-        </svg>
+
 
         {/* Badges flutuantes */}
         <div style={{
