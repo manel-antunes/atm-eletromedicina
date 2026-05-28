@@ -14,11 +14,25 @@ export default function Login({ onLogin }: Props) {
   const [focusedField, setFocusedField] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 100)
-    return () => clearTimeout(t)
-  }, [])
+useEffect(() => {
+  const t = setTimeout(() => setMounted(true), 100)
 
+  // Parallax no ATM ao mover o rato
+  function handleMouse(e: MouseEvent) {
+    const x = (e.clientX / window.innerWidth - 0.5) * 30
+    const y = (e.clientY / window.innerHeight - 0.5) * 20
+    const el = document.getElementById('atm-gigante')
+    if (el) el.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`
+    const ecg = document.getElementById('ecg-line')
+    if (ecg) ecg.style.transform = `translateY(calc(-50% + ${y * 0.5}px))`
+  }
+
+  window.addEventListener('mousemove', handleMouse)
+  return () => {
+    clearTimeout(t)
+    window.removeEventListener('mousemove', handleMouse)
+  }
+}, [])
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -102,6 +116,15 @@ export default function Login({ onLogin }: Props) {
         }
         .login-btn:hover:not(:disabled) { background: #C0001A; }
         .login-btn:disabled { opacity: 0.4; cursor: default; }
+        @keyframes bg-pulse {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50%       { opacity: 1; filter: brightness(1.15); }
+}
+
+@keyframes ecg-draw {
+  from { stroke-dashoffset: 2000; }
+  to   { stroke-dashoffset: 0; }
+}
       `}</style>
 
       {/* Painel esquerdo — imagem editorial */}
@@ -114,32 +137,73 @@ export default function Login({ onLogin }: Props) {
         padding: 48,
       }}>
         {/* Fundo com padrão geométrico médico */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(160deg, #0A0F1E 0%, #1a0509 60%, #C0001A 100%)',
-        }} />
-
+   <div
+  id="bg-gradient"
+  style={{
+    position: 'absolute', inset: 0,
+    background: 'linear-gradient(160deg, #0A0F1E 0%, #1a0509 60%, #C0001A 100%)',
+    animation: 'bg-pulse 8s ease-in-out infinite',
+  }}
+/>
+        {/* Grid ECG decorativo */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.06 }} xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#fff" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
 
         {/* Número editorial gigante */}
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          fontFamily: "'Cormorant Garamond', serif",
-          fontSize: 'clamp(120px, 20vw, 280px)',
-          fontWeight: 300,
-          color: 'rgba(255,255,255,0.35)',
-          lineHeight: 1,
-          whiteSpace: 'nowrap',
-          letterSpacing: '-0.05em',
-          userSelect: 'none',
-          pointerEvents: 'none',
-        }}>
-          ATM
-        </div>
+<div
+  id="atm-gigante"
+  style={{
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    fontFamily: "'Cormorant Garamond', serif",
+    fontSize: 'clamp(120px, 20vw, 280px)',
+    fontWeight: 300,
+    color: 'rgba(255,255,255,0.12)',
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+    letterSpacing: '-0.05em',
+    userSelect: 'none',
+    pointerEvents: 'none',
+    transition: 'transform 0.15s ease-out',  // ← adiciona isto
+  }}
+>
+  ATM
+</div>
 
-
+        {/* Linha ECG decorativa */}
+     <svg
+  id="ecg-line"
+  viewBox="0 0 800 120"
+  style={{
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    width: '100%',
+    transform: 'translateY(-50%)',
+    opacity: 0.15,
+    transition: 'transform 0.2s ease-out',  // ← adiciona isto
+  }}
+          preserveAspectRatio="none"
+        >
+          <polyline
+            points="0,60 80,60 100,60 110,20 120,100 130,10 140,110 150,60 160,60 240,60 260,60 270,45 280,75 290,60 370,60 390,60 400,20 410,100 420,10 430,110 440,60 450,60 530,60 550,60 560,45 570,75 580,60 660,60 680,60 690,20 700,100 710,10 720,110 730,60 740,60 800,60"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="1.5"
+            strokeDasharray="2000"
+strokeDashoffset="0"
+style={{ animation: 'ecg-draw 3s ease-out forwards' }}
+          />
+        </svg>
 
         {/* Badges flutuantes */}
         <div style={{
