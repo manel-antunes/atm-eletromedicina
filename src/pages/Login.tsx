@@ -138,7 +138,7 @@ export default function Login({ onLogin }: Props) {
           fontFamily: "'Cormorant Garamond', serif",
           fontSize: 'clamp(120px, 20vw, 280px)',
           fontWeight: 300,
-          color: 'rgba(255,255,255,0.04)',
+          color: 'rgba(255,255,255,0.55)',
           lineHeight: 1,
           whiteSpace: 'nowrap',
           letterSpacing: '-0.05em',
