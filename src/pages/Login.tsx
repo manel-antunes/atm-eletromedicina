@@ -289,7 +289,7 @@ export default function Login({ onLogin }: Props) {
         ref={leftPanelRef}
         className="left-panel"
         style={{
-          flex: 1,
+   
           position: 'relative',
           overflow: 'hidden',
           display: 'flex',
