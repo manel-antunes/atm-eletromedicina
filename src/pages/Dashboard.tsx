@@ -83,7 +83,7 @@ function useIsMobile() {
 // Skeleton do gráfico
 function SkeletonGrafico() {
   return (
-    <div style={{ background: '#0f172a', borderRadius: 20, padding: '20px 24px' }}>
+    <div style={{ background: '#0f172a', padding: '20px 24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <SkeletonLine width={120} height={10} />
@@ -99,9 +99,9 @@ function SkeletonGrafico() {
           ))}
         </div>
       </div>
-      <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12, display: 'flex', alignItems: 'flex-end', padding: '16px', gap: 4, overflow: 'hidden' }}>
+      <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'flex-end', padding: '16px', gap: 4, overflow: 'hidden' }}>
         {Array.from({ length: 14 }).map((_, i) => (
-          <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 4, height: `${20 + Math.random() * 60}%`, animation: 'skeleton-shimmer 1.4s ease-in-out infinite', backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.06) 75%)', backgroundSize: '200% 100%' }} />
+          <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.06)', height: `${20 + Math.random() * 60}%`, animation: 'skeleton-shimmer 1.4s ease-in-out infinite', backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.06) 75%)', backgroundSize: '200% 100%' }} />
         ))}
       </div>
     </div>
@@ -113,13 +113,13 @@ function SkeletonAlertas() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {[1,2,3].map(i => (
-        <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #f1f5f9' }}>
+        <div key={i} style={{ background: '#fff', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #f1f5f9' }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f1f5f9', flexShrink: 0 }} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <SkeletonLine width="50%" height={12} />
             <SkeletonLine width="70%" height={10} />
           </div>
-          <SkeletonLine width={60} height={22} radius={99} />
+          <SkeletonLine width={60} height={22} />
         </div>
       ))}
     </div>
@@ -134,6 +134,15 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
   const avisos   = estados.filter(e => e.estado === 'aviso')
   const emDia    = estados.filter(e => e.estado === 'ok')
   const alertas  = [...vencidos, ...urgentes, ...avisos]
+
+  const cedenciasAtrasadas = (() => {
+    try {
+      const ceds = JSON.parse(localStorage.getItem('atm_cedencias') ?? '[]')
+      return ceds.filter((c: { ativa: boolean; dataRetornoPrevista: string }) =>
+        c.ativa && new Date(c.dataRetornoPrevista) < new Date()
+      )
+    } catch { return [] }
+  })()
 
   const [vista, setVista] = useState<'tabela' | 'cards'>('cards')
   const [cardExpandido, setCardExpandido] = useState<number | null>(null)
@@ -256,32 +265,22 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
       </div>
 
       {/* Alertas cedências atrasadas */}
-      {(() => {
-        try {
-          const ceds = JSON.parse(localStorage.getItem('atm_cedencias') ?? '[]')
-          const atrasadas = ceds.filter((c: { ativa: boolean; dataRetornoPrevista: string }) => {
-            if (!c.ativa) return false
-            return new Date(c.dataRetornoPrevista) < new Date()
-          })
-          if (atrasadas.length === 0) return null
-          return (
-            <div className="mb-2">
-              {atrasadas.map((c: { id: number; equipamentoNome: string; destino: string; dataRetornoPrevista: string }) => (
-                <div key={c.id} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f97316', flexShrink: 0 }} />
-                    <div>
-                      <p style={{ color: '#9a3412', fontSize: 13, fontWeight: 700 }}>{c.equipamentoNome}</p>
-                      <p style={{ color: '#ea580c', fontSize: 11, marginTop: 2, opacity: 0.7 }}>Cedido a {c.destino} — retorno: {new Date(c.dataRetornoPrevista).toLocaleDateString('pt-PT')}</p>
-                    </div>
-                  </div>
-                  <span style={{ background: '#ffedd5', color: '#9a3412', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>Retorno atrasado</span>
+      {cedenciasAtrasadas.length > 0 && (
+        <div className="mb-2">
+          {cedenciasAtrasadas.map((c: { id: number; equipamentoNome: string; destino: string; dataRetornoPrevista: string }) => (
+            <div key={c.id} style={{ background: '#fff7ed', border: '1px solid #fed7aa', padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f97316', flexShrink: 0 }} />
+                <div>
+                  <p style={{ color: '#9a3412', fontSize: 13, fontWeight: 700 }}>{c.equipamentoNome}</p>
+                  <p style={{ color: '#ea580c', fontSize: 11, marginTop: 2, opacity: 0.7 }}>Cedido a {c.destino} — retorno: {new Date(c.dataRetornoPrevista).toLocaleDateString('pt-PT')}</p>
                 </div>
-              ))}
+              </div>
+              <span style={{ background: '#ffedd5', color: '#9a3412', fontSize: 10, fontWeight: 700, padding: '3px 10px' }}>Retorno atrasado</span>
             </div>
-          )
-        } catch { return null }
-      })()}
+          ))}
+        </div>
+      )}
 
       {/* Alertas */}
       {alertas.length > 0 && (
@@ -305,7 +304,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
                   key={eq.id}
                   className={`anim-fade-left delay-${Math.min(index + 1, 8)}`}
                   onClick={() => onVerDetalhe(eq)}
-                  style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 12, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', gap: 8, flexWrap: isMobile ? 'wrap' : 'nowrap' }}
+                  style={{ background: c.bg, border: `1px solid ${c.border}`, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', gap: 8, flexWrap: isMobile ? 'wrap' : 'nowrap' }}
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateX(4px)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)' }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateX(0)'; e.currentTarget.style.boxShadow = 'none' }}
                 >
@@ -323,7 +322,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
                         <p style={{ color: c.sub, fontSize: 11, marginTop: 2, opacity: 0.7 }}>Próxima: {formatarData(eq.dataCalibracao)}</p>
                       </div>
                     )}
-                    <span style={{ background: c.badge.bg, color: c.badge.color, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                    <span style={{ background: c.badge.bg, color: c.badge.color, fontSize: 10, fontWeight: 700, padding: '3px 10px', whiteSpace: 'nowrap' }}>
                       {cfg.label}
                     </span>
                   </div>
@@ -532,7 +531,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
                 <div style={{ background: local.cor, padding: '12px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <p style={{ color: '#fff', fontSize: 12, fontWeight: 700 }}>{local.nome}</p>
-                    <span style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>{local.sigla}</span>
+                    <span style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 8px' }}>{local.sigla}</span>
                   </div>
                   <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, marginTop: 3 }}>{local.morada}</p>
                 </div>
@@ -546,16 +545,16 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
                       <span style={{ fontSize: 10, color: '#94a3b8' }}>Conformidade</span>
                       <span style={{ fontSize: 10, fontWeight: 700, color: taxa >= 80 ? '#22c55e' : taxa >= 60 ? '#eab308' : '#ef4444' }}>{taxa}%</span>
                     </div>
-                    <div style={{ height: 4, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${taxa}%`, background: taxa >= 80 ? '#22c55e' : taxa >= 60 ? '#eab308' : '#ef4444', borderRadius: 99 }} />
+                    <div style={{ height: 4, background: '#f1f5f9', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${taxa}%`, background: taxa >= 80 ? '#22c55e' : taxa >= 60 ? '#eab308' : '#ef4444' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 8, padding: '6px 8px', textAlign: 'center' }}>
+                    <div style={{ flex: 1, background: '#f0fdf4', padding: '6px 8px', textAlign: 'center' }}>
                       <p style={{ fontSize: 14, fontWeight: 800, color: '#16a34a', fontFamily: 'monospace' }}>{emDiaLocal}</p>
                       <p style={{ fontSize: 9, color: '#16a34a', textTransform: 'uppercase' }}>Em dia</p>
                     </div>
-                    <div style={{ flex: 1, background: vencidosLocal > 0 ? '#fef2f2' : '#f8fafc', borderRadius: 8, padding: '6px 8px', textAlign: 'center' }}>
+                    <div style={{ flex: 1, background: vencidosLocal > 0 ? '#fef2f2' : '#f8fafc', padding: '6px 8px', textAlign: 'center' }}>
                       <p style={{ fontSize: 14, fontWeight: 800, color: vencidosLocal > 0 ? '#dc2626' : '#94a3b8', fontFamily: 'monospace' }}>{vencidosLocal}</p>
                       <p style={{ fontSize: 9, color: vencidosLocal > 0 ? '#dc2626' : '#94a3b8', textTransform: 'uppercase' }}>Vencidas</p>
                     </div>
