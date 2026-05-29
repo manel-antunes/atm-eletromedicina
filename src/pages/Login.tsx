@@ -195,10 +195,14 @@ export default function Login({ onLogin }: Props) {
           0%, 100% { filter: brightness(1); }
           50%       { filter: brightness(1.15); }
         }
-        @keyframes ecg-scroll {
-          from { stroke-dashoffset: 0; }
-          to   { stroke-dashoffset: -2400; }
-        }
+    @keyframes ecg-draw-atm {
+  from { stroke-dashoffset: 3200; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes ecg-scroll-atm {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.33%); }
+}
 
         /* 7. Botão fill da esquerda para a direita */
         .login-btn {
@@ -367,43 +371,82 @@ export default function Login({ onLogin }: Props) {
         </div>
 
         {/* 3. ECG — scroll contínuo */}
-        <svg
-          id="ecg-line"
-          viewBox="0 0 800 120"
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: 0,
-            width: '100%',
-            transform: 'translateY(-50%)',
-            opacity: 0.18,
-            transition: 'transform 0.2s ease-out',
-            overflow: 'visible',
-          }}
-          preserveAspectRatio="none"
-        >
-          {/* Linha base longa (3× para o scroll contínuo funcionar) */}
-          <polyline
-            points="
-              0,60 80,60 100,60 110,20 120,100 130,10 140,110 150,60 200,60
-              240,60 260,60 270,45 280,75 290,60 340,60
-              400,60 410,20 420,100 430,10 440,110 450,60 500,60
-              540,60 560,45 570,75 580,60 640,60
-              680,60 690,20 700,100 710,10 720,110 730,60 800,60
-              880,60 890,20 900,100 910,10 920,110 930,60 980,60
-              1020,60 1030,45 1040,75 1050,60 1100,60
-              1160,60 1170,20 1180,100 1190,10 1200,110 1210,60 1260,60
-              1340,60 1360,45 1370,75 1380,60 1440,60
-              1480,60 1490,20 1500,100 1510,10 1520,110 1530,60 1600,60
-            "
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="1.5"
-            strokeDasharray="2400"
-            strokeDashoffset="0"
-            style={{ animation: 'ecg-scroll 6s linear infinite' }}
-          />
-        </svg>
+{/* 3. ECG — desenha ATM depois continua como ECG */}
+<svg
+  id="ecg-line"
+  viewBox="0 0 1200 120"
+  style={{
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    width: '100%',
+    transform: 'translateY(-50%)',
+    opacity: 0.22,
+    transition: 'transform 0.2s ease-out',
+    overflow: 'visible',
+  }}
+  preserveAspectRatio="none"
+>
+  <path
+    fill="none"
+    stroke="#ffffff"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeDasharray="3200"
+    strokeDashoffset="3200"
+    style={{ animation: 'ecg-draw-atm 4s ease-out forwards, ecg-scroll-atm 5s linear 4.2s infinite' }}
+    d="
+      M0,60
+      L30,60
+
+      L40,60 L50,20 L55,100 L58,5 L62,115 L65,60
+      L75,60 L80,50 L85,70 L90,60
+      L100,60 L108,60 L110,20 L112,100 L114,5 L116,115 L118,60
+      L125,60 L128,40 L131,80 L134,60
+      L140,60 L148,60 L150,20 L152,100 L154,5 L156,115 L158,60
+      L165,60
+
+      L180,60
+
+      L195,60 L200,20 L205,100 L208,5 L212,115 L215,60
+      L220,60
+
+      L230,60 L232,55 L238,65 L244,60
+      L250,60
+
+      L260,60 L265,20 L270,100 L273,5 L277,115 L280,60
+      L285,60
+
+      L295,60 L297,50 L303,70 L309,60
+      L315,60 L320,20 L325,100 L328,5 L332,115 L335,60
+      L345,60
+
+      L360,60
+
+      L380,60 L385,20 L390,100 L393,5 L397,115 L400,60
+      L410,60 L415,45 L420,75 L425,60
+      L435,60 L440,20 L445,100 L448,5 L452,115 L455,60
+      L465,60 L470,45 L475,75 L480,60
+      L490,60 L495,20 L500,100 L503,5 L507,115 L510,60
+      L520,60
+
+      L540,60
+      L560,60 L565,20 L570,100 L573,5 L577,115 L580,60
+      L590,60 L595,45 L600,75 L605,60
+      L615,60 L620,20 L625,100 L628,5 L632,115 L635,60
+      L650,60
+
+      L670,60
+      L690,60 L695,20 L700,100 L703,5 L707,115 L710,60
+      L720,60 L725,45 L730,75 L735,60
+      L745,60 L750,20 L755,100 L758,5 L762,115 L765,60
+      L780,60
+
+      L800,60
+    "
+  />
+</svg>
 
         {/* Badges */}
         <div style={{ position: 'absolute', top: 48, left: 48, opacity: mounted ? 1 : 0, transition: 'opacity 0.8s ease 0.3s' }}>
