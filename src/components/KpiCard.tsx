@@ -23,10 +23,10 @@ export default function KpiCard({ label, valor, sub, icon, bg, border, iconBg, i
   return (
     <div
       className={`anim-fade-up ${delay}`}
-      style={{ background: bg, border: `1px solid ${border}`, borderRadius: 16, padding: '18px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', position: 'relative', overflow: 'hidden' }}
+      style={{ background: bg, border: `1px solid ${border}`, padding: '18px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', position: 'relative', overflow: 'hidden' }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <div style={{ background: iconBg, borderRadius: 10, padding: 8, color: iconCor, display: 'flex' }}>
+        <div style={{ background: iconBg, padding: 8, color: iconCor, display: 'flex' }}>
           {icon}
         </div>
         <span style={{ color: labelCor, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -41,13 +41,12 @@ export default function KpiCard({ label, valor, sub, icon, bg, border, iconBg, i
 
       {/* Barra de progresso */}
       {progresso !== undefined && (
-        <div style={{ marginTop: 12, height: 3, background: 'rgba(0,0,0,0.06)', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{ marginTop: 12, height: 3, background: 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
           <div
             style={{
               height: '100%',
               width: `${progresso}%`,
               background: progressoCor ?? valCor,
-              borderRadius: 99,
               transition: 'width 1s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           />

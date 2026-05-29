@@ -287,7 +287,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
         <div className="anim-fade-up delay-6">
           <div className="flex items-center gap-2 mb-3">
             <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Alertas ativos</h2>
-            <span className="bg-red-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{alertas.length}</span>
+            <span className="bg-red-500 text-white text-xs font-black px-2 py-0.5">{alertas.length}</span>
           </div>
           <div className="space-y-2">
             {alertas.map(({ eq, estado }, index) => {
@@ -337,20 +337,20 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
       <div className="anim-fade-up delay-7">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Todos os equipamentos</h2>
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-gray-100 p-1">
             {!isMobile && (
-              <button onClick={() => setVista('tabela')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'tabela' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+              <button onClick={() => setVista('tabela')} className={`px-3 py-1.5 text-xs font-semibold transition-all ${vista === 'tabela' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
                 ☰ Tabela
               </button>
             )}
-            <button onClick={() => setVista('cards')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'cards' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+            <button onClick={() => setVista('cards')} className={`px-3 py-1.5 text-xs font-semibold transition-all ${vista === 'cards' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
               ⊞ Cards
             </button>
           </div>
         </div>
 
         {vista === 'tabela' && !isMobile ? (
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="bg-white border border-gray-100 overflow-hidden shadow-sm">
             <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
               <Search size={13} className="text-gray-400 flex-shrink-0" />
               <input
@@ -408,7 +408,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
                       </td>
                       <td className="px-4 py-2.5 text-xs text-gray-500">{eq.localizacao || '—'}</td>
                       <td className="px-4 py-2.5">
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>{cfg.label}</span>
+                        <span className={`text-xs font-bold px-2.5 py-1 ${cfg.badge}`}>{cfg.label}</span>
                       </td>
                     </tr>
                   )
@@ -435,12 +435,12 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
               const expandido = cardExpandido === eq.id
               return (
                 <div key={eq.id} onClick={() => setCardExpandido(expandido ? null : eq.id)}
-                  className={`bg-white rounded-2xl border cursor-pointer transition-all duration-300 overflow-hidden ${cfg.border} ${expandido ? 'shadow-lg ring-1 ring-gray-200' : 'hover:shadow-md'}`}>
+                  className={`bg-white border cursor-pointer transition-all duration-300 overflow-hidden ${cfg.border} ${expandido ? 'shadow-lg ring-1 ring-gray-200' : 'hover:shadow-md'}`}>
                   <div className={`h-1 w-full ${cfg.dot}`} />
                   <div className="px-4 py-3 flex items-center gap-3">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot} ${estado === 'vencido' || estado === 'urgente' ? 'dot-piscar' : ''}`} />
                     <p className="text-xs font-bold text-gray-800 flex-1 truncate">{eq.descricao}</p>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${cfg.badge}`}>{cfg.label}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 flex-shrink-0 ${cfg.badge}`}>{cfg.label}</span>
                     <span style={{ fontSize: 9, color: '#cbd5e1', display: 'inline-block', transform: expandido ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', flexShrink: 0 }}>▼</span>
                   </div>
                   <div style={{ maxHeight: expandido ? 280 : 0, overflow: 'hidden', transition: 'max-height 0.35s cubic-bezier(0.16,1,0.3,1)' }}>
@@ -475,13 +475,13 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
               )
             })}
             {!tabelaExpandida && estados.length > 6 && (
-              <div onClick={() => setTabelaExpandida(true)} className="bg-gray-50 rounded-2xl border border-dashed border-gray-200 cursor-pointer hover:bg-gray-100 transition-all flex flex-col items-center justify-center gap-2 min-h-24">
+              <div onClick={() => setTabelaExpandida(true)} className="bg-gray-50 border border-dashed border-gray-200 cursor-pointer hover:bg-gray-100 transition-all flex flex-col items-center justify-center gap-2 min-h-24">
                 <p className="text-xs font-bold text-gray-400">+{estados.length - 6} equipamentos</p>
                 <p className="text-xs text-gray-300">Clica para ver todos</p>
               </div>
             )}
             {tabelaExpandida && (
-              <button onClick={() => setTabelaExpandida(false)} className="col-span-full py-3 text-xs font-semibold text-gray-500 hover:text-gray-700 bg-white rounded-2xl border border-gray-100 transition-all">
+              <button onClick={() => setTabelaExpandida(false)} className="col-span-full py-3 text-xs font-semibold text-gray-500 hover:text-gray-700 bg-white border border-gray-100 transition-all">
                 Recolher ↑
               </button>
             )}
@@ -495,7 +495,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Unidade de Eletromedicina</h2>
         </div>
         <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <div className="flex-shrink-0 w-64 rounded-2xl overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+          <div className="flex-shrink-0 w-64 overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ background: '#C0001A', padding: '12px 16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Estatísticas</p>
               <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginTop: 2 }}>Resumo da Unidade</p>
@@ -527,7 +527,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
             const emDiaLocal = eqLocal.length - vencidosLocal
             const taxa = eqLocal.length > 0 ? Math.round((emDiaLocal / eqLocal.length) * 100) : 0
             return (
-              <div key={local.sigla} className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white">
+              <div key={local.sigla} className="flex-shrink-0 w-56 overflow-hidden shadow-sm border border-gray-100 bg-white">
                 <div style={{ background: local.cor, padding: '12px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <p style={{ color: '#fff', fontSize: 12, fontWeight: 700 }}>{local.nome}</p>
@@ -563,7 +563,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
               </div>
             )
           })}
-          <div className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white">
+          <div className="flex-shrink-0 w-56 overflow-hidden shadow-sm border border-gray-100 bg-white">
             <div style={{ background: 'linear-gradient(135deg, #C0001A 0%, #7f1d1d 100%)', padding: '12px 16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Equipa</p>
               <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginTop: 2 }}>Eletromedicina ATM</p>
@@ -587,7 +587,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
               ))}
             </div>
           </div>
-          <div className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+          <div className="flex-shrink-0 w-56 overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sistema</p>
               <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginTop: 2 }}>ATM Eletromedicina</p>
