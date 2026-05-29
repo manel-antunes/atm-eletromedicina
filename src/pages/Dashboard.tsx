@@ -63,12 +63,11 @@ function getDiasTexto(eq: Equipamento): string {
   return `Próxima: ${proxima.toLocaleDateString('pt-PT')}`
 }
 
-// Cores editoriais — fundo escuro, sem pastéis
 const estadoConfig = {
-  vencido: { label: 'Vencida',  dotColor: '#ef4444', badgeBg: 'rgba(192,0,26,0.15)', badgeColor: '#ff6b6b', borderColor: 'rgba(192,0,26,0.25)', rowBg: 'rgba(192,0,26,0.05)' },
-  urgente: { label: 'Urgente',  dotColor: '#f97316', badgeBg: 'rgba(249,115,22,0.15)', badgeColor: '#fb923c', borderColor: 'rgba(249,115,22,0.25)', rowBg: 'rgba(249,115,22,0.04)' },
-  aviso:   { label: 'Em breve', dotColor: '#eab308', badgeBg: 'rgba(234,179,8,0.15)', badgeColor: '#fbbf24', borderColor: 'rgba(234,179,8,0.25)', rowBg: 'rgba(234,179,8,0.04)' },
-  ok:      { label: 'Em dia',   dotColor: '#22c55e', badgeBg: 'rgba(34,197,94,0.15)', badgeColor: '#4ade80', borderColor: 'rgba(34,197,94,0.2)', rowBg: 'transparent' },
+  vencido: { label: 'Vencida',  bg: 'bg-red-50',    text: 'text-red-700',    border: 'border-red-200',    dot: 'bg-red-500',    badge: 'bg-red-100 text-red-700',    dotColor: '#ef4444' },
+  urgente: { label: 'Urgente',  bg: 'bg-orange-50',  text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500', badge: 'bg-orange-100 text-orange-700', dotColor: '#f97316' },
+  aviso:   { label: 'Em breve', bg: 'bg-yellow-50',  text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-400', badge: 'bg-yellow-100 text-yellow-700', dotColor: '#eab308' },
+  ok:      { label: 'Em dia',   bg: 'bg-green-50',   text: 'text-green-700',  border: 'border-green-200',  dot: 'bg-green-500',  badge: 'bg-green-100 text-green-700',  dotColor: '#22c55e' },
 }
 
 function useIsMobile() {
@@ -81,6 +80,7 @@ function useIsMobile() {
   return isMobile
 }
 
+// Skeleton do gráfico
 function SkeletonGrafico() {
   return (
     <div style={{ background: '#0f172a', borderRadius: 20, padding: '20px 24px' }}>
@@ -99,17 +99,22 @@ function SkeletonGrafico() {
           ))}
         </div>
       </div>
-      <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12 }} />
+      <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12, display: 'flex', alignItems: 'flex-end', padding: '16px', gap: 4, overflow: 'hidden' }}>
+        {Array.from({ length: 14 }).map((_, i) => (
+          <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 4, height: `${20 + Math.random() * 60}%`, animation: 'skeleton-shimmer 1.4s ease-in-out infinite', backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.06) 75%)', backgroundSize: '200% 100%' }} />
+        ))}
+      </div>
     </div>
   )
 }
 
+// Skeleton alertas
 function SkeletonAlertas() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {[1,2,3].map(i => (
-        <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+        <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #f1f5f9' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f1f5f9', flexShrink: 0 }} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <SkeletonLine width="50%" height={12} />
             <SkeletonLine width="70%" height={10} />
@@ -117,38 +122,6 @@ function SkeletonAlertas() {
           <SkeletonLine width={60} height={22} radius={99} />
         </div>
       ))}
-    </div>
-  )
-}
-
-// Label de secção — estilo editorial
-function SectionLabel({ children, count }: { children: React.ReactNode; count?: number }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-      <span style={{
-        fontFamily: "'Inter', sans-serif",
-        fontSize: 9,
-        fontWeight: 500,
-        color: 'rgba(255,255,255,0.3)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.22em',
-      }}>
-        {children}
-      </span>
-      {count !== undefined && (
-        <span style={{
-          background: '#C0001A',
-          color: '#fff',
-          fontSize: 9,
-          fontWeight: 700,
-          padding: '2px 7px',
-          borderRadius: 99,
-          letterSpacing: '0.05em',
-        }}>
-          {count}
-        </span>
-      )}
-      <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.06)' }} />
     </div>
   )
 }
@@ -211,10 +184,16 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
     eq.numeroSAP.includes(pesquisaTabela)
   )
 
+  // SKELETON — mostra enquanto loading
   if (loading) {
     return (
       <div className="space-y-4">
-        <style>{`@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+        <style>{`
+          @keyframes skeleton-shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `}</style>
         <SkeletonKpis />
         <SkeletonGrafico />
         <div>
@@ -230,52 +209,53 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
   }
 
   return (
-    <div className="space-y-5">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400;500&display=swap');
-        .dash-row:hover { background: rgba(255,255,255,0.04) !important; }
-        .alerta-item:hover { transform: translateX(3px); }
-        .alerta-item { transition: transform 0.15s ease; }
-      `}</style>
+    <div className="space-y-4">
 
-      {/* ── KPIs ── */}
+      {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard
           label="Total" valor={equipamentos.length} sub="equipamentos"
           icon={<Package size={15} />}
-          estado="neutro" delay="delay-1"
-          progresso={100} progressoCor="rgba(255,255,255,0.2)"
+          bg="#f8fafc" border="#e2e8f0" iconBg="#e2e8f0" iconCor="#475569"
+          valCor="#0f172a" subCor="#94a3b8" labelCor="#64748b"
+          delay="delay-1" progresso={100} progressoCor="#94a3b8"
         />
         <KpiCard
           label="Em dia" valor={emDia.length}
           sub={`${Math.round((emDia.length / equipamentos.length) * 100)}% do total`}
           icon={<CheckCircle size={15} />}
-          estado="ok" delay="delay-2"
+          bg="#f0fdf4" border="#bbf7d0" iconBg="#dcfce7" iconCor="#16a34a"
+          valCor="#14532d" subCor="#4ade80" labelCor="#16a34a"
+          delay="delay-2"
           progresso={Math.round((emDia.length / equipamentos.length) * 100)}
-          progressoCor="#4ade80"
+          progressoCor="#22c55e"
         />
         <KpiCard
           label="Em breve" valor={avisos.length + urgentes.length} sub="próximos 60 dias"
           icon={<Clock size={15} />}
-          estado="aviso" delay="delay-3"
+          bg="#fffbeb" border="#fde68a" iconBg="#fef3c7" iconCor="#d97706"
+          valCor="#78350f" subCor="#f59e0b" labelCor="#d97706"
+          delay="delay-3"
           progresso={Math.round(((avisos.length + urgentes.length) / equipamentos.length) * 100)}
-          progressoCor="#fbbf24"
+          progressoCor="#f59e0b"
         />
         <KpiCard
           label="Vencidas" valor={vencidos.length} sub="ação imediata"
           icon={<AlertTriangle size={15} />}
-          estado="vencido" delay="delay-4"
+          bg="#fff5f5" border="#fecaca" iconBg="#fee2e2" iconCor="#dc2626"
+          valCor="#7f1d1d" subCor="#f87171" labelCor="#dc2626"
+          delay="delay-4"
           progresso={Math.round((vencidos.length / equipamentos.length) * 100)}
-          progressoCor="#C0001A"
+          progressoCor="#ef4444"
         />
       </div>
 
-      {/* ── Gráfico ── */}
+      {/* Gráfico */}
       <div className="anim-fade-up delay-5">
         <GraficoCalibracoes equipamentos={equipamentos} />
       </div>
 
-      {/* ── Alertas cedências ── */}
+      {/* Alertas cedências atrasadas */}
       {(() => {
         try {
           const ceds = JSON.parse(localStorage.getItem('atm_cedencias') ?? '[]')
@@ -285,17 +265,17 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
           })
           if (atrasadas.length === 0) return null
           return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="mb-2">
               {atrasadas.map((c: { id: number; equipamentoNome: string; destino: string; dataRetornoPrevista: string }) => (
-                <div key={c.id} style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 12, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                <div key={c.id} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f97316', flexShrink: 0 }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f97316', flexShrink: 0 }} />
                     <div>
-                      <p style={{ color: '#fb923c', fontSize: 12, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{c.equipamentoNome}</p>
-                      <p style={{ color: 'rgba(249,115,22,0.6)', fontSize: 10, marginTop: 2, fontFamily: "'Inter', sans-serif" }}>Cedido a {c.destino} — retorno: {new Date(c.dataRetornoPrevista).toLocaleDateString('pt-PT')}</p>
+                      <p style={{ color: '#9a3412', fontSize: 13, fontWeight: 700 }}>{c.equipamentoNome}</p>
+                      <p style={{ color: '#ea580c', fontSize: 11, marginTop: 2, opacity: 0.7 }}>Cedido a {c.destino} — retorno: {new Date(c.dataRetornoPrevista).toLocaleDateString('pt-PT')}</p>
                     </div>
                   </div>
-                  <span style={{ background: 'rgba(249,115,22,0.15)', color: '#fb923c', fontSize: 9, fontWeight: 600, padding: '3px 10px', borderRadius: 99, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: "'Inter', sans-serif" }}>Retorno atrasado</span>
+                  <span style={{ background: '#ffedd5', color: '#9a3412', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>Retorno atrasado</span>
                 </div>
               ))}
             </div>
@@ -303,64 +283,47 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
         } catch { return null }
       })()}
 
-      {/* ── Alertas ── */}
+      {/* Alertas */}
       {alertas.length > 0 && (
         <div className="anim-fade-up delay-6">
-          <SectionLabel count={alertas.length}>Alertas ativos</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Alertas ativos</h2>
+            <span className="bg-red-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{alertas.length}</span>
+          </div>
+          <div className="space-y-2">
             {alertas.map(({ eq, estado }, index) => {
               const cfg = estadoConfig[estado]
+              const cores = {
+                vencido: { bg: '#fff5f5', border: '#fecaca', dot: '#ef4444', titulo: '#991b1b', sub: '#dc2626', badge: { bg: '#fee2e2', color: '#991b1b' } },
+                urgente: { bg: '#fff7ed', border: '#fed7aa', dot: '#f97316', titulo: '#9a3412', sub: '#ea580c', badge: { bg: '#ffedd5', color: '#9a3412' } },
+                aviso:   { bg: '#fefce8', border: '#fef08a', dot: '#eab308', titulo: '#854d0e', sub: '#ca8a04', badge: { bg: '#fef9c3', color: '#854d0e' } },
+                ok:      { bg: '#f0fdf4', border: '#bbf7d0', dot: '#22c55e', titulo: '#14532d', sub: '#16a34a', badge: { bg: '#dcfce7', color: '#14532d' } },
+              }
+              const c = cores[estado]
               return (
                 <div
                   key={eq.id}
-                  className={`alerta-item anim-fade-left delay-${Math.min(index + 1, 8)}`}
+                  className={`anim-fade-left delay-${Math.min(index + 1, 8)}`}
                   onClick={() => onVerDetalhe(eq)}
-                  style={{
-                    background: cfg.rowBg,
-                    border: `1px solid ${cfg.borderColor}`,
-                    borderRadius: 10,
-                    padding: '10px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    gap: 8,
-                    flexWrap: isMobile ? 'wrap' : 'nowrap',
-                  }}
+                  style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 12, padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', gap: 8, flexWrap: isMobile ? 'wrap' : 'nowrap' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateX(4px)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateX(0)'; e.currentTarget.style.boxShadow = 'none' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-                    <div
-                      className={estado === 'vencido' || estado === 'urgente' ? 'dot-piscar' : ''}
-                      style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dotColor, flexShrink: 0 }}
-                    />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                    <div className={estado === 'vencido' || estado === 'urgente' ? 'dot-piscar' : ''} style={{ width: 8, height: 8, borderRadius: '50%', background: c.dot, flexShrink: 0 }} />
                     <div style={{ minWidth: 0 }}>
-                      <p style={{ color: '#fff', fontSize: 12, fontWeight: 500, fontFamily: "'Inter', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {eq.descricao}
-                      </p>
-                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 2, fontFamily: "'Inter', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {eq.marca} {eq.modelo} · {eq.numeroSAP}
-                      </p>
+                      <p style={{ color: c.titulo, fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.descricao}</p>
+                      <p style={{ color: c.sub, fontSize: 11, marginTop: 2, opacity: 0.7, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.marca} {eq.modelo} · {eq.numeroSAP}</p>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                     {!isMobile && (
                       <div style={{ textAlign: 'right' }}>
-                        <p style={{ color: cfg.badgeColor, fontSize: 11, fontWeight: 500, fontFamily: "'Inter', sans-serif" }}>{getDiasTexto(eq)}</p>
-                        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, marginTop: 1, fontFamily: "'Inter', sans-serif" }}>Próxima: {formatarData(eq.dataCalibracao)}</p>
+                        <p style={{ color: c.titulo, fontSize: 12, fontWeight: 600 }}>{getDiasTexto(eq)}</p>
+                        <p style={{ color: c.sub, fontSize: 11, marginTop: 2, opacity: 0.7 }}>Próxima: {formatarData(eq.dataCalibracao)}</p>
                       </div>
                     )}
-                    <span style={{
-                      background: cfg.badgeBg,
-                      color: cfg.badgeColor,
-                      fontSize: 9,
-                      fontWeight: 600,
-                      padding: '3px 10px',
-                      borderRadius: 99,
-                      whiteSpace: 'nowrap',
-                      fontFamily: "'Inter', sans-serif",
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                    }}>
+                    <span style={{ background: c.badge.bg, color: c.badge.color, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap' }}>
                       {cfg.label}
                     </span>
                   </div>
@@ -371,84 +334,37 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
         </div>
       )}
 
-      {/* ── Tabela / Cards ── */}
+      {/* Tabela / Cards */}
       <div className="anim-fade-up delay-7">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <SectionLabel>Todos os equipamentos</SectionLabel>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 3, border: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Todos os equipamentos</h2>
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             {!isMobile && (
-              <button
-                onClick={() => setVista('tabela')}
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: 6,
-                  fontSize: 10,
-                  fontWeight: 500,
-                  fontFamily: "'Inter', sans-serif",
-                  letterSpacing: '0.08em',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  background: vista === 'tabela' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  color: vista === 'tabela' ? '#fff' : 'rgba(255,255,255,0.3)',
-                }}
-              >
+              <button onClick={() => setVista('tabela')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'tabela' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
                 ☰ Tabela
               </button>
             )}
-            <button
-              onClick={() => setVista('cards')}
-              style={{
-                padding: '5px 12px',
-                borderRadius: 6,
-                fontSize: 10,
-                fontWeight: 500,
-                fontFamily: "'Inter', sans-serif",
-                letterSpacing: '0.08em',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                background: vista === 'cards' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                color: vista === 'cards' ? '#fff' : 'rgba(255,255,255,0.3)',
-              }}
-            >
+            <button onClick={() => setVista('cards')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${vista === 'cards' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
               ⊞ Cards
             </button>
           </div>
         </div>
 
         {vista === 'tabela' && !isMobile ? (
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden' }}>
-            {/* Search bar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
-              <Search size={12} style={{ color: 'rgba(255,255,255,0.25)', flexShrink: 0 }} />
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
+              <Search size={13} className="text-gray-400 flex-shrink-0" />
               <input
-                type="text"
-                placeholder="Filtrar equipamentos..."
-                value={pesquisaTabela}
-                onChange={e => setPesquisaTabela(e.target.value)}
-                style={{
-                  flex: 1,
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  fontSize: 11,
-                  fontFamily: "'Inter', sans-serif",
-                  color: 'rgba(255,255,255,0.7)',
-                  letterSpacing: '0.02em',
-                }}
+                type="text" placeholder="Filtrar equipamentos..."
+                value={pesquisaTabela} onChange={e => setPesquisaTabela(e.target.value)}
+                className="flex-1 text-xs outline-none bg-transparent text-gray-600 placeholder-gray-400"
               />
-              {pesquisaTabela && (
-                <button onClick={() => setPesquisaTabela('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', display: 'flex' }}>
-                  <X size={11} />
-                </button>
-              )}
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', flexShrink: 0 }}>{equipFiltrados.length} eq.</span>
+              {pesquisaTabela && <button onClick={() => setPesquisaTabela('')} className="text-gray-400 hover:text-gray-600"><X size={12} /></button>}
+              <span className="text-xs text-gray-400 font-mono flex-shrink-0">{equipFiltrados.length} equipamentos</span>
             </div>
-
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className="w-full">
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <tr className="border-b border-gray-100">
                   {[
                     { key: 'descricao',    label: 'Equipamento' },
                     { key: 'marca',        label: 'Marca' },
@@ -456,24 +372,12 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
                     { key: 'localizacao',  label: 'Local' },
                     { key: 'estado',       label: 'Estado' },
                   ].map(col => (
-                    <th
-                      key={col.key}
-                      onClick={() => toggleOrdenacao(col.key)}
-                      style={{
-                        textAlign: 'left',
-                        padding: '8px 16px',
-                        fontSize: 9,
-                        fontWeight: 500,
-                        fontFamily: "'Inter', sans-serif",
-                        color: 'rgba(255,255,255,0.25)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.18em',
-                        cursor: 'pointer',
-                        userSelect: 'none',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {col.label} {ordenacao.coluna === col.key ? (ordenacao.direcao === 'asc' ? '↑' : '↓') : ''}
+                    <th key={col.key} onClick={() => toggleOrdenacao(col.key)}
+                      className="text-left px-4 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide select-none cursor-pointer hover:text-gray-600">
+                      <span className="flex items-center gap-1">
+                        {col.label}
+                        <span className="text-gray-300">{ordenacao.coluna === col.key ? (ordenacao.direcao === 'asc' ? '↑' : '↓') : '↕'}</span>
+                      </span>
                     </th>
                   ))}
                 </tr>
@@ -484,61 +388,44 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
                   const proxima = parseData(eq.dataCalibracao)
                   const diff = proxima ? differenceInDays(proxima, new Date()) : null
                   return (
-                    <tr
-                      key={eq.id}
-                      className="dash-row"
-                      onClick={() => onVerDetalhe(eq)}
-                      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.15s' }}
-                    >
-                      <td style={{ padding: '10px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 5, height: 5, borderRadius: '50%', background: cfg.dotColor, flexShrink: 0 }} />
+                    <tr key={eq.id} onClick={() => onVerDetalhe(eq)} className="border-b border-gray-50 hover:bg-blue-50 transition-colors cursor-pointer group">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dotColor, flexShrink: 0 }} />
                           <div>
-                            <p style={{ fontSize: 12, fontWeight: 500, color: '#fff', fontFamily: "'Inter', sans-serif" }}>{eq.descricao}</p>
-                            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', marginTop: 1 }}>{eq.numeroSAP}</p>
+                            <p className="text-xs font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">{eq.descricao}</p>
+                            <p className="text-xs text-gray-400 font-mono">{eq.numeroSAP}</p>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '10px 16px', fontSize: 11, color: 'rgba(255,255,255,0.45)', fontFamily: "'Inter', sans-serif" }}>
-                        {eq.marca} <span style={{ color: 'rgba(255,255,255,0.2)' }}>{eq.modelo}</span>
-                      </td>
-                      <td style={{ padding: '10px 16px' }}>
-                        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontFamily: "'Inter', sans-serif" }}>{proxima ? proxima.toLocaleDateString('pt-PT') : '—'}</p>
+                      <td className="px-4 py-2.5 text-xs text-gray-500">{eq.marca} <span className="text-gray-300">{eq.modelo}</span></td>
+                      <td className="px-4 py-2.5">
+                        <p className="text-xs text-gray-700">{proxima ? proxima.toLocaleDateString('pt-PT') : '—'}</p>
                         {diff !== null && (
-                          <p style={{ fontSize: 10, fontWeight: 600, fontFamily: "'Inter', sans-serif", color: diff < 0 ? '#ef4444' : diff <= 30 ? '#f97316' : diff <= 60 ? '#eab308' : 'rgba(255,255,255,0.3)', marginTop: 1 }}>
+                          <p className={`text-xs font-semibold ${diff < 0 ? 'text-red-500' : diff <= 30 ? 'text-orange-500' : diff <= 60 ? 'text-yellow-600' : 'text-gray-400'}`}>
                             {diff < 0 ? `há ${Math.abs(diff)}d` : `em ${diff}d`}
                           </p>
                         )}
                       </td>
-                      <td style={{ padding: '10px 16px', fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: "'Inter', sans-serif" }}>{eq.localizacao || '—'}</td>
-                      <td style={{ padding: '10px 16px' }}>
-                        <span style={{ background: cfg.badgeBg, color: cfg.badgeColor, fontSize: 9, fontWeight: 600, padding: '3px 10px', borderRadius: 99, fontFamily: "'Inter', sans-serif", letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                          {cfg.label}
-                        </span>
+                      <td className="px-4 py-2.5 text-xs text-gray-500">{eq.localizacao || '—'}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>{cfg.label}</span>
                       </td>
                     </tr>
                   )
                 })}
               </tbody>
             </table>
-
             {!tabelaExpandida && equipFiltrados.length > 5 ? (
-              <button
-                onClick={() => setTabelaExpandida(true)}
-                style={{ width: '100%', padding: '12px', fontSize: 10, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: 'rgba(255,255,255,0.3)', background: 'transparent', border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.15s' }}
-              >
+              <button onClick={() => setTabelaExpandida(true)} className="w-full py-3 text-xs font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all border-t border-gray-100 flex items-center justify-center gap-2">
                 Ver todos os {equipFiltrados.length} equipamentos ↓
               </button>
             ) : tabelaExpandida ? (
-              <button
-                onClick={() => setTabelaExpandida(false)}
-                style={{ width: '100%', padding: '12px', fontSize: 10, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: 'rgba(255,255,255,0.3)', background: 'transparent', border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', letterSpacing: '0.1em', textTransform: 'uppercase' }}
-              >
+              <button onClick={() => setTabelaExpandida(false)} className="w-full py-3 text-xs font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all border-t border-gray-100 flex items-center justify-center gap-2">
                 Recolher ↑
               </button>
             ) : null}
           </div>
-
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {ordenarEstados(estados).slice(0, tabelaExpandida ? undefined : 6).map(({ eq, estado }) => {
@@ -548,62 +435,38 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
               const diff = proxima ? differenceInDays(proxima, new Date()) : null
               const expandido = cardExpandido === eq.id
               return (
-                <div
-                  key={eq.id}
-                  onClick={() => setCardExpandido(expandido ? null : eq.id)}
-                  style={{
-                    background: 'linear-gradient(135deg, #0f1629 0%, #141d35 100%)',
-                    border: `1px solid ${expandido ? cfg.borderColor : 'rgba(255,255,255,0.07)'}`,
-                    borderRadius: 14,
-                    cursor: 'pointer',
-                    overflow: 'hidden',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
-                    boxShadow: expandido ? `0 0 20px ${cfg.dotColor}18` : 'none',
-                  }}
-                >
-                  {/* Linha de cor no topo */}
-                  <div style={{ height: 2, background: cfg.dotColor, opacity: 0.7 }} />
-
-                  <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div
-                      className={estado === 'vencido' || estado === 'urgente' ? 'dot-piscar' : ''}
-                      style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dotColor, flexShrink: 0 }}
-                    />
-                    <p style={{ fontSize: 12, fontWeight: 500, color: '#fff', fontFamily: "'Inter', sans-serif", flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {eq.descricao}
-                    </p>
-                    <span style={{ background: cfg.badgeBg, color: cfg.badgeColor, fontSize: 9, fontWeight: 600, padding: '2px 8px', borderRadius: 99, whiteSpace: 'nowrap', fontFamily: "'Inter', sans-serif", letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>
-                      {cfg.label}
-                    </span>
-                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', display: 'inline-block', transform: expandido ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', flexShrink: 0 }}>▼</span>
+                <div key={eq.id} onClick={() => setCardExpandido(expandido ? null : eq.id)}
+                  className={`bg-white rounded-2xl border cursor-pointer transition-all duration-300 overflow-hidden ${cfg.border} ${expandido ? 'shadow-lg ring-1 ring-gray-200' : 'hover:shadow-md'}`}>
+                  <div className={`h-1 w-full ${cfg.dot}`} />
+                  <div className="px-4 py-3 flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot} ${estado === 'vencido' || estado === 'urgente' ? 'dot-piscar' : ''}`} />
+                    <p className="text-xs font-bold text-gray-800 flex-1 truncate">{eq.descricao}</p>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${cfg.badge}`}>{cfg.label}</span>
+                    <span style={{ fontSize: 9, color: '#cbd5e1', display: 'inline-block', transform: expandido ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', flexShrink: 0 }}>▼</span>
                   </div>
-
                   <div style={{ maxHeight: expandido ? 280 : 0, overflow: 'hidden', transition: 'max-height 0.35s cubic-bezier(0.16,1,0.3,1)' }}>
-                    <div style={{ padding: '0 14px 14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                    <div className={`px-4 pb-4 border-t ${cfg.border}`}>
+                      <div className="space-y-2 mt-3">
                         {[
                           { label: 'Nº SAP', valor: eq.numeroSAP, mono: true },
-                          { label: 'Marca / Modelo', valor: `${eq.marca} ${eq.modelo}` },
+                          { label: 'Marca/Modelo', valor: `${eq.marca} ${eq.modelo}` },
                           { label: 'Localização', valor: eq.localizacao || '—' },
                           { label: 'Última calib.', valor: ultima ? ultima.toLocaleDateString('pt-PT') : '—' },
                           { label: 'Próxima calib.', valor: proxima ? proxima.toLocaleDateString('pt-PT') : '—' },
                         ].map(({ label, valor, mono }) => (
-                          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: "'Inter', sans-serif" }}>{label}</span>
-                            <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.7)', fontFamily: mono ? 'monospace' : "'Inter', sans-serif", maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{valor}</span>
+                          <div key={label} className="flex justify-between items-center">
+                            <span className="text-xs text-gray-400">{label}</span>
+                            <span className={`text-xs font-semibold text-gray-700 truncate max-w-32 ${mono ? 'font-mono' : ''}`}>{valor}</span>
                           </div>
                         ))}
                       </div>
-                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div className={`mt-3 pt-2 border-t ${cfg.border} flex items-center justify-between`}>
                         {diff !== null && (
-                          <p style={{ fontSize: 11, fontWeight: 600, color: cfg.badgeColor, fontFamily: "'Inter', sans-serif" }}>
+                          <p className={`text-xs font-bold ${cfg.text}`}>
                             {diff < 0 ? `Venceu há ${Math.abs(diff)} dias` : diff === 0 ? 'Vence hoje!' : `Vence em ${diff} dias`}
                           </p>
                         )}
-                        <button
-                          onClick={e => { e.stopPropagation(); onVerDetalhe(eq) }}
-                          style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", letterSpacing: '0.05em', marginLeft: 'auto' }}
-                        >
+                        <button onClick={e => { e.stopPropagation(); onVerDetalhe(eq) }} className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors ml-auto">
                           Ver detalhes →
                         </button>
                       </div>
@@ -612,22 +475,14 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
                 </div>
               )
             })}
-
             {!tabelaExpandida && estados.length > 6 && (
-              <div
-                onClick={() => setTabelaExpandida(true)}
-                style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 14, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 80, transition: 'background 0.15s' }}
-              >
-                <p style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.3)', fontFamily: "'Inter', sans-serif" }}>+{estados.length - 6} equipamentos</p>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.15)', fontFamily: "'Inter', sans-serif" }}>Clica para ver todos</p>
+              <div onClick={() => setTabelaExpandida(true)} className="bg-gray-50 rounded-2xl border border-dashed border-gray-200 cursor-pointer hover:bg-gray-100 transition-all flex flex-col items-center justify-center gap-2 min-h-24">
+                <p className="text-xs font-bold text-gray-400">+{estados.length - 6} equipamentos</p>
+                <p className="text-xs text-gray-300">Clica para ver todos</p>
               </div>
             )}
-
             {tabelaExpandida && (
-              <button
-                onClick={() => setTabelaExpandida(false)}
-                style={{ gridColumn: '1 / -1', padding: '12px', fontSize: 10, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, cursor: 'pointer', letterSpacing: '0.1em', textTransform: 'uppercase' }}
-              >
+              <button onClick={() => setTabelaExpandida(false)} className="col-span-full py-3 text-xs font-semibold text-gray-500 hover:text-gray-700 bg-white rounded-2xl border border-gray-100 transition-all">
                 Recolher ↑
               </button>
             )}
@@ -635,124 +490,121 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
         )}
       </div>
 
-      {/* ── Scroll horizontal — Unidade ── */}
+      {/* Scroll horizontal — Info empresa */}
       <div className="anim-fade-up">
-        <SectionLabel>Unidade de Eletromedicina</SectionLabel>
-        <div ref={scrollRef} style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
-
-          {/* Card Estatísticas */}
-          <div style={{ flexShrink: 0, width: 220, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: 'linear-gradient(135deg, #0f1629 0%, #141d35 100%)' }}>
-            <div style={{ background: '#C0001A', padding: '10px 14px' }}>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', fontFamily: "'Inter', sans-serif" }}>Estatísticas</p>
-              <p style={{ color: '#fff', fontSize: 13, fontWeight: 400, marginTop: 2, fontFamily: "'Cormorant Garamond', serif", letterSpacing: '0.02em' }}>Resumo da Unidade</p>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Unidade de Eletromedicina</h2>
+        </div>
+        <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div className="flex-shrink-0 w-64 rounded-2xl overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+            <div style={{ background: '#C0001A', padding: '12px 16px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Estatísticas</p>
+              <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginTop: 2 }}>Resumo da Unidade</p>
             </div>
-            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'Total equipamentos',   valor: equipamentos.length,                                             cor: 'rgba(255,255,255,0.7)' },
+                { label: 'Total equipamentos',   valor: equipamentos.length,                                             cor: '#38bdf8' },
                 { label: 'Taxa de conformidade', valor: `${Math.round((emDia.length / equipamentos.length) * 100)}%`,  cor: '#4ade80' },
                 { label: 'Calibrações vencidas', valor: vencidos.length,                                                cor: '#f87171' },
                 { label: 'A vencer em 30 dias',  valor: urgentes.length,                                                cor: '#fb923c' },
-                { label: 'A vencer em 60 dias',  valor: avisos.length,                                                  cor: '#fbbf24' },
+                { label: 'A vencer em 60 dias',  valor: avisos.length,                                                  cor: '#facc15' },
               ].map(stat => (
                 <div key={stat.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontFamily: "'Inter', sans-serif" }}>{stat.label}</p>
-                  <p style={{ color: stat.cor, fontSize: 14, fontWeight: 300, fontFamily: "'Cormorant Garamond', serif", letterSpacing: '-0.01em' }}>{stat.valor}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{stat.label}</p>
+                  <p style={{ color: stat.cor, fontSize: 14, fontWeight: 800, fontFamily: 'monospace' }}>{stat.valor}</p>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* Cards por localização */}
           {[
-            { nome: 'Hospital CUF Porto',    sigla: 'HPRT',   morada: 'Estr. Circunvalação 14341', cor: '#3b82f6' },
-            { nome: 'Hospital CUF Trindade', sigla: 'HTRD',   morada: 'R. da Trindade, Porto',     cor: '#8b5cf6' },
-            { nome: 'Instituto CUF Porto',   sigla: 'CINS',   morada: 'Matosinhos',                cor: '#06b6d4' },
-            { nome: 'Hospital de Braga',     sigla: 'HBRAGA', morada: 'Braga',                     cor: '#10b981' },
-            { nome: 'ISQ',                   sigla: 'ISQ',    morada: 'Oeiras, Lisboa',            cor: '#f59e0b' },
+            { nome: 'Hospital CUF Porto',    sigla: 'HPRT',   morada: 'Estr. Circunvalação 14341, Porto', cor: '#3b82f6' },
+            { nome: 'Hospital CUF Trindade', sigla: 'HTRD',   morada: 'R. da Trindade, Porto',            cor: '#8b5cf6' },
+            { nome: 'Instituto CUF Porto',   sigla: 'CINS',   morada: 'Matosinhos, Porto',                cor: '#06b6d4' },
+            { nome: 'Hospital de Braga',     sigla: 'HBRAGA', morada: 'Braga',                            cor: '#10b981' },
+            { nome: 'ISQ',                   sigla: 'ISQ',    morada: 'Oeiras, Lisboa',                   cor: '#f59e0b' },
           ].map(local => {
             const eqLocal = equipamentos.filter(eq => (eq.localizacao ?? '').toUpperCase().includes(local.sigla))
             const vencidosLocal = eqLocal.filter(eq => { const p = parseData(eq.dataCalibracao); return !p || differenceInDays(p, new Date()) < 0 }).length
             const emDiaLocal = eqLocal.length - vencidosLocal
             const taxa = eqLocal.length > 0 ? Math.round((emDiaLocal / eqLocal.length) * 100) : 0
             return (
-              <div key={local.sigla} style={{ flexShrink: 0, width: 200, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: 'linear-gradient(135deg, #0f1629 0%, #141d35 100%)' }}>
-                <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ color: '#fff', fontSize: 11, fontWeight: 500, fontFamily: "'Inter', sans-serif" }}>{local.nome}</p>
-                    <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, marginTop: 2, fontFamily: "'Inter', sans-serif" }}>{local.morada}</p>
+              <div key={local.sigla} className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white">
+                <div style={{ background: local.cor, padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <p style={{ color: '#fff', fontSize: 12, fontWeight: 700 }}>{local.nome}</p>
+                    <span style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>{local.sigla}</span>
                   </div>
-                  <span style={{ background: local.cor + '22', color: local.cor, fontSize: 8, fontWeight: 600, padding: '2px 6px', borderRadius: 99, fontFamily: "'Inter', sans-serif", letterSpacing: '0.1em', border: `1px solid ${local.cor}44` }}>{local.sigla}</span>
+                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, marginTop: 3 }}>{local.morada}</p>
                 </div>
-                <div style={{ padding: '12px 14px' }}>
-                  <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 36, fontWeight: 300, color: '#fff', lineHeight: 1, marginBottom: 8 }}>{eqLocal.length}</p>
-                  <div style={{ marginBottom: 10 }}>
+                <div style={{ padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <p style={{ fontSize: 24, fontWeight: 800, fontFamily: 'monospace', color: '#0f172a' }}>{eqLocal.length}</p>
+                    <p style={{ fontSize: 11, color: '#94a3b8' }}>equipamentos</p>
+                  </div>
+                  <div style={{ marginBottom: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: "'Inter', sans-serif", letterSpacing: '0.1em', textTransform: 'uppercase' }}>Conformidade</span>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: taxa >= 80 ? '#4ade80' : taxa >= 60 ? '#fbbf24' : '#f87171', fontFamily: "'Inter', sans-serif" }}>{taxa}%</span>
+                      <span style={{ fontSize: 10, color: '#94a3b8' }}>Conformidade</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: taxa >= 80 ? '#22c55e' : taxa >= 60 ? '#eab308' : '#ef4444' }}>{taxa}%</span>
                     </div>
-                    <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${taxa}%`, background: taxa >= 80 ? '#4ade80' : taxa >= 60 ? '#fbbf24' : '#f87171', borderRadius: 99, transition: 'width 1s cubic-bezier(0.16,1,0.3,1)' }} />
+                    <div style={{ height: 4, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${taxa}%`, background: taxa >= 80 ? '#22c55e' : taxa >= 60 ? '#eab308' : '#ef4444', borderRadius: 99 }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <div style={{ flex: 1, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: 8, padding: '6px', textAlign: 'center' }}>
-                      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 300, color: '#4ade80' }}>{emDiaLocal}</p>
-                      <p style={{ fontSize: 8, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'Inter', sans-serif", opacity: 0.7 }}>Em dia</p>
+                    <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 8, padding: '6px 8px', textAlign: 'center' }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, color: '#16a34a', fontFamily: 'monospace' }}>{emDiaLocal}</p>
+                      <p style={{ fontSize: 9, color: '#16a34a', textTransform: 'uppercase' }}>Em dia</p>
                     </div>
-                    <div style={{ flex: 1, background: vencidosLocal > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.03)', border: `1px solid ${vencidosLocal > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 8, padding: '6px', textAlign: 'center' }}>
-                      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 300, color: vencidosLocal > 0 ? '#f87171' : 'rgba(255,255,255,0.2)' }}>{vencidosLocal}</p>
-                      <p style={{ fontSize: 8, color: vencidosLocal > 0 ? '#f87171' : 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'Inter', sans-serif", opacity: 0.7 }}>Vencidas</p>
+                    <div style={{ flex: 1, background: vencidosLocal > 0 ? '#fef2f2' : '#f8fafc', borderRadius: 8, padding: '6px 8px', textAlign: 'center' }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, color: vencidosLocal > 0 ? '#dc2626' : '#94a3b8', fontFamily: 'monospace' }}>{vencidosLocal}</p>
+                      <p style={{ fontSize: 9, color: vencidosLocal > 0 ? '#dc2626' : '#94a3b8', textTransform: 'uppercase' }}>Vencidas</p>
                     </div>
                   </div>
                 </div>
               </div>
             )
           })}
-
-          {/* Card Equipa */}
-          <div style={{ flexShrink: 0, width: 200, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(192,0,26,0.2)', background: 'linear-gradient(135deg, #1a0509 0%, #2d0a0f 100%)' }}>
-            <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(192,0,26,0.15)' }}>
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', fontFamily: "'Inter', sans-serif" }}>Equipa</p>
-              <p style={{ color: '#fff', fontSize: 13, fontWeight: 300, marginTop: 2, fontFamily: "'Cormorant Garamond', serif" }}>Eletromedicina ATM</p>
+          <div className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white">
+            <div style={{ background: 'linear-gradient(135deg, #C0001A 0%, #7f1d1d 100%)', padding: '12px 16px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Equipa</p>
+              <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginTop: 2 }}>Eletromedicina ATM</p>
             </div>
-            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
                 { nome: 'Unidade de Eletromedicina', cargo: 'ATM Manutenção Total',          cor: '#C0001A' },
                 { nome: 'Hospital CUF Porto',         cargo: 'Local principal',               cor: '#3b82f6' },
                 { nome: 'Gestão de Calibrações',      cargo: `${equipamentos.length} equip.`, cor: '#8b5cf6' },
-                { nome: 'ATM Eletromedicina v1.0',    cargo: 'Sistema de gestão',             cor: '#4ade80' },
+                { nome: 'ATM Eletromedicina v1.0',    cargo: 'Sistema de gestão',             cor: '#10b981' },
               ].map(m => (
-                <div key={m.nome} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: m.cor + '18', border: `1px solid ${m.cor}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: m.cor, fontFamily: "'Inter', sans-serif" }}>{m.nome[0]}</span>
+                <div key={m.nome} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: m.cor + '20', border: `1.5px solid ${m.cor}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: m.cor }}>{m.nome[0]}</span>
                   </div>
                   <div>
-                    <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.7)', fontFamily: "'Inter', sans-serif" }}>{m.nome}</p>
-                    <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: "'Inter', sans-serif" }}>{m.cargo}</p>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: '#1e293b' }}>{m.nome}</p>
+                    <p style={{ fontSize: 10, color: '#94a3b8' }}>{m.cargo}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* Card Sistema */}
-          <div style={{ flexShrink: 0, width: 200, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: 'linear-gradient(135deg, #0f1629 0%, #141d35 100%)' }}>
-            <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', fontFamily: "'Inter', sans-serif" }}>Sistema</p>
-              <p style={{ color: '#fff', fontSize: 13, fontWeight: 300, marginTop: 2, fontFamily: "'Cormorant Garamond', serif" }}>ATM Eletromedicina</p>
+          <div className="flex-shrink-0 w-56 rounded-2xl overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sistema</p>
+              <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginTop: 2 }}>ATM Eletromedicina</p>
             </div>
-            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
                 { label: 'Versão',     valor: 'v1.0',                          cor: '#4ade80' },
-                { label: 'Base dados', valor: 'PostgreSQL',                    cor: 'rgba(255,255,255,0.5)' },
-                { label: 'Frontend',   valor: 'React + TypeScript',            cor: 'rgba(255,255,255,0.5)' },
-                { label: 'Backend',    valor: 'Node.js + Express',             cor: 'rgba(255,255,255,0.5)' },
-                { label: 'Deploy',     valor: 'Vercel + Render',               cor: 'rgba(255,255,255,0.5)' },
-                { label: 'URL',        valor: 'atm-eletromedicina.vercel.app', cor: 'rgba(255,255,255,0.3)' },
+                { label: 'Base dados', valor: 'PostgreSQL',                    cor: '#38bdf8' },
+                { label: 'Frontend',   valor: 'React + TypeScript',            cor: '#a78bfa' },
+                { label: 'Backend',    valor: 'Node.js + Express',             cor: '#fb923c' },
+                { label: 'Deploy',     valor: 'Vercel + Render',               cor: '#f472b6' },
+                { label: 'URL',        valor: 'atm-eletromedicina.vercel.app', cor: '#94a3b8' },
               ].map(info => (
-                <div key={info.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 9, fontFamily: "'Inter', sans-serif", letterSpacing: '0.08em', flexShrink: 0 }}>{info.label}</p>
-                  <p style={{ color: info.cor, fontSize: 9, fontWeight: 500, fontFamily: "'Inter', sans-serif", textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{info.valor}</p>
+                <div key={info.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10 }}>{info.label}</p>
+                  <p style={{ color: info.cor, fontSize: 10, fontWeight: 600 }}>{info.valor}</p>
                 </div>
               ))}
             </div>
