@@ -405,17 +405,8 @@ export default function Login({ onLogin }: Props) {
           />
         </svg>
 
-        {/* Badges */}
-        <div style={{ position: 'absolute', top: 48, left: 48, opacity: mounted ? 1 : 0, transition: 'opacity 0.8s ease 0.3s' }}>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2em', textTransform: 'uppercase', margin: 0 }}>
-            ATM Manutenção Total
-          </p>
-        </div>
-        <div style={{ position: 'absolute', top: 48, right: 48, textAlign: 'right', opacity: mounted ? 1 : 0, transition: 'opacity 0.8s ease 0.5s' }}>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2em', textTransform: 'uppercase', margin: 0 }}>
-            v1.0 · 2026
-          </p>
-        </div>
+
+
 
         {/* Stats editoriais */}
         <div style={{
