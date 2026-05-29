@@ -26,7 +26,7 @@ export default function Login({ onLogin }: Props) {
 
     function handleMouse(e: MouseEvent) {
       const el = document.getElementById('atm-gigante')
-      const ecg = document.getElementById('ecg-canvas')
+      const ecg = document.getElementById('ecg-line')
       const cursor = document.getElementById('atm-cursor')
       const left = leftPanelRef.current
 
@@ -34,18 +34,20 @@ export default function Login({ onLogin }: Props) {
       const rect = left.getBoundingClientRect()
       const inLeft = e.clientX >= rect.left && e.clientX <= rect.right
 
+      // Parallax — relativo ao painel esquerdo
       const cx = rect.left + rect.width / 2
       const cy = rect.top + rect.height / 2
-      const dx = (e.clientX - cx) / (rect.width / 2)
-      const dy = (e.clientY - cy) / (rect.height / 2)
+      const dx = (e.clientX - cx) / (rect.width / 2)   // -1 a 1
+      const dy = (e.clientY - cy) / (rect.height / 2)  // -1 a 1
 
       if (el) {
         el.style.transform = `translate(calc(-50% + ${dx * 40}px), calc(-50% + ${dy * 20}px)) rotate(${dx * 2}deg)`
       }
       if (ecg) {
-        (ecg as HTMLElement).style.marginTop = `${dy * 12}px`
+        ecg.style.transform = `translateY(calc(-50% + ${dy * 12}px))`
       }
 
+      // Cursor personalizado
       if (cursor) {
         if (inLeft) {
           cursor.style.opacity = '1'
@@ -56,6 +58,7 @@ export default function Login({ onLogin }: Props) {
         }
       }
 
+      // Coordenadas para partículas (relativas ao canvas)
       if (inLeft) {
         mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
       } else {
@@ -106,6 +109,7 @@ export default function Login({ onLogin }: Props) {
       const { x: mx, y: my } = mouseRef.current
 
       particles.forEach(p => {
+        // Repulsão suave pelo rato
         const dx = mx - p.x
         const dy = my - p.y
         const dist = Math.sqrt(dx * dx + dy * dy)
@@ -113,16 +117,21 @@ export default function Login({ onLogin }: Props) {
           p.vx -= (dx / dist) * 0.5
           p.vy -= (dy / dist) * 0.5
         }
+
+        // Damping + drift
         p.vx *= 0.97
         p.vy *= 0.97
         p.vx += (Math.random() - 0.5) * 0.04
         p.vy += (Math.random() - 0.5) * 0.04
         p.x += p.vx
         p.y += p.vy
+
+        // Wrap
         if (p.x < 0) p.x = canvas!.width
         if (p.x > canvas!.width) p.x = 0
         if (p.y < 0) p.y = canvas!.height
         if (p.y > canvas!.height) p.y = 0
+
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
         ctx.fillStyle = `rgba(255,255,255,${p.opacity})`
@@ -136,207 +145,6 @@ export default function Login({ onLogin }: Props) {
     return () => {
       window.removeEventListener('resize', resize)
       cancelAnimationFrame(animFrameRef.current)
-    }
-  }, [])
-
-  // ─── ECG desenha ATM depois scroll infinito ───────────────────────────────
-  useEffect(() => {
-    const canvas = document.getElementById('ecg-canvas') as HTMLCanvasElement
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')!
-    let rafId = 0
-
-    function resize() {
-      canvas.width = canvas.offsetWidth
-      canvas.height = canvas.offsetHeight
-      init()
-    }
-
-    // Constrói os pontos do path: cada segmento tem largura = canvas.width
-    // Repete 3× para o scroll infinito
-    function buildPoints(W: number, H: number): [number, number][] {
-      const mid = H * 0.5
-      const ecgH = H * 0.32   // amplitude pico ECG normal
-      const letH = H * 0.36   // altura das letras
-
-      function flat(x: number, len: number): [number, number][] {
-        return [[x, mid], [x + len, mid]]
-      }
-
-      function peak(x: number): [number, number][] {
-        return [
-          [x,      mid],
-          [x + 4,  mid - ecgH * 0.3],
-          [x + 8,  mid - ecgH],
-          [x + 12, mid + ecgH],
-          [x + 16, mid - ecgH * 0.15],
-          [x + 20, mid],
-        ]
-      }
-
-      // A: diagonal esquerda sobe, diagonal direita desce, crossbar horizontal
-      function letterA(x: number): [number, number][] {
-        const top = mid - letH
-        const bot = mid + letH * 0.4
-        const w = 36
-        return [
-          [x,           bot],
-          [x + w * 0.5, top],
-          [x + w,       bot],
-          // crossbar: volta ao 30% e vai ao 70%
-          [x + w * 0.28, mid - letH * 0.1],
-          [x + w * 0.72, mid - letH * 0.1],
-          [x + w,        bot],
-        ]
-      }
-
-      // T: sobe ao centro, faz crossbar, desce
-      function letterT(x: number): [number, number][] {
-        const top = mid - letH
-        const bot = mid + letH * 0.4
-        const w = 32
-        return [
-          [x,           mid],
-          [x,           top],
-          [x + w,       top],
-          [x + w * 0.5, top],
-          [x + w * 0.5, bot],
-          [x + w,       bot],
-        ]
-      }
-
-      // M: sobe esquerda, desce ao meio, sobe direita, desce
-      function letterM(x: number): [number, number][] {
-        const top = mid - letH
-        const bot = mid + letH * 0.4
-        const w = 42
-        return [
-          [x,           bot],
-          [x,           top],
-          [x + w * 0.5, mid - letH * 0.3],
-          [x + w,       top],
-          [x + w,       bot],
-        ]
-      }
-
-      // Um segmento completo (ocupa W px)
-      function segment(ox: number): [number, number][] {
-        const tail = W - 510  // preenche o resto com flat+peak
-        return [
-          ...flat(ox,       20),
-          ...peak(ox +      24),
-          ...flat(ox +      48,  18),
-          ...letterA(ox +   70),
-          ...flat(ox +     112,  18),
-          ...peak(ox +     134),
-          ...flat(ox +     158,  18),
-          ...letterT(ox +  180),
-          ...flat(ox +     218,  18),
-          ...peak(ox +     240),
-          ...flat(ox +     264,  18),
-          ...letterM(ox +  286),
-          ...flat(ox +     334,  18),
-          ...peak(ox +     356),
-          ...flat(ox +     380,  18),
-          ...peak(ox +     402),
-          ...flat(ox +     426,  18),
-          ...peak(ox +     448),
-          ...flat(ox +     472, Math.max(tail, 20)),
-        ]
-      }
-
-      return [
-        ...segment(0),
-        ...segment(W),
-        ...segment(W * 2),
-      ]
-    }
-
-    let pts: [number, number][] = []
-    let totalLen = 0
-    let drawnLen = 0
-    let offset = 0
-    let phase: 'draw' | 'scroll' = 'draw'
-    const DRAW_DURATION = 3500  // ms para desenhar o path
-    const SCROLL_SPEED = 0.4    // px por frame
-
-    function calcLen(points: [number, number][]): number {
-      let l = 0
-      for (let i = 1; i < points.length; i++) {
-        const dx = points[i][0] - points[i - 1][0]
-        const dy = points[i][1] - points[i - 1][1]
-        l += Math.sqrt(dx * dx + dy * dy)
-      }
-      return l
-    }
-
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.beginPath()
-      ctx.strokeStyle = '#ffffff'
-      ctx.lineWidth = 1.6
-      ctx.lineJoin = 'round'
-      ctx.lineCap = 'round'
-
-      const W = canvas.width
-
-      if (phase === 'draw') {
-        // Desenha até drawnLen
-        let accumulated = 0
-        ctx.moveTo(pts[0][0], pts[0][1])
-        for (let i = 1; i < pts.length; i++) {
-          const dx = pts[i][0] - pts[i - 1][0]
-          const dy = pts[i][1] - pts[i - 1][1]
-          const segLen = Math.sqrt(dx * dx + dy * dy)
-          if (accumulated + segLen >= drawnLen) {
-            const t = (drawnLen - accumulated) / segLen
-            ctx.lineTo(pts[i - 1][0] + dx * t, pts[i - 1][1] + dy * t)
-            break
-          }
-          accumulated += segLen
-          ctx.lineTo(pts[i][0], pts[i][1])
-        }
-        ctx.stroke()
-
-        drawnLen += totalLen / (DRAW_DURATION / (1000 / 60))
-        if (drawnLen >= totalLen / 3) {
-          phase = 'scroll'
-          offset = 0
-        }
-      } else {
-        // Scroll: desloca o path para a esquerda, wraps a cada W
-        ctx.save()
-        ctx.translate(-offset, 0)
-        ctx.moveTo(pts[0][0], pts[0][1])
-        for (let i = 1; i < pts.length; i++) {
-          ctx.lineTo(pts[i][0], pts[i][1])
-        }
-        ctx.stroke()
-        ctx.restore()
-
-        offset += SCROLL_SPEED
-        if (offset >= W) offset -= W
-      }
-
-      rafId = requestAnimationFrame(render)
-    }
-
-    function init() {
-      pts = buildPoints(canvas.width, canvas.height)
-      totalLen = calcLen(pts)
-      drawnLen = 0
-      phase = 'draw'
-      offset = 0
-      cancelAnimationFrame(rafId)
-      render()
-    }
-
-    resize()
-    window.addEventListener('resize', resize)
-
-    return () => {
-      window.removeEventListener('resize', resize)
-      cancelAnimationFrame(rafId)
     }
   }, [])
 
@@ -359,6 +167,8 @@ export default function Login({ onLogin }: Props) {
       const { token, nome } = await res.json()
       localStorage.setItem('atm_token', token)
       localStorage.setItem('atm_nome', nome)
+
+      // 4. Transição cinematográfica de saída
       setExiting(true)
       setTimeout(() => onLogin(token, nome), 900)
     } catch {
@@ -385,7 +195,12 @@ export default function Login({ onLogin }: Props) {
           0%, 100% { filter: brightness(1); }
           50%       { filter: brightness(1.15); }
         }
+        @keyframes ecg-scroll {
+          from { stroke-dashoffset: 0; }
+          to   { stroke-dashoffset: -2400; }
+        }
 
+        /* 7. Botão fill da esquerda para a direita */
         .login-btn {
           background: #1a1a1a;
           color: #F5F4F0;
@@ -432,14 +247,17 @@ export default function Login({ onLogin }: Props) {
         }
         .login-field::placeholder { color: #999; font-weight: 300; }
         .login-field:focus { border-bottom-color: #C0001A; }
+        /* Fix autofill no Chrome */
         .login-field:-webkit-autofill,
         .login-field:-webkit-autofill:focus {
           -webkit-box-shadow: 0 0 0 1000px #F5F4F0 inset;
           -webkit-text-fill-color: #1a1a1a;
         }
 
+        /* 6. Cursor personalizado — esconde o default só no painel esquerdo */
         .left-panel { cursor: none; }
 
+        /* 5. Mobile: esconde painel esquerdo, fundo escuro no direito */
         @media (max-width: 640px) {
           .left-panel { display: none !important; }
           .right-panel {
@@ -471,11 +289,13 @@ export default function Login({ onLogin }: Props) {
         ref={leftPanelRef}
         className="left-panel"
         style={{
+   
           position: 'relative',
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'flex-end',
           padding: 48,
+          // 4. Expansão cinematográfica na saída
           transition: exiting ? 'flex 0.9s cubic-bezier(0.16,1,0.3,1)' : 'none',
           flex: exiting ? '1 0 100%' : '1',
         }}
@@ -497,29 +317,13 @@ export default function Login({ onLogin }: Props) {
           <rect width="100%" height="100%" fill="url(#grid)" />
         </svg>
 
-        {/* Partículas */}
+        {/* 2. Canvas de partículas */}
         <canvas
           ref={canvasRef}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
         />
 
-        {/* ECG canvas — desenha ATM depois scroll */}
-        <canvas
-          id="ecg-canvas"
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: 0,
-            width: '100%',
-            height: '40%',
-            marginTop: '-20%',
-            pointerEvents: 'none',
-            opacity: 0.22,
-            transition: 'margin-top 0.2s ease-out',
-          }}
-        />
-
-        {/* Cursor médico */}
+        {/* 6. Cursor médico personalizado */}
         <div
           id="atm-cursor"
           style={{
@@ -538,7 +342,7 @@ export default function Login({ onLogin }: Props) {
           </svg>
         </div>
 
-        {/* ATM gigante */}
+        {/* 1. ATM gigante — parallax via DOM direto no mousemove handler */}
         <div
           id="atm-gigante"
           style={{
@@ -549,7 +353,7 @@ export default function Login({ onLogin }: Props) {
             fontFamily: "'Cormorant Garamond', serif",
             fontSize: 'clamp(120px, 20vw, 280px)',
             fontWeight: 300,
-            color: 'rgba(255,255,255,0.07)',
+            color: 'rgba(255,255,255,0.10)',
             lineHeight: 1,
             whiteSpace: 'nowrap',
             letterSpacing: '-0.05em',
@@ -561,6 +365,45 @@ export default function Login({ onLogin }: Props) {
         >
           ATM
         </div>
+
+        {/* 3. ECG — scroll contínuo */}
+        <svg
+          id="ecg-line"
+          viewBox="0 0 800 120"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: 0,
+            width: '100%',
+            transform: 'translateY(-50%)',
+            opacity: 0.18,
+            transition: 'transform 0.2s ease-out',
+            overflow: 'visible',
+          }}
+          preserveAspectRatio="none"
+        >
+          {/* Linha base longa (3× para o scroll contínuo funcionar) */}
+          <polyline
+            points="
+              0,60 80,60 100,60 110,20 120,100 130,10 140,110 150,60 200,60
+              240,60 260,60 270,45 280,75 290,60 340,60
+              400,60 410,20 420,100 430,10 440,110 450,60 500,60
+              540,60 560,45 570,75 580,60 640,60
+              680,60 690,20 700,100 710,10 720,110 730,60 800,60
+              880,60 890,20 900,100 910,10 920,110 930,60 980,60
+              1020,60 1030,45 1040,75 1050,60 1100,60
+              1160,60 1170,20 1180,100 1190,10 1200,110 1210,60 1260,60
+              1340,60 1360,45 1370,75 1380,60 1440,60
+              1480,60 1490,20 1500,100 1510,10 1520,110 1530,60 1600,60
+            "
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="1.5"
+            strokeDasharray="2400"
+            strokeDashoffset="0"
+            style={{ animation: 'ecg-scroll 6s linear infinite' }}
+          />
+        </svg>
 
         {/* Badges */}
         <div style={{ position: 'absolute', top: 48, left: 48, opacity: mounted ? 1 : 0, transition: 'opacity 0.8s ease 0.3s' }}>
@@ -623,11 +466,13 @@ export default function Login({ onLogin }: Props) {
           justifyContent: 'center',
           padding: '64px 56px',
           position: 'relative',
+          // Mounted entry
           opacity: mounted ? 1 : 0,
           transform: mounted ? 'translateX(0)' : 'translateX(40px)',
           transition: exiting
             ? 'opacity 0.4s ease, transform 0.4s ease'
             : 'opacity 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s, transform 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s',
+          // 4. Saída: fade + slide para a direita
           ...(exiting && { opacity: 0, transform: 'translateX(40px)' }),
         }}
       >
