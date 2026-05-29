@@ -195,13 +195,13 @@ export default function Login({ onLogin }: Props) {
           0%, 100% { filter: brightness(1); }
           50%       { filter: brightness(1.15); }
         }
-    @keyframes ecg-draw-atm {
+@keyframes ecg-draw-atm {
   from { stroke-dashoffset: 3200; }
   to   { stroke-dashoffset: 0; }
 }
 @keyframes ecg-scroll-atm {
   from { transform: translateX(0); }
-  to   { transform: translateX(-33.33%); }
+  to   { transform: translateX(-33.32%); }
 }
 
         /* 7. Botão fill da esquerda para a direita */
