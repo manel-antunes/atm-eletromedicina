@@ -519,8 +519,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
             { nome: 'Hospital CUF Porto',    sigla: 'HPRT',   morada: 'Estr. Circunvalação 14341, Porto', cor: '#3b82f6' },
             { nome: 'Hospital CUF Trindade', sigla: 'HTRD',   morada: 'R. da Trindade, Porto',            cor: '#8b5cf6' },
             { nome: 'Instituto CUF Porto',   sigla: 'CINS',   morada: 'Matosinhos, Porto',                cor: '#06b6d4' },
-            { nome: 'Hospital de Braga',     sigla: 'HBRAGA', morada: 'Braga',                            cor: '#10b981' },
-            { nome: 'ISQ',                   sigla: 'ISQ',    morada: 'Oeiras, Lisboa',                   cor: '#f59e0b' },
+          
           ].map(local => {
             const eqLocal = equipamentos.filter(eq => (eq.localizacao ?? '').toUpperCase().includes(local.sigla))
             const vencidosLocal = eqLocal.filter(eq => { const p = parseData(eq.dataCalibracao); return !p || differenceInDays(p, new Date()) < 0 }).length
