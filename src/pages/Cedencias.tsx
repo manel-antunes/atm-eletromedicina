@@ -258,10 +258,15 @@ if (!eqSelecionado) return
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Destino (serviço/unidade) *</label>
-                <input type="text" placeholder="Ex: Bloco Operatório, UCI..."
-                  value={form.destino} onChange={e => setForm({ ...form, destino: e.target.value })}
-                  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
-              </div>
+<input type="text" placeholder="Ex: Bloco Operatório, UCI..."
+  value={form.destino} onChange={e => setForm({ ...form, destino: e.target.value })}
+  list="destinos-lista"
+  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
+<datalist id="destinos-lista">
+  {Array.from(new Set(equipamentos.map(eq => eq.localizacao).filter(Boolean))).sort().map(loc => (
+    <option key={loc} value={loc} />
+  ))}
+</datalist>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Responsável *</label>
