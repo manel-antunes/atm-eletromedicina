@@ -257,15 +257,15 @@ if (!eqSelecionado) return
                 </select>
               </div>
               <div>
-        <input type="text" placeholder="Ex: Bloco Operatório, UCI..."
+<select
   value={form.destino} onChange={e => setForm({ ...form, destino: e.target.value })}
-  list="destinos-lista"
-  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
-<datalist id="destinos-lista">
+  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400"
+>
+  <option value="">Seleciona um destino...</option>
   {Array.from(new Set(equipamentos.map(eq => eq.localizacao).filter(Boolean))).sort().map(loc => (
-    <option key={loc} value={loc} />
+    <option key={loc} value={loc}>{loc}</option>
   ))}
-</datalist>
+</select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
