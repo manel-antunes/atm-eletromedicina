@@ -8,7 +8,7 @@ import { SkeletonKpis, SkeletonTabela, SkeletonLine } from '../components/Skelet
 
 interface Props {
   equipamentos: Equipamento[]
-  onVerDetalhe: (eq: Equipamento) => void
+onVerDetalhe: (eq: Equipamento | null) => void
   loading?: boolean
 }
 
