@@ -124,15 +124,15 @@ if (!eqSelecionado) return
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 border-t-4 border-t-sky-400">
+        <div className="bg-white border border-gray-200 p-4 border-t-4 border-t-sky-400">
           <p className="text-2xl font-bold font-mono text-sky-500">{cedencias.length}</p>
           <p className="text-xs text-gray-500 uppercase tracking-wide mt-1">Total cedências</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 border-t-4 border-t-orange-400">
+        <div className="bg-white border border-gray-200 p-4 border-t-4 border-t-orange-400">
           <p className="text-2xl font-bold font-mono text-orange-500">{ativas}</p>
           <p className="text-xs text-gray-500 uppercase tracking-wide mt-1">Atualmente cedidos</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 border-t-4 border-t-green-400">
+        <div className="bg-white border border-gray-200 p-4 border-t-4 border-t-green-400">
           <p className="text-2xl font-bold font-mono text-green-600">{cedencias.length - ativas}</p>
           <p className="text-xs text-gray-500 uppercase tracking-wide mt-1">Devolvidos</p>
         </div>
@@ -149,7 +149,7 @@ if (!eqSelecionado) return
             <button
               key={f.id}
               onClick={() => setFiltro(f.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold border transition-all ${
                 filtro === f.id
                   ? 'bg-slate-800 text-white border-slate-800'
                   : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
@@ -161,14 +161,14 @@ if (!eqSelecionado) return
         </div>
         <button
           onClick={() => setModalAberto(true)}
-          className="text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg transition-all"
+          className="text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 transition-all"
         >
           + Registar Cedência
         </button>
       </div>
 
       {/* Tabela */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
@@ -206,7 +206,7 @@ if (!eqSelecionado) return
                     {c.dataRetornoEfetiva ? new Date(c.dataRetornoEfetiva).toLocaleDateString('pt-PT') : '—'}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    <span className={`text-xs font-semibold px-2 py-0.5 ${
                       c.ativa ? 'bg-orange-50 text-orange-700' : 'bg-green-50 text-green-700'
                     }`}>
                       {c.ativa ? 'Ativa' : 'Devolvido'}
@@ -216,7 +216,7 @@ if (!eqSelecionado) return
                     {c.ativa && (
                       <button
                         onClick={() => { setModalRetorno(c); setDataRetorno(new Date().toISOString().split('T')[0]) }}
-                        className="text-xs font-semibold text-green-600 hover:text-green-800 border border-green-200 hover:border-green-400 px-3 py-1.5 rounded-lg transition-all"
+                        className="text-xs font-semibold text-green-600 hover:text-green-800 border border-green-200 hover:border-green-400 px-3 py-1.5 transition-all"
                       >
                         Registar retorno
                       </button>
@@ -232,7 +232,7 @@ if (!eqSelecionado) return
       {/* Modal nova cedência */}
       {modalAberto && (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl">
+          <div className="bg-white w-full max-w-lg shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <ArrowLeftRight size={16} className="text-sky-500" />
@@ -248,7 +248,7 @@ if (!eqSelecionado) return
                 <select
                   value={form.equipamentoId}
                   onChange={e => setForm({ ...form, equipamentoId: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400"
+                  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400"
                 >
                   <option value="">Seleciona um equipamento...</option>
                   {equipamentos.map(eq => (
@@ -260,46 +260,47 @@ if (!eqSelecionado) return
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Destino (serviço/unidade) *</label>
                 <input type="text" placeholder="Ex: Bloco Operatório, UCI..."
                   value={form.destino} onChange={e => setForm({ ...form, destino: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
+                  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Responsável *</label>
                   <input type="text" placeholder="Nome"
                     value={form.responsavel} onChange={e => setForm({ ...form, responsavel: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
+                    className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Contacto</label>
                   <input type="text" placeholder="Email ou extensão"
                     value={form.contacto} onChange={e => setForm({ ...form, contacto: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
+                    className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Data de saída *</label>
                   <input type="date" value={form.dataSaida} onChange={e => setForm({ ...form, dataSaida: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
+                    className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Retorno previsto *</label>
-                  <input type="date" value={form.dataRetornoPrevista} onChange={e => setForm({ ...form, dataRetornoPrevista: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
+                <input type="date" value={form.dataRetornoPrevista} onChange={e => setForm({ ...form, dataRetornoPrevista: e.target.value })}
+  min={new Date().toISOString().split('T')[0]}
+  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
                 </div>
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Observações</label>
                 <textarea placeholder="Notas relevantes..." value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400 resize-none h-16" />
+                  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400 resize-none h-16" />
               </div>
-              {erro && <p className="text-xs text-red-600 font-medium bg-red-50 px-3 py-2 rounded-lg">{erro}</p>}
+              {erro && <p className="text-xs text-red-600 font-medium bg-red-50 px-3 py-2">{erro}</p>}
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-              <button onClick={() => { setModalAberto(false); setErro('') }} className="text-xs font-semibold text-gray-500 px-4 py-2 rounded-lg border border-gray-200 hover:border-gray-300 transition-all">
+              <button onClick={() => { setModalAberto(false); setErro('') }} className="text-xs font-semibold text-gray-500 px-4 py-2 border border-gray-200 hover:border-gray-300 transition-all">
                 Cancelar
               </button>
-              <button onClick={handleSubmit} className="text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg transition-all">
+              <button onClick={handleSubmit} className="text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 transition-all">
                 Registar Cedência
               </button>
             </div>
@@ -310,7 +311,7 @@ if (!eqSelecionado) return
       {/* Modal retorno */}
       {modalRetorno && (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl">
+          <div className="bg-white w-full max-w-sm shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h2 className="text-sm font-semibold text-gray-800">Registar Retorno</h2>
               <button onClick={() => { setModalRetorno(null); setErro('') }} className="text-gray-400 hover:text-gray-600">
@@ -323,15 +324,15 @@ if (!eqSelecionado) return
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Data de retorno efetiva *</label>
                 <input type="date" value={dataRetorno} onChange={e => setDataRetorno(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
+                  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
               </div>
-              {erro && <p className="text-xs text-red-600 font-medium bg-red-50 px-3 py-2 rounded-lg">{erro}</p>}
+              {erro && <p className="text-xs text-red-600 font-medium bg-red-50 px-3 py-2">{erro}</p>}
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-              <button onClick={() => { setModalRetorno(null); setErro('') }} className="text-xs font-semibold text-gray-500 px-4 py-2 rounded-lg border border-gray-200 transition-all">
+              <button onClick={() => { setModalRetorno(null); setErro('') }} className="text-xs font-semibold text-gray-500 px-4 py-2 border border-gray-200 transition-all">
                 Cancelar
               </button>
-              <button onClick={registarRetorno} className="text-xs font-semibold bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all flex items-center gap-1.5">
+              <button onClick={registarRetorno} className="text-xs font-semibold bg-green-600 hover:bg-green-700 text-white px-4 py-2 transition-all flex items-center gap-1.5">
                 <CheckCircle size={12} />
                 Confirmar retorno
               </button>
