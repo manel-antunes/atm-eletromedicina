@@ -216,7 +216,6 @@ case 'dashboard': return <Dashboard equipamentos={equipamentos} onVerDetalhe={se
       case 'calendario':  return <Calendario />
       case 'documentos':  return <Documentos equipamentos={equipamentos} />
       case 'contactos':   return <Contactos equipamentos={equipamentos} />
-      case 'mapa':        return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       case 'preventivas': return <PlanoPreventivas />
       case 'qrcodes':     return <QRCodes equipamentos={equipamentos} />
       default:            return null
