@@ -269,12 +269,14 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
               </div>
             </div>
             {onNavegar && (
-              <button
-                onClick={() => onNavegar('preventivas')}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 600, padding: '4px 10px', cursor: 'pointer', letterSpacing: '0.06em' }}
-              >
-                Ver tudo <ChevronRight size={11} />
-              </button>
+<button
+  onClick={() => onNavegar('preventivas')}
+  style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 600, padding: '4px 10px', cursor: 'pointer', letterSpacing: '0.06em', transition: 'all 0.15s' }}
+  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.18)'; (e.currentTarget as HTMLElement).style.color = '#fff' }}
+  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)' }}
+>
+  Ver tudo <ChevronRight size={11} />
+</button>
             )}
           </div>
 
