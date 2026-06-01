@@ -208,7 +208,7 @@ function App() {
       return <DetalheEquipamento equipamento={equipDetalhe} onVoltar={() => setEquipDetalhe(null)} />
     }
     switch (paginaAtiva) {
-      case 'dashboard':   return <Dashboard equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
+case 'dashboard': return <Dashboard equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} onNavegar={navegar} />
       case 'calibracoes': return <Calibracoes equipamentos={equipamentos} onAtualizar={handleAtualizar} onVerDetalhe={setEquipDetalhe} />
       case 'inventario':  return <Inventario equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       case 'cedencias':   return <Cedencias equipamentos={equipamentos} onAtualizar={setEquipamentos} />
