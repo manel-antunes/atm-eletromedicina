@@ -359,7 +359,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
         {/* QR Codes — atalho */}
         <div
           onClick={() => onNavegar?.('qrcodes')}
-          style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1a0509 60%, #C0001A 100%)', border: '1px solid rgba(192,0,26,0.3)', overflow: 'hidden', cursor: onNavegar ? 'pointer' : 'default', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 160 }}
+          style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1a0509 60%, #C0001A 100%)', border: '1px solid rgba(192,0,26,0.3)', overflow: 'hidden', cursor: onNavegar ? 'pointer' : 'default', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start',}}
           onMouseEnter={e => { if (onNavegar) (e.currentTarget as HTMLElement).style.opacity = '0.92' }}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
         >
