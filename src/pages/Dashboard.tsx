@@ -478,7 +478,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Unidade de Eletromedicina</h2>
         </div>
-        <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
 
           <div className="flex-shrink-0 w-64 overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ background: '#C0001A', padding: '12px 16px' }}>
