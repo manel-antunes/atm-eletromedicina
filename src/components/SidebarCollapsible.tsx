@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Map, Calendar, LogOut, QrCode, Stethoscope, ChevronRight, Command } from 'lucide-react'
+import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Calendar, LogOut, QrCode, Stethoscope, ChevronRight, Command } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import logoAtm from '../assets/logo-atm.png'
@@ -47,7 +47,6 @@ const ITENS = [
   { id: 'calendario',  label: 'Calendário',   icon: Calendar },
   { id: 'documentos',  label: 'Documentos',   icon: FolderOpen },
   { id: 'contactos',   label: 'Contactos',    icon: Phone },
-  { id: 'mapa',        label: 'Mapa',         icon: Map },
   { id: 'qrcodes',     label: 'QR Codes',     icon: QrCode },
   { id: 'preventivas', label: 'Preventivas',  icon: Stethoscope },
 ]

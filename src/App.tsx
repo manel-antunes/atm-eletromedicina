@@ -17,7 +17,7 @@ import ModoApresentacao from './pages/ModoApresentacao'
 import DashboardIA from './pages/DashboardIA'
 import Documentos from './pages/Documentos'
 import Contactos from './pages/Contactos'
-import Mapa from './pages/Mapa'
+
 import Calendario from './pages/Calendario'
 import Login from './pages/Login'
 import ToastContainer from './components/Toast'
@@ -42,7 +42,6 @@ const titulos: Record<string, string> = {
   calendario:  'Calendário',
   documentos:  'Documentos',
   contactos:   'Contactos de Marcas',
-  mapa:        'Mapa de Equipamentos',
   qrcodes:     'QR Codes',
   preventivas: 'Plano de Preventivas',
 }
