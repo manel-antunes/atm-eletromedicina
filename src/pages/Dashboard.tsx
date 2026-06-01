@@ -1,7 +1,7 @@
-import { AlertTriangle, CheckCircle, Clock, Package, Search, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Clock, Package } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import GraficoCalibracoes from '../components/GraficoCalibracoes'
 import KpiCard from '../components/KpiCard'
 import { SkeletonKpis, SkeletonTabela, SkeletonLine } from '../components/Skeleton'
@@ -34,13 +34,6 @@ function formatarData(dataStr: string): string {
   const data = parseData(dataStr)
   if (!data) return '—'
   return data.toLocaleDateString('pt-PT')
-}
-
-function getUltimaCalib(proxima: Date, periodicidade: string): Date {
-  const ultima = new Date(proxima)
-  if (periodicidade === 'Bienal') ultima.setFullYear(ultima.getFullYear() - 2)
-  else ultima.setFullYear(ultima.getFullYear() - 1)
-  return ultima
 }
 
 function getEstado(eq: Equipamento): 'vencido' | 'urgente' | 'aviso' | 'ok' {
@@ -80,7 +73,6 @@ function useIsMobile() {
   return isMobile
 }
 
-// Skeleton do gráfico
 function SkeletonGrafico() {
   return (
     <div style={{ background: '#0f172a', padding: '20px 24px' }}>
@@ -108,7 +100,6 @@ function SkeletonGrafico() {
   )
 }
 
-// Skeleton alertas
 function SkeletonAlertas() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -144,11 +135,6 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
     } catch { return [] }
   })()
 
-  const [vista, setVista] = useState<'tabela' | 'cards'>('cards')
-  const [cardExpandido, setCardExpandido] = useState<number | null>(null)
-  const [tabelaExpandida, setTabelaExpandida] = useState(false)
-  const [pesquisaTabela, setPesquisaTabela] = useState('')
-  const [ordenacao, setOrdenacao] = useState<{ coluna: string; direcao: 'asc' | 'desc' }>({ coluna: 'estado', direcao: 'asc' })
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollVelocidade = useRef(0)
   const scrollAnimacao = useRef<number>(0)
@@ -167,48 +153,16 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
     return () => { el.removeEventListener('wheel', handler); cancelAnimationFrame(scrollAnimacao.current) }
   }, [])
 
-  function toggleOrdenacao(coluna: string) {
-    setOrdenacao(prev => ({ coluna, direcao: prev.coluna === coluna && prev.direcao === 'asc' ? 'desc' : 'asc' }))
-  }
-
-  function ordenarEstados(lista: typeof estados) {
-    return [...lista].sort((a, b) => {
-      const dir = ordenacao.direcao === 'asc' ? 1 : -1
-      switch (ordenacao.coluna) {
-        case 'descricao': return dir * a.eq.descricao.localeCompare(b.eq.descricao)
-        case 'marca': return dir * `${a.eq.marca} ${a.eq.modelo}`.localeCompare(`${b.eq.marca} ${b.eq.modelo}`)
-        case 'ultimaCalib':
-        case 'proximaCalib': { const da = parseData(a.eq.dataCalibracao)?.getTime() ?? 0; const db = parseData(b.eq.dataCalibracao)?.getTime() ?? 0; return dir * (da - db) }
-        case 'localizacao': return dir * (a.eq.localizacao ?? '').localeCompare(b.eq.localizacao ?? '')
-        case 'estado': { const ordem = { vencido: 0, urgente: 1, aviso: 2, ok: 3 }; return dir * (ordem[a.estado] - ordem[b.estado]) }
-        default: return 0
-      }
-    })
-  }
-
-  const equipFiltrados = ordenarEstados(estados).filter(({ eq }) =>
-    pesquisaTabela === '' ||
-    eq.descricao.toLowerCase().includes(pesquisaTabela.toLowerCase()) ||
-    eq.marca.toLowerCase().includes(pesquisaTabela.toLowerCase()) ||
-    eq.numeroSAP.includes(pesquisaTabela)
-  )
-
-  // SKELETON — mostra enquanto loading
   if (loading) {
     return (
       <div className="space-y-4">
-        <style>{`
-          @keyframes skeleton-shimmer {
-            0%   { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-          }
-        `}</style>
+        <style>{`@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
         <SkeletonKpis />
         <SkeletonGrafico />
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <SkeletonLine width={100} height={10} />
-            <SkeletonLine width={24} height={20} radius={99} />
+            <SkeletonLine width={24} height={20} />
           </div>
           <SkeletonAlertas />
         </div>
@@ -282,7 +236,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
         </div>
       )}
 
-      {/* Alertas */}
+      {/* Alertas calibrações */}
       {alertas.length > 0 && (
         <div className="anim-fade-up delay-6">
           <div className="flex items-center gap-2 mb-3">
@@ -333,14 +287,14 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
         </div>
       )}
 
-  
-
       {/* Scroll horizontal — Info empresa */}
       <div className="anim-fade-up">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Unidade de Eletromedicina</h2>
         </div>
         <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+
+          {/* Estatísticas */}
           <div className="flex-shrink-0 w-64 overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ background: '#C0001A', padding: '12px 16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Estatísticas</p>
@@ -348,11 +302,11 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
             </div>
             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'Total equipamentos',   valor: equipamentos.length,                                             cor: '#38bdf8' },
-                { label: 'Taxa de conformidade', valor: `${Math.round((emDia.length / equipamentos.length) * 100)}%`,  cor: '#4ade80' },
-                { label: 'Calibrações vencidas', valor: vencidos.length,                                                cor: '#f87171' },
-                { label: 'A vencer em 30 dias',  valor: urgentes.length,                                                cor: '#fb923c' },
-                { label: 'A vencer em 60 dias',  valor: avisos.length,                                                  cor: '#facc15' },
+                { label: 'Total equipamentos',   valor: equipamentos.length,                                            cor: '#38bdf8' },
+                { label: 'Taxa de conformidade', valor: `${Math.round((emDia.length / equipamentos.length) * 100)}%`, cor: '#4ade80' },
+                { label: 'Calibrações vencidas', valor: vencidos.length,                                               cor: '#f87171' },
+                { label: 'A vencer em 30 dias',  valor: urgentes.length,                                               cor: '#fb923c' },
+                { label: 'A vencer em 60 dias',  valor: avisos.length,                                                 cor: '#facc15' },
               ].map(stat => (
                 <div key={stat.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{stat.label}</p>
@@ -361,11 +315,12 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
               ))}
             </div>
           </div>
+
+          {/* Localizações */}
           {[
-            { nome: 'Hospital CUF Porto',    sigla: 'HPRT',   morada: 'Estr. Circunvalação 14341, Porto', cor: '#3b82f6' },
-            { nome: 'Hospital CUF Trindade', sigla: 'HTRD',   morada: 'R. da Trindade, Porto',            cor: '#8b5cf6' },
-            { nome: 'Instituto CUF Porto',   sigla: 'CINS',   morada: 'Matosinhos, Porto',                cor: '#06b6d4' },
-          
+            { nome: 'Hospital CUF Porto',    sigla: 'HPRT', morada: 'Estr. Circunvalação 14341, Porto', cor: '#3b82f6' },
+            { nome: 'Hospital CUF Trindade', sigla: 'HTRD', morada: 'R. da Trindade, Porto',            cor: '#8b5cf6' },
+            { nome: 'Instituto CUF Porto',   sigla: 'CINS', morada: 'Matosinhos, Porto',                cor: '#06b6d4' },
           ].map(local => {
             const eqLocal = equipamentos.filter(eq => (eq.localizacao ?? '').toUpperCase().includes(local.sigla))
             const vencidosLocal = eqLocal.filter(eq => { const p = parseData(eq.dataCalibracao); return !p || differenceInDays(p, new Date()) < 0 }).length
@@ -408,6 +363,8 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
               </div>
             )
           })}
+
+          {/* Equipa */}
           <div className="flex-shrink-0 w-56 overflow-hidden shadow-sm border border-gray-100 bg-white">
             <div style={{ background: 'linear-gradient(135deg, #C0001A 0%, #7f1d1d 100%)', padding: '12px 16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Equipa</p>
@@ -432,6 +389,8 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
               ))}
             </div>
           </div>
+
+          {/* Sistema */}
           <div className="flex-shrink-0 w-56 overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sistema</p>
