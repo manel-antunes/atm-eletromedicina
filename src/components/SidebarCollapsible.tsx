@@ -73,8 +73,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
       onMouseLeave={() => setExpandida(false)}
     >
       {/* Logo */}
-      <div style={{ padding: expandida ? '20px 20px 16px' : '20px 14px 16px', display: 'flex', alignItems: 'center', gap: 10, transition: 'padding 0.25s', borderBottom: '1px solid rgba(255,255,255,0.06)', minHeight: 72 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#C0001A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+<div onClick={() => onNavegar('dashboard')} style={{ padding: expandida ? '20px 20px 16px' : '20px 14px 16px', display: 'flex', alignItems: 'center', gap: 10, transition: 'padding 0.25s', borderBottom: '1px solid rgba(255,255,255,0.06)', minHeight: 72, cursor: 'pointer' }}>        <div style={{ width: 36, height: 36, background: '#C0001A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <img src={logoAtm} alt="ATM" style={{ width: 24, filter: 'brightness(0) invert(1)' }} />
         </div>
         {expandida && (
@@ -92,7 +91,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
           style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: 10,
             background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 8, padding: expandida ? '8px 12px' : '8px', cursor: 'pointer',
+            padding: expandida ? '8px 12px' : '8px', cursor: 'pointer',
             transition: 'all 0.15s', justifyContent: expandida ? 'flex-start' : 'center',
           }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'}
@@ -102,7 +101,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
           {expandida && (
             <>
               <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', flex: 1, textAlign: 'left' }}>Pesquisar...</span>
-              <kbd style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '1px 5px', fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>⌘K</kbd>
+              <kbd style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', padding: '1px 5px', fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>⌘K</kbd>
             </>
           )}
         </button>
@@ -122,7 +121,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
                 width: '100%', display: 'flex', alignItems: 'center',
                 gap: expandida ? 12 : 0, justifyContent: expandida ? 'flex-start' : 'center',
                 padding: expandida ? '9px 12px' : '9px',
-                borderRadius: 8, border: 'none', cursor: 'pointer',
+                border: 'none', cursor: 'pointer',
                 background: ativo ? 'rgba(192,0,26,0.2)' : 'transparent',
                 transition: 'all 0.15s', position: 'relative',
               }}
@@ -132,14 +131,14 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <Icon size={18} color={ativo ? '#ff4458' : 'rgba(255,255,255,0.5)'} />
                 {temBadge && !expandida && (
-                  <div style={{ position: 'absolute', top: -3, right: -3, width: 8, height: 8, borderRadius: 99, background: '#C0001A', border: '1.5px solid #0A0F1E' }} />
+                  <div style={{ position: 'absolute', top: -3, right: -3, width: 8, height: 8, borderRadius: '50%', background: '#C0001A', border: '1.5px solid #0A0F1E' }} />
                 )}
               </div>
               {expandida && (
                 <>
                   <span style={{ fontSize: 12, fontWeight: ativo ? 700 : 500, color: ativo ? '#fff' : 'rgba(255,255,255,0.6)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden' }}>{label}</span>
                   {temBadge && (
-                    <span style={{ background: '#C0001A', color: '#fff', fontSize: 10, fontWeight: 900, padding: '1px 6px', borderRadius: 99 }}>{alertas > 99 ? '99+' : alertas}</span>
+                    <span style={{ background: '#C0001A', color: '#fff', fontSize: 10, fontWeight: 900, padding: '1px 6px' }}>{alertas > 99 ? '99+' : alertas}</span>
                   )}
                   {ativo && <ChevronRight size={12} color="rgba(255,255,255,0.3)" />}
                 </>
@@ -156,7 +155,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
       {/* Footer */}
       <div style={{ padding: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         {nomeUtilizador && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 8, justifyContent: expandida ? 'flex-start' : 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', justifyContent: expandida ? 'flex-start' : 'center' }}>
             <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#C0001A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{nomeUtilizador.charAt(0).toUpperCase()}</span>
             </div>
@@ -167,7 +166,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
                   <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', margin: 0 }}>Sessão ativa</p>
                 </div>
                 {onLogout && (
-                  <button onClick={onLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 4, borderRadius: 6, display: 'flex' }}>
+                  <button onClick={onLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 4, display: 'flex' }}>
                     <LogOut size={13} />
                   </button>
                 )}
