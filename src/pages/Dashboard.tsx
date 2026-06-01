@@ -479,7 +479,8 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
   <div className="flex items-center justify-between mb-3">
     <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Unidade de Eletromedicina</h2>
   </div>
-  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1fr 1fr'
+, gap: 12 }}>
 
     <div style={{ overflow: 'hidden', border: '1px solid #e2e8f0', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ background: '#C0001A', padding: '12px 16px' }}>
