@@ -4,8 +4,8 @@ import dotenv from 'dotenv'
 import * as cron from 'node-cron'
 import nodemailer from 'nodemailer'
 import jwt from 'jsonwebtoken'
+import bcrypt from 'bcrypt'
 import webpush from 'web-push'
-
 import { pool, inicializarDB } from './database'
 
 dotenv.config()
@@ -14,15 +14,14 @@ const app = express()
 app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'atm-eletromedicina-2026'
+const JWT_SECRET         = process.env.JWT_SECRET          ?? 'atm-eletromedicina-2026'
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET  ?? 'atm-refresh-2026'
+const BCRYPT_ROUNDS      = 10
 
 // ── GMAIL SMTP ─────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
   service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
+  auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
 })
 
 // ── VAPID ──────────────────────────────────────────────────
@@ -33,11 +32,31 @@ webpush.setVapidDetails(
 )
 let subscricoesPush: webpush.PushSubscription[] = []
 
-// ── UTILIZADORES ──────────────────────────────────────────
-const UTILIZADORES = [
-  { username: 'admin',   password: process.env.PASS_ADMIN   ?? 'atm2026',  nome: 'Administrador' },
-  { username: 'tecnico', password: process.env.PASS_TECNICO ?? 'hprt2026', nome: 'Técnico HPRT' },
-]
+// ── HELPERS ────────────────────────────────────────────────
+function getIP(req: any): string {
+  return req.headers['x-forwarded-for']?.split(',')[0] ?? req.socket?.remoteAddress ?? ''
+}
+
+// ── AUDIT LOG ──────────────────────────────────────────────
+async function registarAudit(
+  userId: number | null,
+  username: string,
+  acao: string,
+  entidade: string | null = null,
+  entidadeId: string | null = null,
+  detalhes: object | null = null,
+  ip: string = ''
+) {
+  try {
+    await pool.query(
+      `INSERT INTO audit_log (user_id, username, acao, entidade, entidade_id, detalhes, ip)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [userId, username, acao, entidade, entidadeId, detalhes ? JSON.stringify(detalhes) : null, ip]
+    )
+  } catch (err) {
+    console.error('Erro ao registar audit:', err)
+  }
+}
 
 // ── MIDDLEWARE AUTH ────────────────────────────────────────
 function autenticar(req: any, res: any, next: any) {
@@ -51,30 +70,236 @@ function autenticar(req: any, res: any, next: any) {
   }
 }
 
-// ── LOGIN ──────────────────────────────────────────────────
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body
-  const user = UTILIZADORES.find(u => u.username === username)
-  if (!user || user.password !== password) {
-    return res.status(401).json({ erro: 'Utilizador ou password incorretos' })
+// Middleware só para admins
+function apenasAdmin(req: any, res: any, next: any) {
+  if (req.utilizador?.role !== 'admin') {
+    return res.status(403).json({ erro: 'Acesso restrito a administradores' })
   }
-  const token = jwt.sign({ username, nome: user.nome }, JWT_SECRET, { expiresIn: '8h' })
-  res.json({ token, nome: user.nome, username })
+  next()
+}
+
+// ── SEED UTILIZADORES ──────────────────────────────────────
+async function seedUtilizadores() {
+  const count = await pool.query('SELECT COUNT(*) FROM users')
+  if (parseInt(count.rows[0].count) > 0) return
+
+  const passAdmin   = process.env.PASS_ADMIN   ?? 'atm2026'
+  const passTecnico = process.env.PASS_TECNICO ?? 'hprt2026'
+
+  const hashAdmin   = await bcrypt.hash(passAdmin,   BCRYPT_ROUNDS)
+  const hashTecnico = await bcrypt.hash(passTecnico, BCRYPT_ROUNDS)
+
+  await pool.query(
+    `INSERT INTO users (username, password_hash, nome, role) VALUES
+     ('admin',   $1, 'Administrador', 'admin'),
+     ('tecnico', $2, 'Técnico HPRT',  'tecnico')`,
+    [hashAdmin, hashTecnico]
+  )
+  console.log('✅ Utilizadores iniciais criados (admin + tecnico)')
+}
+
+// ── LOGIN ──────────────────────────────────────────────────
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body
+  try {
+    const result = await pool.query(
+      'SELECT * FROM users WHERE username = $1 AND ativo = TRUE',
+      [username]
+    )
+    const user = result.rows[0]
+    if (!user) return res.status(401).json({ erro: 'Utilizador ou password incorretos' })
+
+    const passwordOk = await bcrypt.compare(password, user.password_hash)
+    if (!passwordOk) {
+      await registarAudit(user.id, username, 'LOGIN_FALHOU', null, null, null, getIP(req))
+      return res.status(401).json({ erro: 'Utilizador ou password incorretos' })
+    }
+
+    // Access token (8h)
+    const token = jwt.sign(
+      { id: user.id, username: user.username, nome: user.nome, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '8h' }
+    )
+
+    // Refresh token (7 dias)
+    const refreshToken = jwt.sign(
+      { id: user.id, username: user.username },
+      JWT_REFRESH_SECRET,
+      { expiresIn: '7d' }
+    )
+
+    const expiraEm = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    const deviceInfo = req.headers['user-agent'] ?? ''
+    await pool.query(
+      `INSERT INTO refresh_tokens (user_id, token, device_info, ip, expira_em)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [user.id, refreshToken, deviceInfo, getIP(req), expiraEm]
+    )
+
+    // Atualiza último login
+    await pool.query('UPDATE users SET ultimo_login = NOW() WHERE id = $1', [user.id])
+    await registarAudit(user.id, username, 'LOGIN', null, null, null, getIP(req))
+
+    res.json({ token, refreshToken, nome: user.nome, username: user.username, role: user.role })
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
 })
 
+// ── REFRESH TOKEN ──────────────────────────────────────────
+app.post('/api/refresh', async (req, res) => {
+  const { refreshToken } = req.body
+  if (!refreshToken) return res.status(401).json({ erro: 'Refresh token em falta' })
+
+  try {
+    const payload: any = jwt.verify(refreshToken, JWT_REFRESH_SECRET)
+
+    // Verifica se existe e não foi revogado
+    const result = await pool.query(
+      `SELECT rt.*, u.nome, u.role, u.ativo
+       FROM refresh_tokens rt
+       JOIN users u ON u.id = rt.user_id
+       WHERE rt.token = $1 AND rt.revogado = FALSE AND rt.expira_em > NOW()`,
+      [refreshToken]
+    )
+    if (!result.rows.length) return res.status(401).json({ erro: 'Refresh token inválido ou expirado' })
+
+    const row = result.rows[0]
+    if (!row.ativo) return res.status(401).json({ erro: 'Utilizador inativo' })
+
+    // Novo access token
+    const newToken = jwt.sign(
+      { id: payload.id, username: payload.username, nome: row.nome, role: row.role },
+      JWT_SECRET,
+      { expiresIn: '8h' }
+    )
+
+    res.json({ token: newToken })
+  } catch {
+    res.status(401).json({ erro: 'Refresh token inválido' })
+  }
+})
+
+// ── LOGOUT ─────────────────────────────────────────────────
+app.post('/api/logout', autenticar, async (req: any, res) => {
+  const { refreshToken } = req.body
+  try {
+    if (refreshToken) {
+      await pool.query('UPDATE refresh_tokens SET revogado = TRUE WHERE token = $1', [refreshToken])
+    }
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'LOGOUT', null, null, null, getIP(req))
+    res.json({ sucesso: true })
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+// ── ME ─────────────────────────────────────────────────────
 app.get('/api/me', autenticar, (req: any, res) => {
-  res.json({ username: req.utilizador.username, nome: req.utilizador.nome })
+  res.json({
+    id: req.utilizador.id,
+    username: req.utilizador.username,
+    nome: req.utilizador.nome,
+    role: req.utilizador.role,
+  })
+})
+
+// ── SESSÕES ATIVAS (admin) ────────────────────────────────
+app.get('/api/sessoes', autenticar, apenasAdmin, async (req: any, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT rt.id, u.username, u.nome, rt.device_info, rt.ip, rt.criado_em, rt.expira_em
+       FROM refresh_tokens rt
+       JOIN users u ON u.id = rt.user_id
+       WHERE rt.revogado = FALSE AND rt.expira_em > NOW()
+       ORDER BY rt.criado_em DESC`
+    )
+    res.json(result.rows)
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+app.delete('/api/sessoes/:id', autenticar, apenasAdmin, async (req: any, res) => {
+  try {
+    await pool.query('UPDATE refresh_tokens SET revogado = TRUE WHERE id = $1', [req.params.id])
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'REVOGAR_SESSAO', 'sessao', req.params.id, null, getIP(req))
+    res.json({ sucesso: true })
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+// ── GESTÃO DE UTILIZADORES (admin) ───────────────────────
+app.get('/api/users', autenticar, apenasAdmin, async (_req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, username, nome, role, ativo, criado_em, ultimo_login FROM users ORDER BY criado_em'
+    )
+    res.json(result.rows)
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+app.post('/api/users', autenticar, apenasAdmin, async (req: any, res) => {
+  const { username, password, nome, role } = req.body
+  if (!username || !password || !nome || !role) return res.status(400).json({ erro: 'Campos obrigatórios em falta' })
+  try {
+    const hash = await bcrypt.hash(password, BCRYPT_ROUNDS)
+    const result = await pool.query(
+      'INSERT INTO users (username, password_hash, nome, role) VALUES ($1, $2, $3, $4) RETURNING id, username, nome, role',
+      [username, hash, nome, role]
+    )
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'CRIAR_USER', 'user', String(result.rows[0].id), { username, nome, role }, getIP(req))
+    res.json(result.rows[0])
+  } catch (err: any) {
+    if (err.code === '23505') return res.status(409).json({ erro: 'Username já existe' })
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+app.patch('/api/users/:id', autenticar, apenasAdmin, async (req: any, res) => {
+  const { nome, role, ativo, password } = req.body
+  try {
+    if (password) {
+      const hash = await bcrypt.hash(password, BCRYPT_ROUNDS)
+      await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.params.id])
+    }
+    if (nome || role !== undefined || ativo !== undefined) {
+      await pool.query(
+        `UPDATE users SET
+          nome = COALESCE($1, nome),
+          role = COALESCE($2, role),
+          ativo = COALESCE($3, ativo)
+         WHERE id = $4`,
+        [nome ?? null, role ?? null, ativo ?? null, req.params.id]
+      )
+    }
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'EDITAR_USER', 'user', req.params.id, { nome, role, ativo }, getIP(req))
+    res.json({ sucesso: true })
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
+})
+
+// ── AUDIT LOG (admin) ─────────────────────────────────────
+app.get('/api/audit', autenticar, apenasAdmin, async (req: any, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM audit_log ORDER BY criado_em DESC LIMIT 200`
+    )
+    res.json(result.rows)
+  } catch (err) {
+    res.status(500).json({ erro: String(err) })
+  }
 })
 
 // ── EMAIL ──────────────────────────────────────────────────
 interface Alerta {
-  descricao: string
-  marca: string
-  modelo: string
-  numeroSAP: string
-  localizacao: string
-  diasRestantes: number
-  proximaCalib: string
+  descricao: string; marca: string; modelo: string; numeroSAP: string
+  localizacao: string; diasRestantes: number; proximaCalib: string
   estado: 'vencido' | 'urgente' | 'aviso'
 }
 
@@ -144,8 +369,7 @@ async function enviarEmail(destinatarios: string[], subject: string, html: strin
   await transporter.sendMail({
     from: `"ATM Eletromedicina" <${process.env.GMAIL_USER}>`,
     to: destinatarios.join(', '),
-    subject,
-    html,
+    subject, html,
   })
 }
 
@@ -171,13 +395,13 @@ async function iniciarCron() {
 // ── ROTAS PÚBLICAS ─────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }))
 
-// ── ROTAS PROTEGIDAS ───────────────────────────────────────
+// ── EQUIPAMENTOS ───────────────────────────────────────────
 app.get('/api/equipamentos', autenticar, async (_req, res) => {
   try { res.json((await pool.query('SELECT * FROM equipamentos ORDER BY id')).rows) }
   catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
-app.post('/api/equipamentos/importar', autenticar, async (req, res) => {
+app.post('/api/equipamentos/importar', autenticar, apenasAdmin, async (req: any, res) => {
   const { equipamentos } = req.body
   const client = await pool.connect()
   try {
@@ -192,17 +416,19 @@ app.post('/api/equipamentos/importar', autenticar, async (req, res) => {
       )
     }
     await client.query('COMMIT')
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'IMPORTAR_EQUIPAMENTOS', 'equipamentos', null, { total: equipamentos.length }, getIP(req))
     res.json({ sucesso: true, total: equipamentos.length })
   } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ erro: String(err) }) }
   finally { client.release() }
 })
 
+// ── CALIBRAÇÕES ────────────────────────────────────────────
 app.get('/api/calibracoes/:sap', autenticar, async (req, res) => {
   try { res.json((await pool.query('SELECT * FROM calibracoes WHERE equipamento_sap=$1 ORDER BY data_calibracao DESC', [req.params.sap])).rows) }
   catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
-app.post('/api/calibracoes', autenticar, async (req, res) => {
+app.post('/api/calibracoes', autenticar, async (req: any, res) => {
   const { equipamentoSAP, dataCalibracao, tecnico, entidade, observacoes, relatorio, aprovadoPor, novaProximaCalib } = req.body
   const client = await pool.connect()
   try {
@@ -211,17 +437,19 @@ app.post('/api/calibracoes', autenticar, async (req, res) => {
       [equipamentoSAP,dataCalibracao,tecnico,entidade,observacoes,relatorio,aprovadoPor])
     await client.query(`UPDATE equipamentos SET data_calibracao=$1,atualizado_em=NOW() WHERE numero_sap=$2`, [novaProximaCalib,equipamentoSAP])
     await client.query('COMMIT')
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'REGISTAR_CALIBRACAO', 'equipamento', equipamentoSAP, { tecnico, entidade }, getIP(req))
     res.json({ sucesso: true })
   } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ erro: String(err) }) }
   finally { client.release() }
 })
 
+// ── CEDÊNCIAS ──────────────────────────────────────────────
 app.get('/api/cedencias', autenticar, async (_req, res) => {
   try { res.json((await pool.query('SELECT * FROM cedencias ORDER BY criado_em DESC')).rows) }
   catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
-app.post('/api/cedencias', autenticar, async (req, res) => {
+app.post('/api/cedencias', autenticar, async (req: any, res) => {
   const { equipamentoSAP, equipamentoNome, destino, responsavel, contacto, dataSaida, dataRetornoPrevista, observacoes } = req.body
   const client = await pool.connect()
   try {
@@ -230,12 +458,13 @@ app.post('/api/cedencias', autenticar, async (req, res) => {
       [equipamentoSAP,equipamentoNome,destino,responsavel,contacto,dataSaida,dataRetornoPrevista,observacoes])
     await client.query(`UPDATE equipamentos SET localizacao=$1,atualizado_em=NOW() WHERE numero_sap=$2`, [destino,equipamentoSAP])
     await client.query('COMMIT')
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'CRIAR_CEDENCIA', 'equipamento', equipamentoSAP, { destino, responsavel }, getIP(req))
     res.json({ sucesso: true })
   } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ erro: String(err) }) }
   finally { client.release() }
 })
 
-app.patch('/api/cedencias/:id/retorno', autenticar, async (req, res) => {
+app.patch('/api/cedencias/:id/retorno', autenticar, async (req: any, res) => {
   const { dataRetornoEfetiva } = req.body
   const client = await pool.connect()
   try {
@@ -244,23 +473,26 @@ app.patch('/api/cedencias/:id/retorno', autenticar, async (req, res) => {
     await client.query(`UPDATE cedencias SET ativa=FALSE,data_retorno_efetiva=$1 WHERE id=$2`, [dataRetornoEfetiva,req.params.id])
     if (sap) await client.query(`UPDATE equipamentos SET localizacao='FIXO HPRT',atualizado_em=NOW() WHERE numero_sap=$1`, [sap])
     await client.query('COMMIT')
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'REGISTAR_RETORNO', 'cedencia', req.params.id, null, getIP(req))
     res.json({ sucesso: true })
   } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ erro: String(err) }) }
   finally { client.release() }
 })
 
+// ── CONFIG EMAIL ───────────────────────────────────────────
 app.get('/api/config', autenticar, async (_req, res) => {
   try { res.json(await carregarConfig()) }
   catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
-app.post('/api/config', autenticar, async (req, res) => {
+app.post('/api/config', autenticar, apenasAdmin, async (req: any, res) => {
   const config = req.body
   try {
     await pool.query('DELETE FROM config_email')
     await pool.query(`INSERT INTO config_email (destinatarios,agendamento_ativo,dia_semana,hora,incluir_vencidas,incluir_urgentes,incluir_em_breve) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
       [JSON.stringify(config.destinatarios),config.agendamento.ativo,config.agendamento.diaSemana,config.agendamento.hora,config.filtros.incluirVencidas,config.filtros.incluirUrgentes,config.filtros.incluirEmBreve])
     await iniciarCron()
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'ATUALIZAR_CONFIG_EMAIL', null, null, null, getIP(req))
     res.json({ sucesso: true })
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
@@ -277,7 +509,7 @@ app.post('/api/alertas-cache', autenticar, (req, res) => {
   res.json({ sucesso: true })
 })
 
-app.post('/api/enviar-alertas', autenticar, async (req, res) => {
+app.post('/api/enviar-alertas', autenticar, async (req: any, res) => {
   const { alertas, destinatarios } = req.body
   if (!alertas?.length) return res.status(400).json({ erro: 'Sem alertas.' })
   ultimosAlertasCache = alertas
@@ -288,6 +520,7 @@ app.post('/api/enviar-alertas', autenticar, async (req, res) => {
     await pool.query(`INSERT INTO historico_emails (data,hora,destinatarios,total_alertas,vencidas,urgentes,em_breve,sucesso) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [new Date().toLocaleDateString('pt-PT'),new Date().toLocaleTimeString('pt-PT'),JSON.stringify(destinos),alertas.length,
        alertas.filter((a:Alerta)=>a.estado==='vencido').length,alertas.filter((a:Alerta)=>a.estado==='urgente').length,alertas.filter((a:Alerta)=>a.estado==='aviso').length,true])
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'ENVIAR_EMAIL_ALERTAS', null, null, { total: alertas.length }, getIP(req))
     res.json({ sucesso: true, enviados: alertas.length })
   } catch (err) {
     await pool.query(`INSERT INTO historico_emails (data,hora,destinatarios,total_alertas,vencidas,urgentes,em_breve,sucesso,erro) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
@@ -305,6 +538,7 @@ app.post('/api/testar-email', autenticar, async (_req, res) => {
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
+// ── DESCRIÇÕES IA ──────────────────────────────────────────
 app.get('/api/descricao/:sap', autenticar, async (req, res) => {
   try { res.json({ descricao: (await pool.query('SELECT descricao_tecnica FROM descricoes_equipamentos WHERE equipamento_sap=$1', [req.params.sap])).rows[0]?.descricao_tecnica ?? null }) }
   catch (err) { res.status(500).json({ erro: String(err) }) }
@@ -316,40 +550,6 @@ app.post('/api/descricao/:sap', autenticar, async (req, res) => {
     await pool.query(`INSERT INTO descricoes_equipamentos (equipamento_sap,descricao_tecnica) VALUES ($1,$2) ON CONFLICT (equipamento_sap) DO UPDATE SET descricao_tecnica=$2,gerado_em=NOW()`, [req.params.sap,descricao])
     res.json({ sucesso: true })
   } catch (err) { res.status(500).json({ erro: String(err) }) }
-})
-
-app.get('/api/documentos', autenticar, async (_req, res) => {
-  try { res.json((await pool.query('SELECT id,equipamento_sap,nome,tipo,tamanho,criado_em FROM documentos ORDER BY criado_em DESC')).rows) }
-  catch (err) { res.status(500).json({ erro: String(err) }) }
-})
-
-app.get('/api/documentos/download/:id', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT nome,tipo,dados FROM documentos WHERE id=$1', [req.params.id])
-    if (!result.rows.length) return res.status(404).json({ erro: 'Documento não encontrado' })
-    const { nome, dados } = result.rows[0]
-    res.setHeader('Content-Type', 'application/pdf')
-    res.setHeader('Content-Disposition', `attachment; filename="${nome}"`)
-    res.send(Buffer.from(dados, 'base64'))
-  } catch (err) { res.status(500).json({ erro: String(err) }) }
-})
-
-app.get('/api/documentos/:sap', autenticar, async (req, res) => {
-  try { res.json((await pool.query('SELECT id,equipamento_sap,nome,tipo,tamanho,criado_em FROM documentos WHERE equipamento_sap=$1 ORDER BY criado_em DESC', [req.params.sap])).rows) }
-  catch (err) { res.status(500).json({ erro: String(err) }) }
-})
-
-app.post('/api/documentos', autenticar, async (req, res) => {
-  const { equipamentoSAP, nome, tipo, tamanho, dados } = req.body
-  try {
-    await pool.query(`INSERT INTO documentos (equipamento_sap,nome,tipo,tamanho,dados) VALUES ($1,$2,$3,$4,$5)`, [equipamentoSAP||null,nome,tipo,tamanho,dados])
-    res.json({ sucesso: true })
-  } catch (err) { res.status(500).json({ erro: String(err) }) }
-})
-
-app.delete('/api/documentos/:id', autenticar, async (req, res) => {
-  try { await pool.query('DELETE FROM documentos WHERE id=$1', [req.params.id]); res.json({ sucesso: true }) }
-  catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
 app.post('/api/descricao-ia', autenticar, async (req, res) => {
@@ -371,6 +571,45 @@ app.post('/api/descricao-ia', autenticar, async (req, res) => {
   res.json({ descricao: candidatos[Math.floor(Math.random() * candidatos.length)] })
 })
 
+// ── DOCUMENTOS ─────────────────────────────────────────────
+app.get('/api/documentos', autenticar, async (_req, res) => {
+  try { res.json((await pool.query('SELECT id,equipamento_sap,nome,tipo,tamanho,criado_em FROM documentos ORDER BY criado_em DESC')).rows) }
+  catch (err) { res.status(500).json({ erro: String(err) }) }
+})
+
+app.get('/api/documentos/download/:id', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT nome,tipo,dados FROM documentos WHERE id=$1', [req.params.id])
+    if (!result.rows.length) return res.status(404).json({ erro: 'Documento não encontrado' })
+    const { nome, dados } = result.rows[0]
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${nome}"`)
+    res.send(Buffer.from(dados, 'base64'))
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
+})
+
+app.get('/api/documentos/:sap', autenticar, async (req, res) => {
+  try { res.json((await pool.query('SELECT id,equipamento_sap,nome,tipo,tamanho,criado_em FROM documentos WHERE equipamento_sap=$1 ORDER BY criado_em DESC', [req.params.sap])).rows) }
+  catch (err) { res.status(500).json({ erro: String(err) }) }
+})
+
+app.post('/api/documentos', autenticar, async (req: any, res) => {
+  const { equipamentoSAP, nome, tipo, tamanho, dados } = req.body
+  try {
+    await pool.query(`INSERT INTO documentos (equipamento_sap,nome,tipo,tamanho,dados) VALUES ($1,$2,$3,$4,$5)`, [equipamentoSAP||null,nome,tipo,tamanho,dados])
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'UPLOAD_DOCUMENTO', 'equipamento', equipamentoSAP, { nome, tipo }, getIP(req))
+    res.json({ sucesso: true })
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
+})
+
+app.delete('/api/documentos/:id', autenticar, async (req: any, res) => {
+  try {
+    await pool.query('DELETE FROM documentos WHERE id=$1', [req.params.id])
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'APAGAR_DOCUMENTO', 'documento', req.params.id, null, getIP(req))
+    res.json({ sucesso: true })
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
+})
+
 // ── PUSH NOTIFICATIONS ─────────────────────────────────────
 app.post('/api/push/subscrever', autenticar, (req, res) => {
   const sub = req.body as webpush.PushSubscription
@@ -383,49 +622,35 @@ app.post('/api/push/notificar', autenticar, async (req, res) => {
   const { vencidas, urgentes, emBreve } = req.body
   const total = (vencidas ?? 0) + (urgentes ?? 0) + (emBreve ?? 0)
   if (total === 0) return res.json({ sucesso: true, enviados: 0 })
-
   const partes = [
     vencidas  > 0 ? `${vencidas} vencida${vencidas  > 1 ? 's' : ''}` : '',
     urgentes  > 0 ? `${urgentes} urgente${urgentes  > 1 ? 's' : ''}` : '',
-    emBreve   > 0 ? `${emBreve} em breve`                            : '',
+    emBreve   > 0 ? `${emBreve} em breve` : '',
   ].filter(Boolean).join(' · ')
-
-  const payload = JSON.stringify({
-    titulo: '⚠️ ATM — Alertas de calibração',
-    corpo: partes,
-    tag: 'atm-calibracao',
-    url: '/?page=relatorios',
-  })
-
-  const resultados = await Promise.allSettled(
-    subscricoesPush.map(sub => webpush.sendNotification(sub, payload))
-  )
+  const payload = JSON.stringify({ titulo: '⚠️ ATM — Alertas de calibração', corpo: partes, tag: 'atm-calibracao', url: '/?page=relatorios' })
+  const resultados = await Promise.allSettled(subscricoesPush.map(sub => webpush.sendNotification(sub, payload)))
   subscricoesPush = subscricoesPush.filter((_, i) => resultados[i].status === 'fulfilled')
-  const enviados = resultados.filter(r => r.status === 'fulfilled').length
-  res.json({ sucesso: true, enviados })
+  res.json({ sucesso: true, enviados: resultados.filter(r => r.status === 'fulfilled').length })
 })
 
-// ── PLANO DE PREVENTIVAS ───────────────────────────────────
-app.post('/api/preventivas/importar', autenticar, async (req, res) => {
+// ── PREVENTIVAS ────────────────────────────────────────────
+app.post('/api/preventivas/importar', autenticar, async (req: any, res) => {
   const { mes, ano, equipamentos } = req.body
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
     await client.query(`DELETE FROM preventivas_equipamentos WHERE mes=$1 AND ano=$2`, [mes, ano])
     await client.query(`DELETE FROM preventivas_plano WHERE mes=$1 AND ano=$2`, [mes, ano])
-    const plano = await client.query(
-      `INSERT INTO preventivas_plano (mes, ano, total) VALUES ($1,$2,$3) RETURNING id`,
-      [mes, ano, equipamentos.length]
-    )
+    const plano = await client.query(`INSERT INTO preventivas_plano (mes, ano, total) VALUES ($1,$2,$3) RETURNING id`, [mes, ano, equipamentos.length])
     const planoId = plano.rows[0].id
     for (const eq of equipamentos) {
       await client.query(
-        `INSERT INTO preventivas_equipamentos (plano_id,mes,ano,cod_ativo,nome,marca,modelo,numero_serie,cod_localizacao,localizacao,setor,area)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        `INSERT INTO preventivas_equipamentos (plano_id,mes,ano,cod_ativo,nome,marca,modelo,numero_serie,cod_localizacao,localizacao,setor,area) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
         [planoId, mes, ano, eq.codAtivo, eq.nome, eq.marca, eq.modelo, eq.numeroSerie, eq.codLocalizacao, eq.localizacao, eq.setor, eq.area]
       )
     }
     await client.query('COMMIT')
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'IMPORTAR_PREVENTIVAS', null, null, { mes, ano, total: equipamentos.length }, getIP(req))
     res.json({ sucesso: true, total: equipamentos.length })
   } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ erro: String(err) }) }
   finally { client.release() }
@@ -433,104 +658,67 @@ app.post('/api/preventivas/importar', autenticar, async (req, res) => {
 
 app.get('/api/preventivas/:mes/:ano', autenticar, async (req, res) => {
   try {
-    const equipamentos = await pool.query(
-      `SELECT * FROM preventivas_equipamentos WHERE mes=$1 AND ano=$2 ORDER BY setor, nome`,
-      [req.params.mes, req.params.ano]
-    )
-    res.json(equipamentos.rows)
+    res.json((await pool.query(`SELECT * FROM preventivas_equipamentos WHERE mes=$1 AND ano=$2 ORDER BY setor, nome`, [req.params.mes, req.params.ano])).rows)
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
 app.patch('/api/preventivas/:id/concluir', autenticar, async (req: any, res) => {
   const { observacoes } = req.body
   try {
-    await pool.query(
-      `UPDATE preventivas_equipamentos SET concluido=TRUE, concluido_em=NOW(), concluido_por=$1, observacoes=$2 WHERE id=$3`,
-      [req.utilizador.nome, observacoes ?? '', req.params.id]
-    )
+    await pool.query(`UPDATE preventivas_equipamentos SET concluido=TRUE, concluido_em=NOW(), concluido_por=$1, observacoes=$2 WHERE id=$3`,
+      [req.utilizador.nome, observacoes ?? '', req.params.id])
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'CONCLUIR_PREVENTIVA', 'preventiva', req.params.id, null, getIP(req))
     res.json({ sucesso: true })
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
-app.patch('/api/preventivas/:id/desconcluir', autenticar, async (req, res) => {
+app.patch('/api/preventivas/:id/desconcluir', autenticar, async (req: any, res) => {
   try {
-    await pool.query(
-      `UPDATE preventivas_equipamentos SET concluido=FALSE, concluido_em=NULL, concluido_por=NULL WHERE id=$1`,
-      [req.params.id]
-    )
+    await pool.query(`UPDATE preventivas_equipamentos SET concluido=FALSE, concluido_em=NULL, concluido_por=NULL WHERE id=$1`, [req.params.id])
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'DESCONCLUIR_PREVENTIVA', 'preventiva', req.params.id, null, getIP(req))
     res.json({ sucesso: true })
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
-app.post('/api/preventivas/importar-anual', autenticar, async (req, res) => {
+
+app.post('/api/preventivas/importar-anual', autenticar, async (req: any, res) => {
   const { ano, meses } = req.body
-  // meses = [{ mes: 1, equipamentos: [...] }, { mes: 2, equipamentos: [...] }, ...]
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
-    // Apaga todo o ano
     await client.query(`DELETE FROM preventivas_equipamentos WHERE ano=$1`, [ano])
     await client.query(`DELETE FROM preventivas_plano WHERE ano=$1`, [ano])
-
     for (const { mes, equipamentos: eqs } of meses) {
       if (!eqs.length) continue
-      const plano = await client.query(
-        `INSERT INTO preventivas_plano (mes, ano, total) VALUES ($1,$2,$3) RETURNING id`,
-        [mes, ano, eqs.length]
-      )
+      const plano = await client.query(`INSERT INTO preventivas_plano (mes, ano, total) VALUES ($1,$2,$3) RETURNING id`, [mes, ano, eqs.length])
       const planoId = plano.rows[0].id
       for (const eq of eqs) {
         await client.query(
-          `INSERT INTO preventivas_equipamentos (plano_id,mes,ano,cod_ativo,nome,marca,modelo,numero_serie,cod_localizacao,localizacao,setor,area)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          `INSERT INTO preventivas_equipamentos (plano_id,mes,ano,cod_ativo,nome,marca,modelo,numero_serie,cod_localizacao,localizacao,setor,area) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
           [planoId, mes, ano, eq.codAtivo, eq.nome, eq.marca, eq.modelo, eq.numeroSerie ?? '', eq.codLocalizacao ?? '', eq.localizacao, eq.setor, eq.area ?? '']
         )
       }
     }
     await client.query('COMMIT')
     const total = meses.reduce((acc: number, m: any) => acc + m.equipamentos.length, 0)
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'IMPORTAR_PREVENTIVAS_ANUAL', null, null, { ano, total, meses: meses.length }, getIP(req))
     res.json({ sucesso: true, total, meses: meses.length })
   } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ erro: String(err) }) }
   finally { client.release() }
-})  
-// ── ROTA PÚBLICA EQUIPAMENTO (sem auth) ───────────────────
+})
+
+// ── ROTA PÚBLICA EQUIPAMENTO ───────────────────────────────
 app.get('/api/pub/equipamento/:sap', async (req, res) => {
   try {
     const { sap } = req.params
-    // Tenta equipamentos de calibração
     const eqCalib = await pool.query('SELECT * FROM equipamentos WHERE numero_sap=$1', [sap])
     if (eqCalib.rows.length > 0) {
       const eq = eqCalib.rows[0]
-      return res.json({
-        tipo: 'calibracao',
-        numeroSAP: eq.numero_sap,
-        descricao: eq.descricao,
-        marca: eq.marca,
-        modelo: eq.modelo,
-        numeroSerie: eq.numero_serie,
-        localizacao: eq.localizacao,
-        dataCalibracao: eq.data_calibracao,
-        periodicidade: eq.periodicidade,
-        responsavel: eq.responsavel,
-      })
+      return res.json({ tipo: 'calibracao', numeroSAP: eq.numero_sap, descricao: eq.descricao, marca: eq.marca, modelo: eq.modelo, numeroSerie: eq.numero_serie, localizacao: eq.localizacao, dataCalibracao: eq.data_calibracao, periodicidade: eq.periodicidade, responsavel: eq.responsavel })
     }
-    // Tenta equipamentos de preventivas
-    const eqPrev = await pool.query(
-      'SELECT DISTINCT ON (cod_ativo) * FROM preventivas_equipamentos WHERE cod_ativo=$1 ORDER BY cod_ativo, ano DESC, mes DESC',
-      [sap]
-    )
+    const eqPrev = await pool.query('SELECT DISTINCT ON (cod_ativo) * FROM preventivas_equipamentos WHERE cod_ativo=$1 ORDER BY cod_ativo, ano DESC, mes DESC', [sap])
     if (eqPrev.rows.length > 0) {
       const eq = eqPrev.rows[0]
-      return res.json({
-        tipo: 'preventiva',
-        numeroSAP: eq.cod_ativo,
-        descricao: eq.nome,
-        marca: eq.marca,
-        modelo: eq.modelo,
-        numeroSerie: eq.numero_serie,
-        localizacao: eq.localizacao,
-        setor: eq.setor,
-        area: eq.area,
-      })
+      return res.json({ tipo: 'preventiva', numeroSAP: eq.cod_ativo, descricao: eq.nome, marca: eq.marca, modelo: eq.modelo, numeroSerie: eq.numero_serie, localizacao: eq.localizacao, setor: eq.setor, area: eq.area })
     }
     res.status(404).json({ erro: 'Equipamento não encontrado' })
   } catch (err) { res.status(500).json({ erro: String(err) }) }
@@ -538,7 +726,8 @@ app.get('/api/pub/equipamento/:sap', async (req, res) => {
 
 // ── ARRANQUE ───────────────────────────────────────────────
 const PORT = process.env.PORT ?? 3001
-inicializarDB().then(() => {
+inicializarDB().then(async () => {
+  await seedUtilizadores()
   iniciarCron()
   app.listen(PORT, () => console.log(`✅ Servidor ATM a correr em http://localhost:${PORT}`))
 }).catch(err => {
