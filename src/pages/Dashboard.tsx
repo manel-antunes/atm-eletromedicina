@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Clock, Package } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Clock, Package, QrCode, Stethoscope, ChevronRight } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import { useRef, useEffect, useState } from 'react'
@@ -6,11 +6,25 @@ import GraficoCalibracoes from '../components/GraficoCalibracoes'
 import KpiCard from '../components/KpiCard'
 import { SkeletonKpis, SkeletonTabela, SkeletonLine } from '../components/Skeleton'
 
+const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
+const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+
 interface Props {
   equipamentos: Equipamento[]
-onVerDetalhe: (eq: Equipamento | null) => void
+  onVerDetalhe: (eq: Equipamento) => void
+  onNavegar?: (pagina: string) => void
   loading?: boolean
 }
+
+interface PreventivaEq {
+  id: number
+  nome: string
+  localizacao: string
+  concluido: boolean
+  cod_ativo: string
+}
+
+function getToken() { return localStorage.getItem('atm_token') ?? '' }
 
 function parseData(dataStr: string): Date | null {
   if (!dataStr || dataStr === 'undefined' || dataStr === 'null') return null
@@ -57,10 +71,10 @@ function getDiasTexto(eq: Equipamento): string {
 }
 
 const estadoConfig = {
-  vencido: { label: 'Vencida',  bg: 'bg-red-50',    text: 'text-red-700',    border: 'border-red-200',    dot: 'bg-red-500',    badge: 'bg-red-100 text-red-700',    dotColor: '#ef4444' },
-  urgente: { label: 'Urgente',  bg: 'bg-orange-50',  text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500', badge: 'bg-orange-100 text-orange-700', dotColor: '#f97316' },
-  aviso:   { label: 'Em breve', bg: 'bg-yellow-50',  text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-400', badge: 'bg-yellow-100 text-yellow-700', dotColor: '#eab308' },
-  ok:      { label: 'Em dia',   bg: 'bg-green-50',   text: 'text-green-700',  border: 'border-green-200',  dot: 'bg-green-500',  badge: 'bg-green-100 text-green-700',  dotColor: '#22c55e' },
+  vencido: { label: 'Vencida',  bg: 'bg-red-50',   text: 'text-red-700',   border: 'border-red-200',   dot: 'bg-red-500',   badge: 'bg-red-100 text-red-700',   dotColor: '#ef4444' },
+  urgente: { label: 'Urgente',  bg: 'bg-orange-50', text: 'text-orange-700',border: 'border-orange-200',dot: 'bg-orange-500',badge: 'bg-orange-100 text-orange-700',dotColor: '#f97316' },
+  aviso:   { label: 'Em breve', bg: 'bg-yellow-50', text: 'text-yellow-700',border: 'border-yellow-200',dot: 'bg-yellow-400',badge: 'bg-yellow-100 text-yellow-700',dotColor: '#eab308' },
+  ok:      { label: 'Em dia',   bg: 'bg-green-50',  text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500', badge: 'bg-green-100 text-green-700', dotColor: '#22c55e' },
 }
 
 function useIsMobile() {
@@ -93,7 +107,7 @@ function SkeletonGrafico() {
       </div>
       <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'flex-end', padding: '16px', gap: 4, overflow: 'hidden' }}>
         {Array.from({ length: 14 }).map((_, i) => (
-          <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.06)', height: `${20 + Math.random() * 60}%`, animation: 'skeleton-shimmer 1.4s ease-in-out infinite', backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.06) 75%)', backgroundSize: '200% 100%' }} />
+          <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.06)', height: `${40 + (i % 5) * 12}%`, animation: 'skeleton-shimmer 1.4s ease-in-out infinite', backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.06) 75%)', backgroundSize: '200% 100%' }} />
         ))}
       </div>
     </div>
@@ -117,7 +131,7 @@ function SkeletonAlertas() {
   )
 }
 
-export default function Dashboard({ equipamentos, onVerDetalhe, loading = false }: Props) {
+export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loading = false }: Props) {
   const isMobile = useIsMobile()
   const estados = equipamentos.map(eq => ({ eq, estado: getEstado(eq) }))
   const vencidos = estados.filter(e => e.estado === 'vencido')
@@ -135,6 +149,28 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
     } catch { return [] }
   })()
 
+  // ─── Preventivas deste mês ───────────────────────────────────────────────
+  const [preventivas, setPreventivas] = useState<PreventivaEq[]>([])
+  const [loadingPrev, setLoadingPrev] = useState(true)
+  const mesAtual = new Date().getMonth() + 1
+  const anoAtual = new Date().getFullYear()
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/preventivas/${mesAtual}/${anoAtual}`, {
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then(dados => setPreventivas(dados))
+      .catch(() => setPreventivas([]))
+      .finally(() => setLoadingPrev(false))
+  }, [])
+
+  const prevTotal = preventivas.length
+  const prevConcluidos = preventivas.filter(p => p.concluido).length
+  const prevPendentes = prevTotal - prevConcluidos
+  const prevPct = prevTotal > 0 ? Math.round((prevConcluidos / prevTotal) * 100) : 0
+
+  // ─── Scroll horizontal ───────────────────────────────────────────────────
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollVelocidade = useRef(0)
   const scrollAnimacao = useRef<number>(0)
@@ -174,7 +210,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
   return (
     <div className="space-y-4">
 
-      {/* KPIs */}
+      {/* ── KPIs ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard
           label="Total" valor={equipamentos.length} sub="equipamentos"
@@ -213,12 +249,160 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
         />
       </div>
 
-      {/* Gráfico */}
+      {/* ── Gráfico ── */}
       <div className="anim-fade-up delay-5">
         <GraficoCalibracoes equipamentos={equipamentos} />
       </div>
 
-      {/* Alertas cedências atrasadas */}
+      {/* ── Preventivas + QR Codes ── */}
+      <div className="anim-fade-up delay-6" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 280px', gap: 12 }}>
+
+        {/* Preventivas deste mês */}
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1a0a0f 100%)', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Stethoscope size={15} color="rgba(255,255,255,0.7)" />
+              <div>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.18em', margin: 0 }}>Manutenções Preventivas</p>
+                <p style={{ color: '#fff', fontSize: 13, fontWeight: 700, margin: '1px 0 0' }}>{MESES_PT[mesAtual - 1]} {anoAtual}</p>
+              </div>
+            </div>
+            {onNavegar && (
+              <button
+                onClick={() => onNavegar('preventivas')}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 600, padding: '4px 10px', cursor: 'pointer', letterSpacing: '0.06em' }}
+              >
+                Ver tudo <ChevronRight size={11} />
+              </button>
+            )}
+          </div>
+
+          {/* Barra de progresso */}
+          {prevTotal > 0 && (
+            <div style={{ padding: '10px 18px 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                <span style={{ fontSize: 10, color: '#94a3b8' }}>Progresso do mês</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: prevPct === 100 ? '#16a34a' : prevPct > 60 ? '#d97706' : '#C0001A' }}>{prevConcluidos}/{prevTotal} · {prevPct}%</span>
+              </div>
+              <div style={{ height: 3, background: '#f1f5f9', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${prevPct}%`, background: prevPct === 100 ? '#16a34a' : prevPct > 60 ? '#f59e0b' : '#C0001A', transition: 'width 0.6s ease' }} />
+              </div>
+            </div>
+          )}
+
+          {/* Conteúdo */}
+          <div style={{ padding: '10px 18px 14px' }}>
+            {loadingPrev ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[1,2,3].map(i => <SkeletonLine key={i} width="100%" height={32} />)}
+              </div>
+            ) : prevTotal === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: '#94a3b8' }}>
+                <Stethoscope size={24} style={{ margin: '0 auto 8px', opacity: 0.3 }} />
+                <p style={{ fontSize: 12, margin: 0 }}>Sem plano importado para este mês</p>
+                {onNavegar && (
+                  <button onClick={() => onNavegar('preventivas')} style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: '#C0001A', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    Importar plano →
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Stats rápidas */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  {[
+                    { label: 'Concluídos', valor: prevConcluidos, cor: '#16a34a', bg: '#f0fdf4' },
+                    { label: 'Pendentes',  valor: prevPendentes,  cor: prevPendentes > 0 ? '#C0001A' : '#94a3b8', bg: prevPendentes > 0 ? '#fff5f5' : '#f8fafc' },
+                    { label: 'Total',      valor: prevTotal,       cor: '#475569', bg: '#f8fafc' },
+                  ].map(s => (
+                    <div key={s.label} style={{ flex: 1, background: s.bg, border: `1px solid ${s.bg === '#f0fdf4' ? '#bbf7d0' : s.bg === '#fff5f5' ? '#fecaca' : '#e2e8f0'}`, padding: '8px', textAlign: 'center' }}>
+                      <p style={{ fontSize: 20, fontWeight: 800, color: s.cor, fontFamily: 'monospace', margin: 0, lineHeight: 1 }}>{s.valor}</p>
+                      <p style={{ fontSize: 9, color: s.cor, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '3px 0 0', opacity: 0.7 }}>{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Lista dos primeiros pendentes */}
+                {prevPendentes > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <p style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 4px' }}>Por concluir</p>
+                    {preventivas.filter(p => !p.concluido).slice(0, 4).map(p => (
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', background: '#fafafa', border: '1px solid #f1f5f9' }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#C0001A', flexShrink: 0 }} className="dot-piscar" />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 11, fontWeight: 600, color: '#0f172a', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nome}</p>
+                          <p style={{ fontSize: 10, color: '#94a3b8', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.localizacao}</p>
+                        </div>
+                        <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#cbd5e1', flexShrink: 0 }}>{p.cod_ativo}</span>
+                      </div>
+                    ))}
+                    {prevPendentes > 4 && (
+                      <p style={{ fontSize: 10, color: '#94a3b8', margin: '2px 0 0', textAlign: 'center' }}>
+                        +{prevPendentes - 4} mais pendentes
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {prevPendentes === 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                    <CheckCircle size={14} color="#16a34a" />
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#16a34a', margin: 0 }}>Todas as preventivas concluídas!</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* QR Codes — atalho */}
+        <div
+          onClick={() => onNavegar?.('qrcodes')}
+          style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1a0509 60%, #C0001A 100%)', border: '1px solid rgba(192,0,26,0.3)', overflow: 'hidden', cursor: onNavegar ? 'pointer' : 'default', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 160 }}
+          onMouseEnter={e => { if (onNavegar) (e.currentTarget as HTMLElement).style.opacity = '0.92' }}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+        >
+          {/* Grid decorativo */}
+          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.05 }}>
+            <defs>
+              <pattern id="qr-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#fff" strokeWidth="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#qr-grid)" />
+          </svg>
+
+          <div style={{ position: 'relative', padding: '18px 18px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <QrCode size={18} color="#fff" />
+              </div>
+              <div>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.18em', margin: 0 }}>Acesso rápido</p>
+                <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, margin: '1px 0 0' }}>QR Codes</p>
+              </div>
+            </div>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, margin: '0 0 12px', lineHeight: 1.5 }}>
+              Gera e consulta os QR codes de cada equipamento. Acesso direto à ficha pública.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ color: '#fff', fontSize: 22, fontWeight: 800, fontFamily: 'monospace', margin: 0, lineHeight: 1 }}>{equipamentos.length}</p>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '2px 0 0' }}>equipamentos</p>
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.12em', display: 'flex', alignItems: 'center', gap: 4 }}>
+                Abrir <ChevronRight size={12} />
+              </div>
+            </div>
+          </div>
+
+          {/* Linha vermelha em baixo */}
+          <div style={{ height: 3, background: '#C0001A', marginTop: 18 }} />
+        </div>
+      </div>
+
+      {/* ── Alertas cedências atrasadas ── */}
       {cedenciasAtrasadas.length > 0 && (
         <div className="mb-2">
           {cedenciasAtrasadas.map((c: { id: number; equipamentoNome: string; destino: string; dataRetornoPrevista: string }) => (
@@ -236,9 +420,9 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
         </div>
       )}
 
-      {/* Alertas calibrações */}
+      {/* ── Alertas calibrações ── */}
       {alertas.length > 0 && (
-        <div className="anim-fade-up delay-6">
+        <div className="anim-fade-up delay-7">
           <div className="flex items-center gap-2 mb-3">
             <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Alertas ativos</h2>
             <span className="bg-red-500 text-white text-xs font-black px-2 py-0.5">{alertas.length}</span>
@@ -287,14 +471,13 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
         </div>
       )}
 
-      {/* Scroll horizontal — Info empresa */}
+      {/* ── Scroll horizontal — Unidade ── */}
       <div className="anim-fade-up">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Unidade de Eletromedicina</h2>
         </div>
         <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
 
-          {/* Estatísticas */}
           <div className="flex-shrink-0 w-64 overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ background: '#C0001A', padding: '12px 16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Estatísticas</p>
@@ -316,7 +499,6 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
             </div>
           </div>
 
-          {/* Localizações */}
           {[
             { nome: 'Hospital CUF Porto',    sigla: 'HPRT', morada: 'Estr. Circunvalação 14341, Porto', cor: '#3b82f6' },
             { nome: 'Hospital CUF Trindade', sigla: 'HTRD', morada: 'R. da Trindade, Porto',            cor: '#8b5cf6' },
@@ -364,7 +546,6 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
             )
           })}
 
-          {/* Equipa */}
           <div className="flex-shrink-0 w-56 overflow-hidden shadow-sm border border-gray-100 bg-white">
             <div style={{ background: 'linear-gradient(135deg, #C0001A 0%, #7f1d1d 100%)', padding: '12px 16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Equipa</p>
@@ -390,7 +571,6 @@ export default function Dashboard({ equipamentos, onVerDetalhe, loading = false 
             </div>
           </div>
 
-          {/* Sistema */}
           <div className="flex-shrink-0 w-56 overflow-hidden shadow-sm border border-gray-100" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sistema</p>
