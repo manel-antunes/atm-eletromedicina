@@ -255,7 +255,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
       </div>
 
       {/* ── Preventivas + QR Codes ── */}
-      <div className="anim-fade-up delay-6" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 280px', gap: 12 }}>
+<div className="anim-fade-up delay-6" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 280px', gap: 12, alignItems: 'start' }}>
 
         {/* Preventivas deste mês */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
