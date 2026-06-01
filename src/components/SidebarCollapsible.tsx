@@ -174,7 +174,6 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
             )}
           </div>
         )}
-        {expandida && <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', padding: '0 8px', marginTop: 4 }}>v1.0 · ATM 2026</p>}
       </div>
     </aside>
   )
