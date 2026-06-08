@@ -6,6 +6,8 @@ import nodemailer from 'nodemailer'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import webpush from 'web-push'
+import { createServer } from 'http'
+import { Server as SocketServer } from 'socket.io'
 import { pool, inicializarDB } from './database'
 
 dotenv.config()
@@ -773,12 +775,96 @@ app.get('/api/pub/equipamento/:sap', async (req, res) => {
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
+// ── CHAT (Socket.io) ───────────────────────────────────────
+const httpServer = createServer(app)
+
+const io = new SocketServer(httpServer, {
+  cors: {
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true)
+      if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) return callback(null, true)
+      if (FRONTEND_URL && origin === FRONTEND_URL) return callback(null, true)
+      if (origin.startsWith('https://')) return callback(null, true)
+      callback(new Error('CORS: origem não permitida'))
+    },
+    credentials: true,
+  },
+})
+
+interface UtilizadorOnline {
+  socketId: string
+  userId: number
+  username: string
+  nome: string
+  role: string
+}
+
+const utilizadoresOnline = new Map<string, UtilizadorOnline>()
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token
+  if (!token) return next(new Error('Não autenticado'))
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as any
+    socket.data.utilizador = payload
+    next()
+  } catch {
+    next(new Error('Token inválido'))
+  }
+})
+
+io.on('connection', async (socket) => {
+  const u = socket.data.utilizador
+  utilizadoresOnline.set(socket.id, {
+    socketId: socket.id,
+    userId: u.id,
+    username: u.username,
+    nome: u.nome,
+    role: u.role,
+  })
+
+  // Envia histórico das últimas 50 mensagens
+  try {
+    const hist = await pool.query(
+      `SELECT id, user_id, username, nome, role, texto, criado_em
+       FROM mensagens_chat ORDER BY criado_em DESC LIMIT 50`
+    )
+    socket.emit('historico', hist.rows.reverse())
+  } catch {}
+
+  // Notifica todos de quem está online
+  io.emit('online', Array.from(utilizadoresOnline.values()))
+
+  socket.on('mensagem', async (texto: string) => {
+    if (!texto || typeof texto !== 'string') return
+    const textLimpo = texto.trim().slice(0, 1000)
+    if (!textLimpo) return
+    try {
+      const result = await pool.query(
+        `INSERT INTO mensagens_chat (user_id, username, nome, role, texto)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [u.id, u.username, u.nome, u.role, textLimpo]
+      )
+      io.emit('mensagem', result.rows[0])
+    } catch {}
+  })
+
+  socket.on('typing', (estado: boolean) => {
+    socket.broadcast.emit('typing', { userId: u.id, nome: u.nome, estado })
+  })
+
+  socket.on('disconnect', () => {
+    utilizadoresOnline.delete(socket.id)
+    io.emit('online', Array.from(utilizadoresOnline.values()))
+  })
+})
+
 // ── ARRANQUE ───────────────────────────────────────────────
 const PORT = process.env.PORT ?? 3001
 inicializarDB().then(async () => {
   await seedUtilizadores()
   iniciarCron()
-  app.listen(PORT, () => console.log(`✅ Servidor ATM a correr em http://localhost:${PORT}`))
+  httpServer.listen(PORT, () => console.log(`✅ Servidor ATM a correr em http://localhost:${PORT}`))
 }).catch(err => {
   console.error('❌ Erro ao inicializar base de dados:', err)
   process.exit(1)

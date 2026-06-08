@@ -192,6 +192,18 @@ export async function inicializarDB(): Promise<void> {
     }
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS mensagens_chat (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        username VARCHAR(50) NOT NULL,
+        nome VARCHAR(100) NOT NULL,
+        role VARCHAR(20) NOT NULL,
+        texto TEXT NOT NULL,
+        criado_em TIMESTAMP DEFAULT NOW()
+      )
+    `)
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS push_subscriptions (
         id SERIAL PRIMARY KEY,
         endpoint TEXT UNIQUE NOT NULL,

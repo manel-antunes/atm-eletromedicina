@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Calendar, LogOut, QrCode, Stethoscope, ChevronRight, Command, User, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Calendar, LogOut, QrCode, Stethoscope, ChevronRight, Command, User, ShieldCheck, MessageSquare } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import logoAtm from '../assets/logo-atm.png'
@@ -49,6 +49,7 @@ const ITENS = [
   { id: 'contactos',   label: 'Contactos',    icon: Phone },
   { id: 'qrcodes',     label: 'QR Codes',     icon: QrCode },
   { id: 'preventivas', label: 'Preventivas',  icon: Stethoscope },
+  { id: 'chat',        label: 'Chat',         icon: MessageSquare },
 ]
 
 const ITENS_FOOTER = [

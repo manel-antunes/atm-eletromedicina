@@ -19,6 +19,7 @@ import Documentos from './pages/Documentos'
 import Contactos from './pages/Contactos'
 import Perfil from './pages/Perfil'
 import Administracao from './pages/Administracao'
+import Chat from './pages/Chat'
 import Calendario from './pages/Calendario'
 import Login from './pages/Login'
 import ToastContainer from './components/Toast'
@@ -45,6 +46,7 @@ const titulos: Record<string, string> = {
   contactos:    'Contactos de Marcas',
   qrcodes:      'QR Codes',
   preventivas:  'Plano de Preventivas',
+  chat:         'Chat',
   perfil:       'O Meu Perfil',
   administracao:'Administração',
 }
@@ -262,6 +264,7 @@ function App() {
       case 'contactos':    return <Contactos equipamentos={equipamentos} />
       case 'preventivas':  return <PlanoPreventivas />
       case 'qrcodes':      return <QRCodes equipamentos={equipamentos} />
+      case 'chat':         return <Chat />
       case 'perfil':       return <Perfil />
       case 'administracao': return role === 'admin' ? <Administracao /> : null
       default:             return null
