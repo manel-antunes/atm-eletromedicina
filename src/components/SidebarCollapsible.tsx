@@ -114,7 +114,10 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '8px', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <style>{`
+        .atm-sidebar-nav::-webkit-scrollbar { display: none; }
+      `}</style>
+      <nav className="atm-sidebar-nav" style={{ flex: 1, padding: '8px', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: 2, scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
         {ITENS.map(({ id, label, icon: Icon }) => {
           const ativo = paginaAtiva === id
           const temBadge = (id === 'dashboard' || id === 'calibracoes') && alertas > 0
