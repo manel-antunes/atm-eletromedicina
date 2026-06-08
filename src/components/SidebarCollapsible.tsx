@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Calendar, LogOut, QrCode, Stethoscope, ChevronRight, Command } from 'lucide-react'
+import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Calendar, LogOut, QrCode, Stethoscope, ChevronRight, Command, User, ShieldCheck } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays, parse, isValid } from 'date-fns'
 import logoAtm from '../assets/logo-atm.png'
@@ -51,8 +51,14 @@ const ITENS = [
   { id: 'preventivas', label: 'Preventivas',  icon: Stethoscope },
 ]
 
+const ITENS_FOOTER = [
+  { id: 'perfil',        label: 'Perfil',         icon: User,         roles: ['admin', 'tecnico'] },
+  { id: 'administracao', label: 'Administração',  icon: ShieldCheck,  roles: ['admin'] },
+]
+
 export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamentos, nomeUtilizador, onLogout, onCommandPalette }: Props) {
   const [expandida, setExpandida] = useState(false)
+  const role = localStorage.getItem('atm_role') ?? 'tecnico'
   const alertas = contarAlertas(equipamentos)
   const largura = expandida ? 224 : 64
 
@@ -146,6 +152,35 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
           )
         })}
       </nav>
+
+      {/* Perfil + Administração */}
+      <div style={{ padding: '0 8px 4px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 6 }}>
+        {ITENS_FOOTER.filter(item => item.roles.includes(role)).map(({ id, label, icon: Icon }) => {
+          const ativo = paginaAtiva === id
+          return (
+            <button
+              key={id}
+              onClick={() => onNavegar(id)}
+              title={!expandida ? label : undefined}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center',
+                gap: expandida ? 12 : 0, justifyContent: expandida ? 'flex-start' : 'center',
+                padding: expandida ? '9px 12px' : '9px',
+                border: 'none', cursor: 'pointer',
+                background: ativo ? 'rgba(192,0,26,0.2)' : 'transparent',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
+              onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+            >
+              <Icon size={18} color={ativo ? '#ff4458' : 'rgba(255,255,255,0.5)'} />
+              {expandida && (
+                <span style={{ fontSize: 12, fontWeight: ativo ? 700 : 500, color: ativo ? '#fff' : 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap', overflow: 'hidden' }}>{label}</span>
+              )}
+            </button>
+          )
+        })}
+      </div>
 
 {/* Push */}
 <div style={{ padding: '0 8px 6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>

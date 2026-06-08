@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Component, type ReactNode, type ErrorInfo } from 'react'
 import type { Equipamento } from './data/equipamentos'
 import ImportarExcel from './components/ImportarExcel'
 import SidebarCollapsible from './components/SidebarCollapsible'
@@ -17,7 +17,8 @@ import ModoApresentacao from './pages/ModoApresentacao'
 import DashboardIA from './pages/DashboardIA'
 import Documentos from './pages/Documentos'
 import Contactos from './pages/Contactos'
-
+import Perfil from './pages/Perfil'
+import Administracao from './pages/Administracao'
 import Calendario from './pages/Calendario'
 import Login from './pages/Login'
 import ToastContainer from './components/Toast'
@@ -33,19 +34,55 @@ import { differenceInDays, isValid } from 'date-fns'
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 
 const titulos: Record<string, string> = {
-  dashboard:   'Dashboard Geral',
-  calibracoes: 'Calibrações',
-  inventario:  'Inventário de Equipamentos',
-  cedencias:   'Cedências',
-  relatorios:  'Relatórios',
-  ia:          'Análise Inteligente',
-  calendario:  'Calendário',
-  documentos:  'Documentos',
-  contactos:   'Contactos de Marcas',
-  qrcodes:     'QR Codes',
-  preventivas: 'Plano de Preventivas',
+  dashboard:    'Dashboard Geral',
+  calibracoes:  'Calibrações',
+  inventario:   'Inventário de Equipamentos',
+  cedencias:    'Cedências',
+  relatorios:   'Relatórios',
+  ia:           'Análise Inteligente',
+  calendario:   'Calendário',
+  documentos:   'Documentos',
+  contactos:    'Contactos de Marcas',
+  qrcodes:      'QR Codes',
+  preventivas:  'Plano de Preventivas',
+  perfil:       'O Meu Perfil',
+  administracao:'Administração',
 }
 
+// ── Error Boundary ────────────────────────────────────────────────────────────
+interface EBState { erro: boolean; mensagem: string }
+class ErrorBoundary extends Component<{ children: ReactNode }, EBState> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { erro: false, mensagem: '' }
+  }
+  static getDerivedStateFromError(error: Error): EBState {
+    return { erro: true, mensagem: error.message }
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('ErrorBoundary:', error, info)
+  }
+  render() {
+    if (this.state.erro) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#f3f4f6', padding: 24 }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: 36, maxWidth: 480, width: '100%', textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+            <div style={{ width: 52, height: 52, background: '#fef2f2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 24 }}>⚠️</div>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>Ocorreu um erro inesperado</p>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 24px', wordBreak: 'break-word' }}>{this.state.mensagem}</p>
+            <button onClick={() => window.location.reload()}
+              style={{ padding: '10px 24px', background: '#C0001A', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              Recarregar página
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   useEffect(() => {
@@ -72,10 +109,9 @@ function contarAlertas(equipamentos: Equipamento[]): number {
   }).length
 }
 
+// ── App ───────────────────────────────────────────────────────────────────────
 function App() {
-  if (window.location.pathname.startsWith('/eq/')) {
-    return <FichaPublica />
-  }
+  const isFichaPublica = window.location.pathname.startsWith('/eq/')
 
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -91,6 +127,7 @@ function App() {
   const [ultimaSync, setUltimaSync] = useState<Date | null>(null)
   const { toasts, mostrar, remover } = useToast()
   const isMobile = useIsMobile()
+  const role = localStorage.getItem('atm_role') ?? 'tecnico'
 
   useEffect(() => {
     if (!token) { setVerificandoToken(false); return }
@@ -101,11 +138,13 @@ function App() {
           setNomeUtilizador('')
           localStorage.removeItem('atm_token')
           localStorage.removeItem('atm_nome')
+          localStorage.removeItem('atm_username')
+          localStorage.removeItem('atm_role')
         }
       })
       .catch(() => {})
       .finally(() => setVerificandoToken(false))
-  }, [])
+  }, [token])
 
   useEffect(() => {
     if (!token || verificandoToken) return
@@ -150,6 +189,9 @@ function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  // Ficha pública — não precisa de auth nem layout
+  if (isFichaPublica) return <FichaPublica />
+
   function handleLogin(novoToken: string, nome: string) {
     setToken(novoToken)
     setNomeUtilizador(nome)
@@ -162,6 +204,8 @@ function App() {
     setEquipamentos([])
     localStorage.removeItem('atm_token')
     localStorage.removeItem('atm_nome')
+    localStorage.removeItem('atm_username')
+    localStorage.removeItem('atm_role')
   }
 
   async function handleImportar(novos: Equipamento[]) {
@@ -207,18 +251,20 @@ function App() {
       return <DetalheEquipamento equipamento={equipDetalhe} onVoltar={() => setEquipDetalhe(null)} />
     }
     switch (paginaAtiva) {
-case 'dashboard': return <Dashboard equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} onNavegar={navegar} />
-      case 'calibracoes': return <Calibracoes equipamentos={equipamentos} onAtualizar={handleAtualizar} onVerDetalhe={setEquipDetalhe} />
-      case 'inventario':  return <Inventario equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
-      case 'cedencias':   return <Cedencias equipamentos={equipamentos} onAtualizar={setEquipamentos} />
-      case 'relatorios':  return <Relatorios equipamentos={equipamentos} />
-      case 'ia':          return <DashboardIA equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
-      case 'calendario':  return <Calendario />
-      case 'documentos':  return <Documentos equipamentos={equipamentos} />
-      case 'contactos':   return <Contactos equipamentos={equipamentos} />
-      case 'preventivas': return <PlanoPreventivas />
-      case 'qrcodes':     return <QRCodes equipamentos={equipamentos} />
-      default:            return null
+      case 'dashboard':    return <Dashboard equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} onNavegar={navegar} />
+      case 'calibracoes':  return <Calibracoes equipamentos={equipamentos} onAtualizar={handleAtualizar} onVerDetalhe={setEquipDetalhe} />
+      case 'inventario':   return <Inventario equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
+      case 'cedencias':    return <Cedencias equipamentos={equipamentos} onAtualizar={setEquipamentos} />
+      case 'relatorios':   return <Relatorios equipamentos={equipamentos} />
+      case 'ia':           return <DashboardIA equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
+      case 'calendario':   return <Calendario />
+      case 'documentos':   return <Documentos equipamentos={equipamentos} />
+      case 'contactos':    return <Contactos equipamentos={equipamentos} />
+      case 'preventivas':  return <PlanoPreventivas />
+      case 'qrcodes':      return <QRCodes equipamentos={equipamentos} />
+      case 'perfil':       return <Perfil />
+      case 'administracao': return role === 'admin' ? <Administracao /> : null
+      default:             return null
     }
   }
 
@@ -244,8 +290,6 @@ case 'dashboard': return <Dashboard equipamentos={equipamentos} onVerDetalhe={se
       />
 
       <div style={{ display: 'flex', height: '100vh', background: '#f3f4f6', overflow: 'hidden' }}>
-
-        {/* Sidebar colapsável — só desktop */}
         {!isMobile && (
           <SidebarCollapsible
             paginaAtiva={paginaAtiva}
@@ -257,10 +301,9 @@ case 'dashboard': return <Dashboard equipamentos={equipamentos} onVerDetalhe={se
           />
         )}
 
-        {/* Conteúdo principal */}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minWidth: 0 }}>
           <Topbar
-            titulo={equipDetalhe ? equipDetalhe.descricao : titulos[paginaAtiva]}
+            titulo={equipDetalhe ? equipDetalhe.descricao : (titulos[paginaAtiva] ?? paginaAtiva)}
             totalEquipamentos={equipamentos.length}
             onReimportar={() => setEquipamentos([])}
             equipamentos={equipamentos}
@@ -284,7 +327,6 @@ case 'dashboard': return <Dashboard equipamentos={equipamentos} onVerDetalhe={se
         </div>
       </div>
 
-      {/* Bottom nav — só mobile */}
       {isMobile && (
         <BottomNav
           paginaAtiva={paginaAtiva}
@@ -298,4 +340,10 @@ case 'dashboard': return <Dashboard equipamentos={equipamentos} onVerDetalhe={se
   )
 }
 
-export default App
+export default function AppComBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  )
+}

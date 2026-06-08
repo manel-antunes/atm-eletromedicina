@@ -191,6 +191,15 @@ export async function inicializarDB(): Promise<void> {
       // O seed real é feito no server.ts após bcrypt estar disponível
     }
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id SERIAL PRIMARY KEY,
+        endpoint TEXT UNIQUE NOT NULL,
+        subscription JSONB NOT NULL,
+        criado_em TIMESTAMP DEFAULT NOW()
+      )
+    `)
+
     console.log('✅ Base de dados inicializada!')
   } finally {
     client.release()

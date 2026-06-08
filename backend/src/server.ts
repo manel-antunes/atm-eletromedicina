@@ -11,7 +11,11 @@ import { pool, inicializarDB } from './database'
 dotenv.config()
 
 const app = express()
-app.use(cors())
+const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:5173'
+app.use(cors({
+  origin: [FRONTEND_URL, 'http://localhost:5173', 'http://localhost:4173'],
+  credentials: true,
+}))
 app.use(express.json({ limit: '10mb' }))
 
 const JWT_SECRET         = process.env.JWT_SECRET          ?? 'atm-eletromedicina-2026'
@@ -30,7 +34,6 @@ webpush.setVapidDetails(
   process.env.VAPID_PUBLIC_KEY ?? '',
   process.env.VAPID_PRIVATE_KEY ?? ''
 )
-let subscricoesPush: webpush.PushSubscription[] = []
 
 // ── HELPERS ────────────────────────────────────────────────
 function getIP(req: any): string {
@@ -203,6 +206,24 @@ app.get('/api/me', autenticar, (req: any, res) => {
     nome: req.utilizador.nome,
     role: req.utilizador.role,
   })
+})
+
+// ── PERFIL — alterar password ─────────────────────────────
+app.post('/api/perfil/password', autenticar, async (req: any, res) => {
+  const { passwordAtual, passwordNova } = req.body
+  if (!passwordAtual || !passwordNova) return res.status(400).json({ erro: 'Campos obrigatórios em falta' })
+  if (passwordNova.length < 6) return res.status(400).json({ erro: 'A password deve ter pelo menos 6 caracteres' })
+  try {
+    const result = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.utilizador.id])
+    const user = result.rows[0]
+    if (!user) return res.status(404).json({ erro: 'Utilizador não encontrado' })
+    const ok = await bcrypt.compare(passwordAtual, user.password_hash)
+    if (!ok) return res.status(401).json({ erro: 'Password atual incorreta' })
+    const novoHash = await bcrypt.hash(passwordNova, BCRYPT_ROUNDS)
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [novoHash, req.utilizador.id])
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'ALTERAR_PASSWORD', null, null, null, getIP(req))
+    res.json({ sucesso: true })
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
 // ── SESSÕES ATIVAS (admin) ────────────────────────────────
@@ -611,11 +632,17 @@ app.delete('/api/documentos/:id', autenticar, async (req: any, res) => {
 })
 
 // ── PUSH NOTIFICATIONS ─────────────────────────────────────
-app.post('/api/push/subscrever', autenticar, (req, res) => {
+app.post('/api/push/subscrever', autenticar, async (req, res) => {
   const sub = req.body as webpush.PushSubscription
-  const jaExiste = subscricoesPush.some(s => s.endpoint === sub.endpoint)
-  if (!jaExiste) subscricoesPush.push(sub)
-  res.json({ sucesso: true, total: subscricoesPush.length })
+  try {
+    await pool.query(
+      `INSERT INTO push_subscriptions (endpoint, subscription) VALUES ($1, $2)
+       ON CONFLICT (endpoint) DO UPDATE SET subscription = $2`,
+      [sub.endpoint, JSON.stringify(sub)]
+    )
+    const { rows } = await pool.query('SELECT COUNT(*) FROM push_subscriptions')
+    res.json({ sucesso: true, total: parseInt(rows[0].count) })
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
 app.post('/api/push/notificar', autenticar, async (req, res) => {
@@ -628,9 +655,22 @@ app.post('/api/push/notificar', autenticar, async (req, res) => {
     emBreve   > 0 ? `${emBreve} em breve` : '',
   ].filter(Boolean).join(' · ')
   const payload = JSON.stringify({ titulo: '⚠️ ATM — Alertas de calibração', corpo: partes, tag: 'atm-calibracao', url: '/?page=relatorios' })
-  const resultados = await Promise.allSettled(subscricoesPush.map(sub => webpush.sendNotification(sub, payload)))
-  subscricoesPush = subscricoesPush.filter((_, i) => resultados[i].status === 'fulfilled')
-  res.json({ sucesso: true, enviados: resultados.filter(r => r.status === 'fulfilled').length })
+  try {
+    const { rows } = await pool.query('SELECT id, subscription FROM push_subscriptions')
+    const resultados = await Promise.allSettled(
+      rows.map((r: { id: number; subscription: webpush.PushSubscription }) =>
+        webpush.sendNotification(r.subscription, payload)
+      )
+    )
+    // Remove subscrições expiradas/inválidas
+    const idsParaRemover = rows
+      .filter((_: unknown, i: number) => resultados[i].status === 'rejected')
+      .map((r: { id: number }) => r.id)
+    if (idsParaRemover.length > 0) {
+      await pool.query(`DELETE FROM push_subscriptions WHERE id = ANY($1)`, [idsParaRemover])
+    }
+    res.json({ sucesso: true, enviados: resultados.filter(r => r.status === 'fulfilled').length })
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
 // ── PREVENTIVAS ────────────────────────────────────────────

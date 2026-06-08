@@ -164,9 +164,11 @@ export default function Login({ onLogin }: Props) {
         setLoading(false)
         return
       }
-      const { token, nome } = await res.json()
+      const { token, nome, username: user, role } = await res.json()
       localStorage.setItem('atm_token', token)
       localStorage.setItem('atm_nome', nome)
+      localStorage.setItem('atm_username', user ?? username)
+      localStorage.setItem('atm_role', role ?? 'tecnico')
 
       // 4. Transição cinematográfica de saída
       setExiting(true)
