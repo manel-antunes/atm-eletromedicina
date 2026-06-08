@@ -421,7 +421,6 @@ export default function Login({ onLogin }: Props) {
           <div style={{ display: 'flex', gap: 48, marginBottom: 32 }}>
             {[
               { num: '52', label: 'Equipamentos' },
-              { num: '5',  label: 'Hospitais' },
               { num: '100%', label: 'Digital' },
             ].map(stat => (
               <div key={stat.label}>
@@ -432,7 +431,7 @@ export default function Login({ onLogin }: Props) {
           </div>
           <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.15)', marginBottom: 24, transformOrigin: 'left', animation: mounted ? 'line-in 1.2s cubic-bezier(0.16,1,0.3,1) 0.6s both' : 'none' }} />
           <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontStyle: 'italic', fontWeight: 300, color: 'rgba(255,255,255,0.5)', margin: 0, letterSpacing: '0.02em' }}>
-            Sistema de Gestão de Eletromedicina
+            Sistema de Gestão de Eletromedicina do Hospital CUF Porto
           </p>
         </div>
 
