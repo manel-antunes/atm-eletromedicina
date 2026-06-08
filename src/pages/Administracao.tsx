@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Users, ShieldCheck, Activity, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, Loader2, RefreshCw, LogOut } from 'lucide-react'
+import { Users, ShieldCheck, Activity, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, Loader2, RefreshCw, LogOut, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 
@@ -35,7 +35,15 @@ interface AuditEntry {
   entidade: string | null
   entidade_id: string | null
   ip: string
+  user_agent: string | null
   criado_em: string
+}
+
+interface AuditPaginado {
+  total: number
+  pagina: number
+  porPagina: number
+  registos: AuditEntry[]
 }
 
 type Tab = 'utilizadores' | 'sessoes' | 'audit'
@@ -63,7 +71,12 @@ export default function Administracao() {
   const [tab, setTab] = useState<Tab>('utilizadores')
   const [users, setUsers] = useState<User[]>([])
   const [sessoes, setSessoes] = useState<Sessao[]>([])
-  const [audit, setAudit] = useState<AuditEntry[]>([])
+  const [audit, setAudit] = useState<AuditPaginado>({ total: 0, pagina: 1, porPagina: 50, registos: [] })
+  const [auditFiltroUser, setAuditFiltroUser] = useState('')
+  const [auditFiltroAcao, setAuditFiltroAcao] = useState('')
+  const [auditFiltroDe, setAuditFiltroDe] = useState('')
+  const [auditFiltroAte, setAuditFiltroAte] = useState('')
+  const [auditPagina, setAuditPagina] = useState(1)
   const [carregando, setCarregando] = useState(false)
 
   // form novo utilizador
@@ -93,18 +106,41 @@ export default function Administracao() {
     } finally { setCarregando(false) }
   }, [])
 
-  const carregarAudit = useCallback(async () => {
+  const carregarAudit = useCallback(async (pagina = 1) => {
     setCarregando(true)
     try {
-      const res = await fetch(`${API_URL}/api/audit`, { headers: getHeaders() })
+      const params = new URLSearchParams({ pagina: String(pagina), porPagina: '50' })
+      if (auditFiltroUser) params.set('username', auditFiltroUser)
+      if (auditFiltroAcao) params.set('acao', auditFiltroAcao)
+      if (auditFiltroDe)   params.set('de', auditFiltroDe)
+      if (auditFiltroAte)  params.set('ate', auditFiltroAte)
+      const res = await fetch(`${API_URL}/api/audit?${params}`, { headers: getHeaders() })
       setAudit(await res.json())
+      setAuditPagina(pagina)
     } finally { setCarregando(false) }
-  }, [])
+  }, [auditFiltroUser, auditFiltroAcao, auditFiltroDe, auditFiltroAte])
+
+  function exportarCSV() {
+    const params = new URLSearchParams({ formato: 'csv', porPagina: '200' })
+    if (auditFiltroUser) params.set('username', auditFiltroUser)
+    if (auditFiltroAcao) params.set('acao', auditFiltroAcao)
+    if (auditFiltroDe)   params.set('de', auditFiltroDe)
+    if (auditFiltroAte)  params.set('ate', auditFiltroAte)
+    const url = `${API_URL}/api/audit?${params}`
+    fetch(url, { headers: getHeaders() })
+      .then(r => r.blob())
+      .then(blob => {
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = 'audit_log.csv'
+        a.click()
+      })
+  }
 
   useEffect(() => {
     if (tab === 'utilizadores') carregarUsers()
     else if (tab === 'sessoes') carregarSessoes()
-    else carregarAudit()
+    else carregarAudit(1)
   }, [tab])
 
   function abrirNovoUser() {
@@ -185,11 +221,21 @@ export default function Administracao() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ShieldCheck size={16} color="#C0001A" />
             <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0 }}>
-              {tab === 'utilizadores' ? `Utilizadores (${users.length})` : tab === 'sessoes' ? `Sessões Ativas (${sessoes.length})` : `Audit Log (${audit.length} entradas)`}
+              {tab === 'utilizadores' ? `Utilizadores (${users.length})` : tab === 'sessoes' ? `Sessões Ativas (${sessoes.length})` : `Audit Log (${audit.total} entradas)`}
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => { if (tab === 'utilizadores') carregarUsers(); else if (tab === 'sessoes') carregarSessoes(); else carregarAudit() }}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {tab === 'audit' && (<>
+              <input value={auditFiltroUser} onChange={e => setAuditFiltroUser(e.target.value)} placeholder="Utilizador..." style={{ padding: '5px 10px', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: 12, width: 120 }} />
+              <input value={auditFiltroAcao} onChange={e => setAuditFiltroAcao(e.target.value)} placeholder="Ação..." style={{ padding: '5px 10px', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: 12, width: 130 }} />
+              <input type="date" value={auditFiltroDe} onChange={e => setAuditFiltroDe(e.target.value)} style={{ padding: '5px 10px', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: 12 }} />
+              <input type="date" value={auditFiltroAte} onChange={e => setAuditFiltroAte(e.target.value)} style={{ padding: '5px 10px', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: 12 }} />
+              <button onClick={() => carregarAudit(1)} style={{ padding: '6px 12px', background: '#C0001A', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Filtrar</button>
+              <button onClick={exportarCSV} title="Exportar CSV" style={{ padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: 7, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#374151' }}>
+                <Download size={13} /> CSV
+              </button>
+            </>)}
+            <button onClick={() => { if (tab === 'utilizadores') carregarUsers(); else if (tab === 'sessoes') carregarSessoes(); else carregarAudit(auditPagina) }}
               style={{ padding: '6px 12px', border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#374151' }}>
               <RefreshCw size={14} style={carregando ? { animation: 'spin 1s linear infinite' } : {}} />
               Atualizar
@@ -286,34 +332,61 @@ export default function Administracao() {
 
         {/* Audit log */}
         {tab === 'audit' && (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#f9fafb' }}>
-                  {['Data', 'Utilizador', 'Ação', 'Entidade', 'IP'].map(h => (
-                    <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {audit.map(a => (
-                  <tr key={a.id} style={{ borderTop: '1px solid #f3f4f6' }}>
-                    <td style={{ padding: '10px 16px', fontSize: 12, color: '#6b7280', whiteSpace: 'nowrap' }}>{formatarData(a.criado_em)}</td>
-                    <td style={{ padding: '10px 16px', fontSize: 13, color: '#374151', fontWeight: 600 }}>{a.username}</td>
-                    <td style={{ padding: '10px 16px' }}>
-                      <span style={{ background: '#f3f4f6', color: '#374151', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
-                        {a.acao}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px 16px', fontSize: 12, color: '#9ca3af' }}>
-                      {a.entidade ? `${a.entidade}${a.entidade_id ? ` #${a.entidade_id}` : ''}` : '—'}
-                    </td>
-                    <td style={{ padding: '10px 16px', fontSize: 12, color: '#9ca3af', fontFamily: 'monospace' }}>{a.ip || '—'}</td>
+          <>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f9fafb' }}>
+                    {['Data', 'Utilizador', 'Ação', 'Entidade', 'IP', 'Dispositivo'].map(h => (
+                      <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {audit.registos.map(a => (
+                    <tr key={a.id} style={{ borderTop: '1px solid #f3f4f6' }}>
+                      <td style={{ padding: '10px 16px', fontSize: 12, color: '#6b7280', whiteSpace: 'nowrap' }}>{formatarData(a.criado_em)}</td>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: '#374151', fontWeight: 600 }}>{a.username}</td>
+                      <td style={{ padding: '10px 16px' }}>
+                        <span style={{ background: a.acao.includes('FALHOU') ? '#fef2f2' : '#f3f4f6', color: a.acao.includes('FALHOU') ? '#dc2626' : '#374151', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
+                          {a.acao}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 16px', fontSize: 12, color: '#9ca3af' }}>
+                        {a.entidade ? `${a.entidade}${a.entidade_id ? ` #${a.entidade_id}` : ''}` : '—'}
+                      </td>
+                      <td style={{ padding: '10px 16px', fontSize: 12, color: '#9ca3af', fontFamily: 'monospace' }}>{a.ip || '—'}</td>
+                      <td style={{ padding: '10px 16px', fontSize: 11, color: '#9ca3af', maxWidth: 200 }}>
+                        <span title={a.user_agent ?? ''} style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {a.user_agent || '—'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {audit.registos.length === 0 && (
+                    <tr><td colSpan={6} style={{ padding: 32, textAlign: 'center', color: '#9ca3af', fontSize: 14 }}>Sem registos</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {audit.total > audit.porPagina && (
+              <div style={{ padding: '12px 20px', borderTop: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+                  {((auditPagina - 1) * audit.porPagina) + 1}–{Math.min(auditPagina * audit.porPagina, audit.total)} de {audit.total}
+                </p>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={() => carregarAudit(auditPagina - 1)} disabled={auditPagina === 1}
+                    style={{ padding: '5px 10px', border: '1px solid #e5e7eb', borderRadius: 7, background: '#fff', cursor: auditPagina === 1 ? 'not-allowed' : 'pointer', color: auditPagina === 1 ? '#d1d5db' : '#374151', display: 'flex', alignItems: 'center' }}>
+                    <ChevronLeft size={14} />
+                  </button>
+                  <button onClick={() => carregarAudit(auditPagina + 1)} disabled={auditPagina * audit.porPagina >= audit.total}
+                    style={{ padding: '5px 10px', border: '1px solid #e5e7eb', borderRadius: 7, background: '#fff', cursor: auditPagina * audit.porPagina >= audit.total ? 'not-allowed' : 'pointer', color: auditPagina * audit.porPagina >= audit.total ? '#d1d5db' : '#374151', display: 'flex', alignItems: 'center' }}>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

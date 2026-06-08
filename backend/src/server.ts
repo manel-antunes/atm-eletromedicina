@@ -79,16 +79,49 @@ async function registarAudit(
   entidade: string | null = null,
   entidadeId: string | null = null,
   detalhes: object | null = null,
-  ip: string = ''
+  ip: string = '',
+  userAgent: string = ''
 ) {
   try {
     await pool.query(
-      `INSERT INTO audit_log (user_id, username, acao, entidade, entidade_id, detalhes, ip)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [userId, username, acao, entidade, entidadeId, detalhes ? JSON.stringify(detalhes) : null, ip]
+      `INSERT INTO audit_log (user_id, username, acao, entidade, entidade_id, detalhes, ip, user_agent)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [userId, username, acao, entidade, entidadeId, detalhes ? JSON.stringify(detalhes) : null, ip, userAgent]
     )
   } catch (err) {
     console.error('Erro ao registar audit:', err)
+  }
+}
+
+function getUA(req: any): string {
+  return (req.headers['user-agent'] ?? '').slice(0, 250)
+}
+
+// Deteção de brute-force: notifica admin se ≥5 falhas em 10 min do mesmo IP
+async function verificarBruteForce(ip: string): Promise<void> {
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*) FROM audit_log
+       WHERE acao = 'LOGIN_FALHOU' AND ip = $1
+       AND criado_em > NOW() - INTERVAL '10 minutes'`,
+      [ip]
+    )
+    const falhas = parseInt(result.rows[0].count)
+    if (falhas === 5) {
+      const admins = await pool.query(
+        `SELECT email FROM users WHERE role = 'admin' AND ativo = TRUE AND email IS NOT NULL`
+      )
+      for (const admin of admins.rows) {
+        await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: admin.email,
+          subject: '[ATM] Alerta: tentativas de login suspeitas',
+          html: `<p>Foram detetadas <strong>${falhas} tentativas de login falhadas</strong> nos últimos 10 minutos a partir do IP <code>${ip}</code>.</p><p>Se não reconheces esta atividade, considera bloquear o IP ou revogar sessões ativas.</p>`,
+        }).catch(() => { /* não bloquear o fluxo se o email falhar */ })
+      }
+    }
+  } catch {
+    // silencioso — não bloquear o login por erro de auditoria
   }
 }
 
@@ -147,7 +180,9 @@ app.post('/api/login', limitadorLogin, async (req, res) => {
 
     const passwordOk = await bcrypt.compare(password, user.password_hash)
     if (!passwordOk) {
-      await registarAudit(user.id, username, 'LOGIN_FALHOU', null, null, null, getIP(req))
+      const ip = getIP(req)
+      await registarAudit(user.id, username, 'LOGIN_FALHOU', null, null, null, ip, getUA(req))
+      await verificarBruteForce(ip)
       return res.status(401).json({ erro: 'Utilizador ou password incorretos' })
     }
 
@@ -175,7 +210,7 @@ app.post('/api/login', limitadorLogin, async (req, res) => {
 
     // Atualiza último login
     await pool.query('UPDATE users SET ultimo_login = NOW() WHERE id = $1', [user.id])
-    await registarAudit(user.id, username, 'LOGIN', null, null, null, getIP(req))
+    await registarAudit(user.id, username, 'LOGIN', null, null, null, getIP(req), getUA(req))
 
     res.json({ token, refreshToken, nome: user.nome, username: user.username, role: user.role })
   } catch (err) {
@@ -341,10 +376,39 @@ app.patch('/api/users/:id', autenticar, apenasAdmin, async (req: any, res) => {
 // ── AUDIT LOG (admin) ─────────────────────────────────────
 app.get('/api/audit', autenticar, apenasAdmin, async (req: any, res) => {
   try {
-    const result = await pool.query(
-      `SELECT * FROM audit_log ORDER BY criado_em DESC LIMIT 200`
-    )
-    res.json(result.rows)
+    const { username, acao, de, ate, pagina = '1', porPagina = '50', formato } = req.query as Record<string, string>
+    const pg = Math.max(1, parseInt(pagina))
+    const pp = Math.min(200, Math.max(1, parseInt(porPagina)))
+    const offset = (pg - 1) * pp
+
+    const conds: string[] = []
+    const params: unknown[] = []
+    if (username) { params.push(`%${username}%`); conds.push(`username ILIKE $${params.length}`) }
+    if (acao)     { params.push(acao);             conds.push(`acao = $${params.length}`) }
+    if (de)       { params.push(de);               conds.push(`criado_em >= $${params.length}`) }
+    if (ate)      { params.push(ate);              conds.push(`criado_em <= $${params.length}`) }
+
+    const where = conds.length ? `WHERE ${conds.join(' AND ')}` : ''
+
+    const totalResult = await pool.query(`SELECT COUNT(*) FROM audit_log ${where}`, params)
+    const total = parseInt(totalResult.rows[0].count)
+
+    params.push(pp, offset)
+    const rows = (await pool.query(
+      `SELECT * FROM audit_log ${where} ORDER BY criado_em DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params
+    )).rows
+
+    if (formato === 'csv') {
+      const cols = ['id','username','acao','entidade','entidade_id','ip','user_agent','criado_em']
+      const csvHeader = cols.join(',')
+      const csvRows = rows.map(r => cols.map(c => JSON.stringify(r[c] ?? '')).join(','))
+      res.setHeader('Content-Type', 'text/csv')
+      res.setHeader('Content-Disposition', 'attachment; filename="audit_log.csv"')
+      return res.send([csvHeader, ...csvRows].join('\n'))
+    }
+
+    res.json({ total, pagina: pg, porPagina: pp, registos: rows })
   } catch (err) {
     res.status(500).json({ erro: String(err) })
   }

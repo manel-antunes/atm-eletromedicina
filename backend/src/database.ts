@@ -178,8 +178,12 @@ export async function inicializarDB(): Promise<void> {
         entidade_id VARCHAR(50),
         detalhes JSONB,
         ip VARCHAR(50),
+        user_agent TEXT,
         criado_em TIMESTAMP DEFAULT NOW()
       )
+    `)
+    await client.query(`
+      ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS user_agent TEXT
     `)
 
     // Seed: cria utilizadores iniciais se a tabela estiver vazia
