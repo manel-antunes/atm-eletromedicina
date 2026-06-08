@@ -61,7 +61,7 @@ function Avatar({ nome, role, size = 32 }: { nome: string; role: string; size?: 
 }
 
 export default function Chat() {
-  const [socket, setSocket] = useState<Socket | null>(null)
+  const socketRef = useRef<Socket | null>(null)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
   const [online, setOnline] = useState<UtilizadorOnline[]>([])
   const [texto, setTexto] = useState('')
@@ -72,7 +72,6 @@ export default function Chat() {
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const meuId = parseInt(localStorage.getItem('atm_user_id') ?? '0')
-  const meuNome = localStorage.getItem('atm_nome') ?? ''
 
   useEffect(() => {
     const token = localStorage.getItem('atm_token')
@@ -102,24 +101,26 @@ export default function Chat() {
       )
     })
 
-    setSocket(s)
-    return () => { s.disconnect() }
-  }, [])
+    socketRef.current = s
+    return () => { s.disconnect(); socketRef.current = null }
+  }, [meuId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensagens, typing])
 
   const enviar = useCallback(() => {
+    const socket = socketRef.current
     if (!texto.trim() || !socket) return
     socket.emit('mensagem', texto.trim())
     socket.emit('typing', false)
     setTexto('')
     if (typingTimer.current) clearTimeout(typingTimer.current)
-  }, [texto, socket])
+  }, [texto])
 
   function handleTexto(val: string) {
     setTexto(val)
+    const socket = socketRef.current
     if (!socket) return
     socket.emit('typing', true)
     if (typingTimer.current) clearTimeout(typingTimer.current)
