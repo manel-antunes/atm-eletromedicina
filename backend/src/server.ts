@@ -1,5 +1,7 @@
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
 import dotenv from 'dotenv'
 import * as cron from 'node-cron'
 import nodemailer from 'nodemailer'
@@ -15,19 +17,37 @@ dotenv.config()
 const app = express()
 const FRONTEND_URL = process.env.FRONTEND_URL
 
+app.use(helmet({
+  contentSecurityPolicy: false, // gerido pelo Vercel no frontend
+  crossOriginEmbedderPolicy: false,
+}))
 app.use(cors({
   origin: (origin, callback) => {
-    // Permite: sem origin (apps nativas/Postman), localhost, e o domínio do frontend configurado
     if (!origin) return callback(null, true)
     if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) return callback(null, true)
     if (FRONTEND_URL && origin === FRONTEND_URL) return callback(null, true)
-    // Fallback: aceita qualquer origem HTTPS (para deploy sem FRONTEND_URL definido)
     if (origin.startsWith('https://')) return callback(null, true)
     callback(new Error('CORS: origem não permitida'))
   },
   credentials: true,
 }))
 app.use(express.json({ limit: '10mb' }))
+
+const limitadorLogin = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { erro: 'Demasiadas tentativas. Tenta novamente em 15 minutos.' },
+})
+
+const limitadorGeral = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { erro: 'Demasiados pedidos. Tenta novamente mais tarde.' },
+})
 
 const JWT_SECRET         = process.env.JWT_SECRET          ?? 'atm-eletromedicina-2026'
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET  ?? 'atm-refresh-2026'
@@ -112,8 +132,10 @@ async function seedUtilizadores() {
   console.log('✅ Utilizadores iniciais criados (admin + tecnico)')
 }
 
+app.use('/api', limitadorGeral)
+
 // ── LOGIN ──────────────────────────────────────────────────
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', limitadorLogin, async (req, res) => {
   const { username, password } = req.body
   try {
     const result = await pool.query(
