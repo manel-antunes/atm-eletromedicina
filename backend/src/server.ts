@@ -11,9 +11,18 @@ import { pool, inicializarDB } from './database'
 dotenv.config()
 
 const app = express()
-const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:5173'
+const FRONTEND_URL = process.env.FRONTEND_URL
+
 app.use(cors({
-  origin: [FRONTEND_URL, 'http://localhost:5173', 'http://localhost:4173'],
+  origin: (origin, callback) => {
+    // Permite: sem origin (apps nativas/Postman), localhost, e o domínio do frontend configurado
+    if (!origin) return callback(null, true)
+    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) return callback(null, true)
+    if (FRONTEND_URL && origin === FRONTEND_URL) return callback(null, true)
+    // Fallback: aceita qualquer origem HTTPS (para deploy sem FRONTEND_URL definido)
+    if (origin.startsWith('https://')) return callback(null, true)
+    callback(new Error('CORS: origem não permitida'))
+  },
   credentials: true,
 }))
 app.use(express.json({ limit: '10mb' }))
