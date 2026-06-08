@@ -147,11 +147,13 @@ export async function inicializarDB(): Promise<void> {
         password_hash TEXT NOT NULL,
         nome VARCHAR(100) NOT NULL,
         role VARCHAR(20) NOT NULL DEFAULT 'tecnico',
+        email VARCHAR(150),
         ativo BOOLEAN DEFAULT TRUE,
         criado_em TIMESTAMP DEFAULT NOW(),
         ultimo_login TIMESTAMP
       )
     `)
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(150)`)
 
     // Refresh tokens
     await client.query(`

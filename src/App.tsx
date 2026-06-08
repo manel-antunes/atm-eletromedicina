@@ -125,6 +125,7 @@ function App() {
   const [nomeUtilizador, setNomeUtilizador] = useState(localStorage.getItem('atm_nome') ?? '')
   const [verificandoToken, setVerificandoToken] = useState(true)
   const [commandPaletteAberta, setCommandPaletteAberta] = useState(false)
+  const [sidebarMobileAberta, setSidebarMobileAberta] = useState(false)
   const [sincronizando, setSincronizando] = useState(false)
   const [ultimaSync, setUltimaSync] = useState<Date | null>(null)
   const { toasts, mostrar, remover } = useToast()
@@ -312,7 +313,7 @@ function App() {
             equipamentos={equipamentos}
             onVerDetalhe={(eq) => setEquipDetalhe(eq)}
             onApresentacao={() => setApresentacao(true)}
-            onMenuToggle={() => setCommandPaletteAberta(true)}
+            onMenuToggle={() => isMobile ? setSidebarMobileAberta(true) : setCommandPaletteAberta(true)}
             isMobile={isMobile}
             sincronizando={sincronizando}
             ultimaSync={ultimaSync}
@@ -329,6 +330,26 @@ function App() {
           </main>
         </div>
       </div>
+
+      {/* Drawer mobile */}
+      {isMobile && sidebarMobileAberta && (
+        <>
+          <div
+            onClick={() => setSidebarMobileAberta(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 50 }}
+          />
+          <div style={{ position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 51 }}>
+            <SidebarCollapsible
+              paginaAtiva={paginaAtiva}
+              onNavegar={p => { navegar(p); setSidebarMobileAberta(false) }}
+              equipamentos={equipamentos}
+              nomeUtilizador={nomeUtilizador}
+              onLogout={handleLogout}
+              onCommandPalette={() => { setSidebarMobileAberta(false); setCommandPaletteAberta(true) }}
+            />
+          </div>
+        </>
+      )}
 
       {isMobile && (
         <BottomNav

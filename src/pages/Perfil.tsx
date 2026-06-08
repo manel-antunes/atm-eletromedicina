@@ -16,14 +16,23 @@ export default function Perfil() {
   const [carregando, setCarregando] = useState(false)
   const [mensagem, setMensagem] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null)
 
+  function validarPassword(pwd: string): string | null {
+    if (pwd.length < 8)             return 'Mínimo 8 caracteres.'
+    if (!/[A-Z]/.test(pwd))         return 'Pelo menos uma maiúscula.'
+    if (!/[0-9]/.test(pwd))         return 'Pelo menos um número.'
+    if (!/[^A-Za-z0-9]/.test(pwd))  return 'Pelo menos um caractere especial.'
+    return null
+  }
+
   async function handleAlterarPassword(e: React.FormEvent) {
     e.preventDefault()
     if (passwordNova !== passwordConfirm) {
       setMensagem({ tipo: 'erro', texto: 'As passwords novas não coincidem.' })
       return
     }
-    if (passwordNova.length < 6) {
-      setMensagem({ tipo: 'erro', texto: 'A password nova deve ter pelo menos 6 caracteres.' })
+    const erroPass = validarPassword(passwordNova)
+    if (erroPass) {
+      setMensagem({ tipo: 'erro', texto: erroPass })
       return
     }
     setCarregando(true)

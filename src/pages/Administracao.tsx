@@ -13,9 +13,36 @@ interface User {
   username: string
   nome: string
   role: 'admin' | 'tecnico'
+  email: string | null
   ativo: boolean
   criado_em: string
   ultimo_login: string | null
+}
+
+function validarPassword(pwd: string): string | null {
+  if (pwd.length < 8)             return 'Mínimo 8 caracteres.'
+  if (!/[A-Z]/.test(pwd))         return 'Pelo menos uma maiúscula.'
+  if (!/[0-9]/.test(pwd))         return 'Pelo menos um número.'
+  if (!/[^A-Za-z0-9]/.test(pwd))  return 'Pelo menos um caractere especial.'
+  return null
+}
+
+function ForcaPassword({ pwd }: { pwd: string }) {
+  if (!pwd) return null
+  const checks = [pwd.length >= 8, /[A-Z]/.test(pwd), /[0-9]/.test(pwd), /[^A-Za-z0-9]/.test(pwd)]
+  const score = checks.filter(Boolean).length
+  const cor = score <= 1 ? '#ef4444' : score === 2 ? '#f97316' : score === 3 ? '#eab308' : '#22c55e'
+  const label = score <= 1 ? 'Fraca' : score === 2 ? 'Razoável' : score === 3 ? 'Boa' : 'Forte'
+  return (
+    <div style={{ marginTop: 6 }}>
+      <div style={{ display: 'flex', gap: 3, marginBottom: 3 }}>
+        {[1,2,3,4].map(i => (
+          <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= score ? cor : '#e5e7eb', transition: 'background 0.2s' }} />
+        ))}
+      </div>
+      <p style={{ fontSize: 11, color: cor, margin: 0 }}>{label}</p>
+    </div>
+  )
 }
 
 interface Sessao {
@@ -85,6 +112,7 @@ export default function Administracao() {
   const [formNome, setFormNome] = useState('')
   const [formUsername, setFormUsername] = useState('')
   const [formRole, setFormRole] = useState<'admin' | 'tecnico'>('tecnico')
+  const [formEmail, setFormEmail] = useState('')
   const [formPassword, setFormPassword] = useState('')
   const [mostrarPass, setMostrarPass] = useState(false)
   const [salvando, setSalvando] = useState(false)
@@ -145,28 +173,32 @@ export default function Administracao() {
 
   function abrirNovoUser() {
     setEditUser(null)
-    setFormNome(''); setFormUsername(''); setFormRole('tecnico'); setFormPassword(''); setErroForm('')
+    setFormNome(''); setFormUsername(''); setFormRole('tecnico'); setFormEmail(''); setFormPassword(''); setErroForm('')
     setModalAberto(true)
   }
 
   function abrirEditUser(u: User) {
     setEditUser(u)
-    setFormNome(u.nome); setFormUsername(u.username); setFormRole(u.role); setFormPassword(''); setErroForm('')
+    setFormNome(u.nome); setFormUsername(u.username); setFormRole(u.role); setFormEmail(u.email ?? ''); setFormPassword(''); setErroForm('')
     setModalAberto(true)
   }
 
   async function guardarUser() {
     if (!formNome || !formUsername) { setErroForm('Nome e username são obrigatórios.'); return }
     if (!editUser && !formPassword) { setErroForm('Password obrigatória para novo utilizador.'); return }
+    if (formPassword) {
+      const erroPass = validarPassword(formPassword)
+      if (erroPass) { setErroForm(erroPass); return }
+    }
     setSalvando(true); setErroForm('')
     try {
       if (editUser) {
-        const body: Record<string, string | boolean> = { nome: formNome, role: formRole }
+        const body: Record<string, string | boolean> = { nome: formNome, role: formRole, email: formEmail }
         if (formPassword) body.password = formPassword
         const res = await fetch(`${API_URL}/api/users/${editUser.id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(body) })
         if (!res.ok) throw new Error((await res.json()).erro)
       } else {
-        const res = await fetch(`${API_URL}/api/users`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ username: formUsername, password: formPassword, nome: formNome, role: formRole }) })
+        const res = await fetch(`${API_URL}/api/users`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ username: formUsername, password: formPassword, nome: formNome, role: formRole, email: formEmail }) })
         if (!res.ok) throw new Error((await res.json()).erro)
       }
       setModalAberto(false)
@@ -412,6 +444,11 @@ export default function Administracao() {
                     style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, background: f.disabled ? '#f9fafb' : '#fff', color: '#111827' }} />
                 </div>
               ))}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5 }}>Email (opcional)</label>
+                <input type="email" value={formEmail} onChange={e => setFormEmail(e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, color: '#111827' }} />
+              </div>
 
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5 }}>Role</label>
@@ -434,6 +471,7 @@ export default function Administracao() {
                     {mostrarPass ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
+                <ForcaPassword pwd={formPassword} />
               </div>
 
               {erroForm && (

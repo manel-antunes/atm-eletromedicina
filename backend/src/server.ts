@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
+import pino from 'pino'
 import dotenv from 'dotenv'
 import * as cron from 'node-cron'
 import nodemailer from 'nodemailer'
@@ -13,6 +14,11 @@ import { Server as SocketServer } from 'socket.io'
 import { pool, inicializarDB } from './database'
 
 dotenv.config()
+
+const logger = pino({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+})
 
 const app = express()
 const FRONTEND_URL = process.env.FRONTEND_URL
@@ -89,7 +95,7 @@ async function registarAudit(
       [userId, username, acao, entidade, entidadeId, detalhes ? JSON.stringify(detalhes) : null, ip, userAgent]
     )
   } catch (err) {
-    console.error('Erro ao registar audit:', err)
+    logger.error({ err }, 'Erro ao registar audit')
   }
 }
 
@@ -162,7 +168,26 @@ async function seedUtilizadores() {
      ('tecnico', $2, 'Técnico HPRT',  'tecnico')`,
     [hashAdmin, hashTecnico]
   )
-  console.log('✅ Utilizadores iniciais criados (admin + tecnico)')
+  logger.info('Utilizadores iniciais criados (admin + tecnico)')
+}
+
+// ── HEALTH CHECK ──────────────────────────────────────────
+app.get('/api/health', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1')
+    res.json({ status: 'ok', db: 'ok', ts: new Date().toISOString() })
+  } catch {
+    res.status(503).json({ status: 'error', db: 'unreachable', ts: new Date().toISOString() })
+  }
+})
+
+// ── POLÍTICA DE PASSWORD ───────────────────────────────────
+function validarPassword(pwd: string): string | null {
+  if (pwd.length < 8)                      return 'A password deve ter pelo menos 8 caracteres.'
+  if (!/[A-Z]/.test(pwd))                  return 'A password deve conter pelo menos uma letra maiúscula.'
+  if (!/[0-9]/.test(pwd))                  return 'A password deve conter pelo menos um número.'
+  if (!/[^A-Za-z0-9]/.test(pwd))           return 'A password deve conter pelo menos um caractere especial.'
+  return null
 }
 
 app.use('/api', limitadorGeral)
@@ -280,7 +305,8 @@ app.get('/api/me', autenticar, (req: any, res) => {
 app.post('/api/perfil/password', autenticar, async (req: any, res) => {
   const { passwordAtual, passwordNova } = req.body
   if (!passwordAtual || !passwordNova) return res.status(400).json({ erro: 'Campos obrigatórios em falta' })
-  if (passwordNova.length < 6) return res.status(400).json({ erro: 'A password deve ter pelo menos 6 caracteres' })
+  const erroPass = validarPassword(passwordNova)
+  if (erroPass) return res.status(400).json({ erro: erroPass })
   try {
     const result = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.utilizador.id])
     const user = result.rows[0]
@@ -333,15 +359,25 @@ app.get('/api/users', autenticar, apenasAdmin, async (_req, res) => {
 })
 
 app.post('/api/users', autenticar, apenasAdmin, async (req: any, res) => {
-  const { username, password, nome, role } = req.body
+  const { username, password, nome, role, email } = req.body
   if (!username || !password || !nome || !role) return res.status(400).json({ erro: 'Campos obrigatórios em falta' })
+  const erroPass = validarPassword(password)
+  if (erroPass) return res.status(400).json({ erro: erroPass })
   try {
     const hash = await bcrypt.hash(password, BCRYPT_ROUNDS)
     const result = await pool.query(
-      'INSERT INTO users (username, password_hash, nome, role) VALUES ($1, $2, $3, $4) RETURNING id, username, nome, role',
-      [username, hash, nome, role]
+      'INSERT INTO users (username, password_hash, nome, role, email) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, nome, role, email',
+      [username, hash, nome, role, email ?? null]
     )
-    await registarAudit(req.utilizador.id, req.utilizador.username, 'CRIAR_USER', 'user', String(result.rows[0].id), { username, nome, role }, getIP(req))
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'CRIAR_USER', 'user', String(result.rows[0].id), { username, nome, role }, getIP(req), getUA(req))
+    if (email) {
+      transporter.sendMail({
+        from: process.env.GMAIL_USER,
+        to: email,
+        subject: '[ATM] Conta criada',
+        html: `<p>Olá <strong>${nome}</strong>,</p><p>A tua conta no sistema ATM Eletromedicina foi criada com sucesso.</p><p><strong>Username:</strong> ${username}<br><strong>Role:</strong> ${role}</p><p>Altera a tua password no primeiro acesso.</p>`,
+      }).catch(e => logger.warn({ err: e }, 'Falha ao enviar email de criação de conta'))
+    }
     res.json(result.rows[0])
   } catch (err: any) {
     if (err.code === '23505') return res.status(409).json({ erro: 'Username já existe' })
@@ -350,23 +386,41 @@ app.post('/api/users', autenticar, apenasAdmin, async (req: any, res) => {
 })
 
 app.patch('/api/users/:id', autenticar, apenasAdmin, async (req: any, res) => {
-  const { nome, role, ativo, password } = req.body
+  const { nome, role, ativo, password, email } = req.body
+  if (password) {
+    const erroPass = validarPassword(password)
+    if (erroPass) return res.status(400).json({ erro: erroPass })
+  }
   try {
     if (password) {
       const hash = await bcrypt.hash(password, BCRYPT_ROUNDS)
       await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.params.id])
     }
-    if (nome || role !== undefined || ativo !== undefined) {
+    if (nome || role !== undefined || ativo !== undefined || email !== undefined) {
       await pool.query(
         `UPDATE users SET
           nome = COALESCE($1, nome),
           role = COALESCE($2, role),
-          ativo = COALESCE($3, ativo)
-         WHERE id = $4`,
-        [nome ?? null, role ?? null, ativo ?? null, req.params.id]
+          ativo = COALESCE($3, ativo),
+          email = COALESCE($4, email)
+         WHERE id = $5`,
+        [nome ?? null, role ?? null, ativo ?? null, email ?? null, req.params.id]
       )
     }
-    await registarAudit(req.utilizador.id, req.utilizador.username, 'EDITAR_USER', 'user', req.params.id, { nome, role, ativo }, getIP(req))
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'EDITAR_USER', 'user', req.params.id, { nome, role, ativo }, getIP(req), getUA(req))
+    // Notificar por email se a password foi alterada
+    if (password) {
+      const u = await pool.query('SELECT email, nome FROM users WHERE id = $1', [req.params.id])
+      const dest = u.rows[0]?.email
+      if (dest) {
+        transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: dest,
+          subject: '[ATM] Password alterada pelo administrador',
+          html: `<p>Olá <strong>${u.rows[0].nome}</strong>,</p><p>A tua password no sistema ATM foi alterada por um administrador.</p><p>Se não reconheces esta alteração, contacta o administrador imediatamente.</p>`,
+        }).catch(e => logger.warn({ err: e }, 'Falha ao enviar email de alteração de password'))
+      }
+    }
     res.json({ sucesso: true })
   } catch (err) {
     res.status(500).json({ erro: String(err) })
@@ -950,8 +1004,8 @@ const PORT = process.env.PORT ?? 3001
 inicializarDB().then(async () => {
   await seedUtilizadores()
   iniciarCron()
-  httpServer.listen(PORT, () => console.log(`✅ Servidor ATM a correr em http://localhost:${PORT}`))
+  httpServer.listen(PORT, () => logger.info(`Servidor ATM a correr na porta ${PORT}`))
 }).catch(err => {
-  console.error('❌ Erro ao inicializar base de dados:', err)
+  logger.fatal({ err }, 'Erro ao inicializar base de dados')
   process.exit(1)
 })
