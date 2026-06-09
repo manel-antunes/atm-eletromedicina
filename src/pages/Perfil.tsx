@@ -28,7 +28,7 @@ export default function Perfil() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ nome: nomeInput.trim() }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => { throw new Error('Servidor indisponível. Tenta novamente.') })
       if (!res.ok) throw new Error(data.erro ?? 'Erro ao alterar nome')
       const novoNome = data.nome as string
       setNomeState(novoNome)
@@ -69,7 +69,7 @@ export default function Perfil() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ passwordAtual, passwordNova }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => { throw new Error('Servidor indisponível. Tenta novamente.') })
       if (!res.ok) throw new Error(data.erro ?? 'Erro ao alterar password')
       setMsgPass({ tipo: 'sucesso', texto: 'Password alterada com sucesso.' })
       setPasswordAtual(''); setPasswordNova(''); setPasswordConfirm('')
