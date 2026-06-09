@@ -103,31 +103,36 @@ export default function NotificacoesInApp({ equipamentos }: Props) {
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button
-        onClick={() => setAberto(v => !v)}
-        aria-label={`Notificações — ${naoLidos} não lidas`}
-        aria-haspopup="true"
-        aria-expanded={aberto}
-        style={{
-          position: 'relative', background: 'none', border: '1px solid #e2e8f0',
-          borderRadius: 8, padding: '6px 8px', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', color: naoLidos > 0 ? '#C0001A' : '#64748b',
-          transition: 'all 0.15s',
-        }}
-      >
-        <Bell size={16} />
+      <div style={{ position: 'relative', display: 'inline-flex' }}>
+        <button
+          onClick={() => setAberto(v => !v)}
+          aria-label={`Notificações — ${naoLidos} não lidas`}
+          aria-haspopup="true"
+          aria-expanded={aberto}
+          style={{
+            background: 'none', border: '1px solid #e2e8f0',
+            borderRadius: 8, padding: '6px 8px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: naoLidos > 0 ? '#C0001A' : '#64748b',
+            transition: 'all 0.15s',
+          }}
+        >
+          <Bell size={16} />
+        </button>
         {naoLidos > 0 && (
           <span style={{
-            position: 'absolute', top: -4, right: -4,
-            background: '#C0001A', color: '#fff', fontSize: 9, fontWeight: 800,
-            width: 16, height: 16, borderRadius: '50%',
+            position: 'absolute', top: -5, right: -5,
+            background: '#C0001A', color: '#fff',
+            fontSize: 9, fontWeight: 800, lineHeight: 1,
+            minWidth: 16, height: 16, borderRadius: 99,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '2px solid #fff',
+            padding: '0 4px', boxSizing: 'border-box',
+            border: '2px solid #fff', pointerEvents: 'none',
           }}>
             {naoLidos > 9 ? '9+' : naoLidos}
           </span>
         )}
-      </button>
+      </div>
 
       {aberto && (
         <div role="dialog" aria-label="Painel de notificações" style={{
