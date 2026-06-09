@@ -164,8 +164,9 @@ export default function Login({ onLogin }: Props) {
         setLoading(false)
         return
       }
-      const { token, nome, username: user, role, id } = await res.json()
+      const { token, refreshToken, nome, username: user, role, id } = await res.json()
       localStorage.setItem('atm_token', token)
+      if (refreshToken) localStorage.setItem('atm_refresh_token', refreshToken)
       localStorage.setItem('atm_nome', nome)
       localStorage.setItem('atm_username', user ?? username)
       localStorage.setItem('atm_role', role ?? 'tecnico')

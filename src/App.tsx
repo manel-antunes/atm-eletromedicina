@@ -181,6 +181,19 @@ function App() {
       .finally(() => { setCarregando(false); setSincronizando(false) })
   }, [token, verificandoToken])
 
+  // Sincronizar logout entre abas: se outra aba apagar atm_token, esta fecha sessão também
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === 'atm_token' && e.newValue === null) {
+        setToken(null)
+        setNomeUtilizador('')
+        setEquipamentos([])
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -201,14 +214,26 @@ function App() {
     setCarregando(true)
   }
 
-  function handleLogout() {
+  function limparSessaoLocal() {
     setToken(null)
     setNomeUtilizador('')
     setEquipamentos([])
-    localStorage.removeItem('atm_token')
-    localStorage.removeItem('atm_nome')
-    localStorage.removeItem('atm_username')
-    localStorage.removeItem('atm_role')
+    const chaves = ['atm_token', 'atm_refresh_token', 'atm_nome', 'atm_username', 'atm_role', 'atm_user_id']
+    chaves.forEach(k => localStorage.removeItem(k))
+  }
+
+  function handleLogout() {
+    const currentToken = localStorage.getItem('atm_token')
+    const refreshToken = localStorage.getItem('atm_refresh_token')
+    limparSessaoLocal()
+    // Revogar refresh token no servidor (fire-and-forget)
+    if (currentToken) {
+      fetch(`${API_URL}/api/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
+        body: JSON.stringify({ refreshToken }),
+      }).catch(() => {})
+    }
   }
 
   async function handleImportar(novos: Equipamento[]) {
