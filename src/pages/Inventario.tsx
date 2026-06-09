@@ -114,7 +114,7 @@ export default function Inventario({ equipamentos, onVerDetalhe, onNavegar }: Pr
           ) : filtrados.map(eq => {
             const cedencia = getCedenciaAtiva(eq.id)
             return (
-              <div key={eq.id} onClick={() => onVerDetalhe(eq)} className="p-4 hover:bg-blue-50 cursor-pointer">
+              <div key={eq.id} onClick={() => onVerDetalhe(eq)} className="p-4 hover:bg-red-50/40 cursor-pointer">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-800 truncate">{eq.descricao}</p>
@@ -159,7 +159,7 @@ export default function Inventario({ equipamentos, onVerDetalhe, onNavegar }: Pr
                 const emEletroLoc = loc.includes('hprt') || loc.includes('fixo') || loc.includes('eletro')
                 const cedencia = getCedenciaAtiva(eq.id)
                 return (
-                  <tr key={eq.id} onClick={() => onVerDetalhe(eq)} className="border-b border-gray-50 hover:bg-blue-50 transition-colors cursor-pointer">
+                  <tr key={eq.id} onClick={() => onVerDetalhe(eq)} className="border-b border-gray-50 hover:bg-red-50/40 transition-colors cursor-pointer">
                     <td className="px-4 py-3 font-mono text-xs text-gray-500">{eq.numeroSAP}</td>
                     <td className="px-4 py-3 font-medium text-gray-800 text-xs max-w-48">
                       <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export default function Inventario({ equipamentos, onVerDetalhe, onNavegar }: Pr
                         cedencia
                           ? 'bg-orange-50 text-orange-700'
                           : emEletroLoc
-                            ? 'bg-blue-50 text-blue-700'
+                            ? 'bg-slate-100 text-slate-700'
                             : 'bg-gray-50 text-gray-600'
                       }`}>
                         {cedencia ? cedencia.destino : (eq.localizacao || '—')}

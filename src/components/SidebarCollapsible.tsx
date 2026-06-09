@@ -112,7 +112,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
                 background: ativo ? 'rgba(192,0,26,0.2)' : 'transparent',
                 transition: 'all 0.15s', position: 'relative',
               }}
-              onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
+              onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.10)' }}
               onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
               <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -153,7 +153,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
                 background: ativo ? 'rgba(192,0,26,0.2)' : 'transparent',
                 transition: 'all 0.15s',
               }}
-              onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
+              onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.10)' }}
               onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
               <Icon size={18} color={ativo ? '#ff4458' : 'rgba(255,255,255,0.5)'} />

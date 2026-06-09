@@ -201,7 +201,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
             const proxima = parseData(eq.dataCalibracao)
             const diff = proxima ? differenceInDays(proxima, new Date()) : null
             return (
-              <div key={eq.id} onClick={() => onVerDetalhe(eq)} className="p-4 hover:bg-blue-50 cursor-pointer">
+              <div key={eq.id} onClick={() => onVerDetalhe(eq)} className="p-4 hover:bg-red-50/40 cursor-pointer">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dotColor, flexShrink: 0 }} />
@@ -268,7 +268,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
                   <tr
                     key={eq.id}
                     onClick={() => onVerDetalhe(eq)}
-                    className="border-b border-gray-50 hover:bg-blue-50 transition-colors cursor-pointer group"
+                    className="border-b border-gray-50 hover:bg-red-50/40 transition-colors cursor-pointer group"
                   >
                     {/* Equipamento */}
                     <td className="px-4 py-2.5">
@@ -353,7 +353,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
       {/* Modal de registo */}
       {modalAberto && equipSelecionado && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg shadow-2xl">
+          <div className="bg-white w-full max-w-lg rounded-xl" style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.14)' }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h2 className="text-sm font-bold text-gray-800">Registar Calibração</h2>

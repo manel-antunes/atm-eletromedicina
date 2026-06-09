@@ -102,7 +102,7 @@ export default function Topbar({ titulo, totalEquipamentos, onReimportar, equipa
 
   if (isMobile) {
     return (
-      <header style={{ background: '#fff', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
+      <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <button onClick={onMenuToggle} style={{ background: 'none', border: 'none', padding: 6, cursor: 'pointer', color: '#64748b', flexShrink: 0, display: 'flex' }}>
@@ -133,7 +133,7 @@ export default function Topbar({ titulo, totalEquipamentos, onReimportar, equipa
   }
 
   return (
-    <header style={{ height: 56, background: '#fff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', flexShrink: 0 }}>
+    <header style={{ height: 56, background: '#fff', borderBottom: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', flexShrink: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 4, height: 24, background: '#C0001A' }} />
         <div>
