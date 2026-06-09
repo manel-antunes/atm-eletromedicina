@@ -33,7 +33,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     <div style={{
       background: 'rgba(15,23,42,0.95)',
       border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 12,
       padding: '12px 16px',
       backdropFilter: 'blur(10px)',
     }}>
@@ -91,7 +90,6 @@ export default function GraficoCalibracoes({ equipamentos }: Props) {
   return (
     <div style={{
       background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
-      borderRadius: 20,
       padding: '24px 24px 16px',
       border: '1px solid rgba(255,255,255,0.06)',
     }}>

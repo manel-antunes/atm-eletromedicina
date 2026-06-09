@@ -1,7 +1,7 @@
-export function SkeletonLine({ width = '100%', height = 12, radius = 6 }: { width?: string | number; height?: number; radius?: number }) {
+export function SkeletonLine({ width = '100%', height = 12 }: { width?: string | number; height?: number; radius?: number }) {
   return (
     <div style={{
-      width, height, borderRadius: radius,
+      width, height,
       background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)',
       backgroundSize: '200% 100%',
       animation: 'skeleton-shimmer 1.4s ease-in-out infinite',
@@ -11,9 +11,9 @@ export function SkeletonLine({ width = '100%', height = 12, radius = 6 }: { widt
 
 export function SkeletonCard() {
   return (
-    <div style={{ background: '#fff', borderRadius: 16, padding: '16px', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ background: '#fff', padding: '16px', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f1f5f9', animation: 'skeleton-shimmer 1.4s ease-in-out infinite', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)' }} />
+        <div style={{ width: 36, height: 36, background: '#f1f5f9', animation: 'skeleton-shimmer 1.4s ease-in-out infinite', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)' }} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <SkeletonLine width="60%" height={12} />
           <SkeletonLine width="40%" height={10} />
@@ -28,7 +28,7 @@ export function SkeletonCard() {
 
 export function SkeletonTabela({ linhas = 5 }: { linhas?: number }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+    <div style={{ background: '#fff', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
       <style>{`
         @keyframes skeleton-shimmer {
           0%   { background-position: 200% 0; }
@@ -71,10 +71,10 @@ export function SkeletonKpis() {
         }
       `}</style>
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} style={{ background: '#fff', borderRadius: 16, padding: '16px', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div key={i} style={{ background: '#fff', padding: '16px', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <SkeletonLine width={60} height={10} />
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'skeleton-shimmer 1.4s ease-in-out infinite' }} />
+            <div style={{ width: 28, height: 28, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'skeleton-shimmer 1.4s ease-in-out infinite' }} />
           </div>
           <SkeletonLine width={50} height={28} radius={8} />
           <SkeletonLine width="70%" height={9} />

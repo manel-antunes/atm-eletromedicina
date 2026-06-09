@@ -146,7 +146,7 @@ export default function Documentos({ equipamentos }: Props) {
 
       {/* KPI */}
       <div className="max-w-xs">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 border-t-4 border-t-sky-400">
+        <div className="bg-white border border-gray-200 p-4 border-t-4 border-t-sky-400">
           <p className="text-2xl font-bold font-mono text-sky-500">{documentos.length}</p>
           <p className="text-xs text-gray-500 uppercase tracking-wide mt-1">Total certificados</p>
         </div>
@@ -155,7 +155,7 @@ export default function Documentos({ equipamentos }: Props) {
       {/* Filtros e botão */}
       <div className="flex flex-wrap gap-3 items-center justify-between">
         <div className="flex gap-3 flex-1 flex-wrap">
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 flex-1 min-w-48">
+          <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-2 flex-1 min-w-48">
             <Search size={14} className="text-gray-400 flex-shrink-0" />
             <input
               type="text"
@@ -165,7 +165,7 @@ export default function Documentos({ equipamentos }: Props) {
               className="flex-1 text-sm outline-none bg-transparent text-gray-700 placeholder-gray-400"
             />
           </div>
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2">
+          <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-2">
             <select
               value={filtroEquip}
               onChange={e => setFiltroEquip(e.target.value)}
@@ -180,7 +180,7 @@ export default function Documentos({ equipamentos }: Props) {
         </div>
         <button
           onClick={() => { setModalAberto(true); setErro(''); setFicheiro(null); setEquipamentoSAP(''); setEquipAutoDetectado(null) }}
-          className="flex items-center gap-2 text-xs font-semibold text-white px-4 py-2.5 rounded-xl transition-all flex-shrink-0"
+          className="flex items-center gap-2 text-xs font-semibold text-white px-4 py-2.5 transition-all flex-shrink-0"
           style={{ background: '#C0001A' }}
         >
           <Upload size={13} />
@@ -196,13 +196,13 @@ export default function Documentos({ equipamentos }: Props) {
           <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
         </div>
       ) : filtrados.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
+        <div className="bg-white border border-gray-100 p-12 text-center">
           <FileText size={40} className="text-gray-200 mx-auto mb-4" />
           <p className="text-sm font-medium text-gray-400">Nenhum documento encontrado</p>
           <p className="text-xs text-gray-300 mt-1">Clica em "Adicionar certificado" para fazer upload</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-white border border-gray-100 overflow-hidden shadow-sm">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
@@ -220,7 +220,7 @@ export default function Documentos({ equipamentos }: Props) {
                   <tr key={doc.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div style={{ background: '#f0fdf4', borderRadius: 8, padding: 8 }}>
+                        <div style={{ background: '#f0fdf4', padding: 8 }}>
                           <FileText size={14} style={{ color: '#16a34a' }} />
                         </div>
                         <p className="text-xs font-semibold text-gray-800 max-w-48 truncate">{doc.nome}</p>
@@ -237,10 +237,10 @@ export default function Documentos({ equipamentos }: Props) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleDownload(doc)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Download">
+                        <button onClick={() => handleDownload(doc)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Download">
                           <Download size={13} />
                         </button>
-                        <button onClick={() => handleEliminar(doc.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Eliminar">
+                        <button onClick={() => handleEliminar(doc.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all" title="Eliminar">
                           <Trash2 size={13} />
                         </button>
                       </div>
@@ -256,7 +256,7 @@ export default function Documentos({ equipamentos }: Props) {
       {/* Modal upload */}
       {modalAberto && (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
+          <div className="bg-white w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-sm font-bold text-gray-800">Adicionar certificado</h2>
               <button onClick={() => { setModalAberto(false); setErro(''); setFicheiro(null); setEquipAutoDetectado(null) }} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
@@ -267,7 +267,7 @@ export default function Documentos({ equipamentos }: Props) {
                   Ficheiro <span className="text-red-500">*</span>
                 </label>
                 <label
-                  className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 cursor-pointer transition-all"
+                  className="flex flex-col items-center justify-center border-2 border-dashed p-6 cursor-pointer transition-all"
                   style={{ borderColor: ficheiro ? '#16a34a' : '#e2e8f0', background: ficheiro ? '#f0fdf4' : '#fafafa' }}
                 >
                   {ficheiro ? (
@@ -286,7 +286,7 @@ export default function Documentos({ equipamentos }: Props) {
                   <input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg" className="hidden" onChange={e => handleFicheiro(e.target.files?.[0] ?? null)} />
                 </label>
                 {ficheiro && equipAutoDetectado && (
-                  <div className="mt-2 flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  <div className="mt-2 flex items-center gap-2 bg-green-50 border border-green-200 px-3 py-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
                     <p className="text-xs text-green-700 font-medium">
                       Equipamento detetado automaticamente: <span className="font-bold">{equipAutoDetectado}</span>
@@ -302,7 +302,7 @@ export default function Documentos({ equipamentos }: Props) {
                 <select
                   value={equipamentoSAP}
                   onChange={e => { setEquipamentoSAP(e.target.value); setEquipAutoDetectado(null) }}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-red-400"
+                  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-red-400"
                 >
                   <option value="">Documento geral (sem equipamento)</option>
                   {equipamentos.map(eq => (
@@ -310,13 +310,13 @@ export default function Documentos({ equipamentos }: Props) {
                   ))}
                 </select>
               </div>
-              {erro && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{erro}</p>}
+              {erro && <p className="text-xs text-red-600 bg-red-50 px-3 py-2">{erro}</p>}
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-              <button onClick={() => { setModalAberto(false); setErro(''); setFicheiro(null); setEquipAutoDetectado(null) }} className="text-xs font-semibold text-gray-500 px-4 py-2 rounded-xl border border-gray-200 hover:border-gray-300 transition-all">
+              <button onClick={() => { setModalAberto(false); setErro(''); setFicheiro(null); setEquipAutoDetectado(null) }} className="text-xs font-semibold text-gray-500 px-4 py-2 border border-gray-200 hover:border-gray-300 transition-all">
                 Cancelar
               </button>
-              <button onClick={handleUpload} disabled={enviando} className="text-xs font-semibold text-white px-4 py-2 rounded-xl transition-all" style={{ background: enviando ? '#94a3b8' : '#C0001A' }}>
+              <button onClick={handleUpload} disabled={enviando} className="text-xs font-semibold text-white px-4 py-2 transition-all" style={{ background: enviando ? '#94a3b8' : '#C0001A' }}>
                 {enviando ? 'A fazer upload...' : 'Guardar documento'}
               </button>
             </div>

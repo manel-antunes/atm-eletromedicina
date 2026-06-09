@@ -102,15 +102,15 @@ export default function Contactos({ equipamentos }: Props) {
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 border-t-4 border-t-sky-400">
+        <div className="bg-white border border-gray-200 p-4 border-t-4 border-t-sky-400">
           <p className="text-2xl font-bold font-mono text-sky-500">{Object.keys(contactos).length}</p>
           <p className="text-xs text-gray-500 uppercase tracking-wide mt-1">Marcas no inventário</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 border-t-4 border-t-green-400">
+        <div className="bg-white border border-gray-200 p-4 border-t-4 border-t-green-400">
           <p className="text-2xl font-bold font-mono text-green-600">{preenchidos}</p>
           <p className="text-xs text-gray-500 uppercase tracking-wide mt-1">Contactos preenchidos</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 border-t-4 border-t-orange-400">
+        <div className="bg-white border border-gray-200 p-4 border-t-4 border-t-orange-400">
           <p className="text-2xl font-bold font-mono text-orange-500">{Object.keys(contactos).length - preenchidos}</p>
           <p className="text-xs text-gray-500 uppercase tracking-wide mt-1">Por preencher</p>
         </div>
@@ -118,7 +118,7 @@ export default function Contactos({ equipamentos }: Props) {
 
       {/* Filtros e botão */}
       <div className="flex gap-3 items-center justify-between">
-        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 flex-1">
+        <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-2 flex-1">
           <input
             type="text"
             placeholder="Pesquisar marca..."
@@ -129,7 +129,7 @@ export default function Contactos({ equipamentos }: Props) {
         </div>
         <button
           onClick={() => setNovoModal(true)}
-          className="flex items-center gap-2 text-xs font-semibold text-white px-4 py-2.5 rounded-xl flex-shrink-0"
+          className="flex items-center gap-2 text-xs font-semibold text-white px-4 py-2.5 flex-shrink-0"
           style={{ background: '#C0001A' }}
         >
           <Plus size={13} />
@@ -148,7 +148,7 @@ export default function Contactos({ equipamentos }: Props) {
     const expandido = cardExpandido === contacto.marca
 
     return (
-      <div key={contacto.marca} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div key={contacto.marca} className="bg-white border border-gray-100 shadow-sm overflow-hidden">
 
         {/* Linha compacta sempre visível */}
         <div
@@ -169,7 +169,7 @@ export default function Contactos({ equipamentos }: Props) {
           {/* Badges modelos */}
           <div className="hidden md:flex gap-1">
             {eqDaMarca.slice(0, 2).map(eq => (
-              <span key={eq.id} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{eq.modelo || eq.descricao}</span>
+              <span key={eq.id} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5">{eq.modelo || eq.descricao}</span>
             ))}
             {eqDaMarca.length > 2 && <span className="text-xs text-gray-400">+{eqDaMarca.length - 2}</span>}
           </div>
@@ -178,16 +178,16 @@ export default function Contactos({ equipamentos }: Props) {
             {!estaEditando ? (
               <button
                 onClick={e => { e.stopPropagation(); iniciarEdicao(contacto.marca) }}
-                className="text-xs font-semibold text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 px-3 py-1.5 rounded-lg transition-all"
+                className="text-xs font-semibold text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 px-3 py-1.5 transition-all"
               >
                 <Edit2 size={11} className="inline mr-1" />Editar
               </button>
             ) : (
               <div className="flex gap-1.5">
-                <button onClick={e => { e.stopPropagation(); guardarEdicao() }} className="text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
+                <button onClick={e => { e.stopPropagation(); guardarEdicao() }} className="text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5">
                   <Check size={11} className="inline mr-1" />Guardar
                 </button>
-                <button onClick={e => { e.stopPropagation(); cancelarEdicao() }} className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">
+                <button onClick={e => { e.stopPropagation(); cancelarEdicao() }} className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5">
                   <X size={11} className="inline mr-1" />Cancelar
                 </button>
               </div>
@@ -225,7 +225,7 @@ export default function Contactos({ equipamentos }: Props) {
                           type="text"
                           value={formEdit?.[campo.key as keyof Contacto] ?? ''}
                           onChange={e => setFormEdit(prev => prev ? { ...prev, [campo.key]: e.target.value } : null)}
-                          className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-red-400"
+                          className="w-full text-xs border border-gray-200 px-2 py-1.5 focus:outline-none focus:border-red-400"
                           placeholder={`Inserir ${campo.label.toLowerCase()}...`}
                         />
                       ) : (
@@ -245,7 +245,7 @@ export default function Contactos({ equipamentos }: Props) {
                 <textarea
                   value={formEdit?.notas ?? ''}
                   onChange={e => setFormEdit(prev => prev ? { ...prev, notas: e.target.value } : null)}
-                  className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-red-400 resize-none h-14"
+                  className="w-full text-xs border border-gray-200 px-2 py-1.5 focus:outline-none focus:border-red-400 resize-none h-14"
                   placeholder="Notas adicionais..."
                 />
               ) : (
@@ -264,7 +264,7 @@ export default function Contactos({ equipamentos }: Props) {
       {/* Modal novo contacto */}
       {novoModal && (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
+          <div className="bg-white w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-sm font-bold text-gray-800">Adicionar contacto</h2>
               <button onClick={() => setNovoModal(false)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
@@ -284,18 +284,18 @@ export default function Contactos({ equipamentos }: Props) {
                     type="text"
                     value={novaEntrada[campo.key as keyof Contacto]}
                     onChange={e => setNovaEntrada(prev => ({ ...prev, [campo.key]: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-red-400"
+                    className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-red-400"
                   />
                 </div>
               ))}
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-              <button onClick={() => setNovoModal(false)} className="text-xs font-semibold text-gray-500 px-4 py-2 rounded-xl border border-gray-200">
+              <button onClick={() => setNovoModal(false)} className="text-xs font-semibold text-gray-500 px-4 py-2 border border-gray-200">
                 Cancelar
               </button>
               <button
                 onClick={adicionarContacto}
-                className="text-xs font-semibold text-white px-4 py-2 rounded-xl"
+                className="text-xs font-semibold text-white px-4 py-2"
                 style={{ background: '#C0001A' }}
               >
                 Adicionar

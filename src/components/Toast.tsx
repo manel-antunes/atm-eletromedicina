@@ -45,7 +45,6 @@ function ToastItem({ toast, onRemover }: { toast: ToastData; onRemover: (id: num
     <div style={{
       background: cfg.bg,
       border: `1px solid ${cfg.border}`,
-      borderRadius: 14,
       padding: '12px 16px',
       display: 'flex',
       alignItems: 'flex-start',

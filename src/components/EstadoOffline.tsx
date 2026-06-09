@@ -89,7 +89,7 @@ export default function EstadoOffline() {
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             background: '#C0001A', color: '#fff',
-            border: 'none', borderRadius: 12,
+            border: 'none',
             padding: '12px 24px', cursor: 'pointer',
             fontSize: 13, fontWeight: 700,
             margin: '0 auto',

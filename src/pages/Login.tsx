@@ -490,12 +490,13 @@ export default function Login({ onLogin }: Props) {
         </div>
 
         {/* Formulário */}
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 32 }} aria-label="Formulário de autenticação">
           <div>
-            <label style={{ display: 'block', fontFamily: "'Inter', sans-serif", fontSize: 9, fontWeight: 500, color: focusedField === 'user' ? '#C0001A' : '#999', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 8, transition: 'color 0.3s' }}>
+            <label htmlFor="login-username" style={{ display: 'block', fontFamily: "'Inter', sans-serif", fontSize: 9, fontWeight: 500, color: focusedField === 'user' ? '#C0001A' : '#999', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 8, transition: 'color 0.3s' }}>
               Utilizador
             </label>
             <input
+              id="login-username"
               className="login-field"
               type="text"
               value={username}
@@ -506,14 +507,17 @@ export default function Login({ onLogin }: Props) {
               required
               autoFocus
               autoComplete="username"
+              aria-describedby={erro ? 'login-erro' : undefined}
+              aria-invalid={!!erro}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontFamily: "'Inter', sans-serif", fontSize: 9, fontWeight: 500, color: focusedField === 'pass' ? '#C0001A' : '#999', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 8, transition: 'color 0.3s' }}>
+            <label htmlFor="login-password" style={{ display: 'block', fontFamily: "'Inter', sans-serif", fontSize: 9, fontWeight: 500, color: focusedField === 'pass' ? '#C0001A' : '#999', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 8, transition: 'color 0.3s' }}>
               Password
             </label>
             <input
+              id="login-password"
               className="login-field"
               type="password"
               value={password}
@@ -523,16 +527,18 @@ export default function Login({ onLogin }: Props) {
               placeholder="••••••••"
               required
               autoComplete="current-password"
+              aria-describedby={erro ? 'login-erro' : undefined}
+              aria-invalid={!!erro}
             />
           </div>
 
           {erro && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderLeft: '2px solid #C0001A', paddingLeft: 12 }}>
+            <div id="login-erro" role="alert" style={{ display: 'flex', alignItems: 'center', gap: 10, borderLeft: '2px solid #C0001A', paddingLeft: 12 }}>
               <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#C0001A', fontWeight: 400 }}>{erro}</span>
             </div>
           )}
 
-          <button type="submit" disabled={loading} className="login-btn">
+          <button type="submit" disabled={loading} className="login-btn" aria-busy={loading}>
             {loading ? (
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                 <div style={{ width: 12, height: 12, border: '1.5px solid rgba(255,255,255,0.3)', borderTop: '1.5px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />

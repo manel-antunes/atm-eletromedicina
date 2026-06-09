@@ -40,7 +40,6 @@ export default function NotificacoesPush({ compacto = false }: Props) {
         gap: compacto ? 0 : 8,
         background: ativo ? 'rgba(192,0,26,0.15)' : 'rgba(255,255,255,0.06)',
         border: `1px solid ${ativo ? 'rgba(192,0,26,0.4)' : 'rgba(255,255,255,0.1)'}`,
-        borderRadius: 8,
         padding: compacto ? '8px' : '7px 12px',
         cursor: 'pointer',
         color: ativo ? '#f87171' : 'rgba(255,255,255,0.4)',

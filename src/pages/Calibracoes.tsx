@@ -175,7 +175,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
           <button
             key={f}
             onClick={() => setFiltro(f)}
-            className={`p-3 rounded-xl border text-left transition-all ${
+            className={`p-3 border text-left transition-all ${
               filtro === f ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white border-gray-200 hover:border-gray-300'
             }`}
           >
@@ -195,7 +195,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
       </div>
 
       {/* Tabela */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+      <div className="bg-white border border-gray-100 overflow-hidden shadow-sm">
 
         {/* Search bar */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
@@ -215,8 +215,46 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
           <span className="text-xs text-gray-400 font-mono flex-shrink-0">{filtrados.length} equipamentos</span>
         </div>
 
-        {/* Table */}
-        <table className="w-full">
+        {/* Cards mobile */}
+        <div className="md:hidden divide-y divide-gray-50">
+          {filtrados.length === 0 ? (
+            <p className="py-10 text-center text-sm text-gray-400">Nenhum equipamento encontrado</p>
+          ) : filtrados.slice(0, expandida ? undefined : 5).map(({ eq, estado }) => {
+            const cfg = estadoConfig[estado]
+            const proxima = parseData(eq.dataCalibracao)
+            const diff = proxima ? differenceInDays(proxima, new Date()) : null
+            return (
+              <div key={eq.id} onClick={() => onVerDetalhe(eq)} className="p-4 hover:bg-blue-50 cursor-pointer">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dotColor, flexShrink: 0 }} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{eq.descricao}</p>
+                      <p className="text-xs text-gray-400 font-mono">{eq.numeroSAP} · {eq.marca} {eq.modelo}</p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-bold px-2 py-1 flex-shrink-0 ${cfg.badge}`}>{cfg.label}</span>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <div>
+                    <p className="text-xs text-gray-500">{proxima ? proxima.toLocaleDateString('pt-PT') : '—'}</p>
+                    {diff !== null && (
+                      <p className={`text-xs font-semibold ${diff < 0 ? 'text-red-500' : diff <= 30 ? 'text-orange-500' : 'text-gray-400'}`}>
+                        {diff < 0 ? `Vencida há ${Math.abs(diff)}d` : `Em ${diff}d`}
+                      </p>
+                    )}
+                  </div>
+                  <button onClick={e => abrirModal(eq, e)} className="text-xs font-semibold text-white px-3 py-1.5" style={{ background: '#C0001A' }}>
+                    Registar
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Table desktop */}
+        <table className="w-full hidden md:table">
           <thead>
             <tr className="border-b border-gray-100">
               {colunas.map(col => (
@@ -285,7 +323,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
 
                     {/* Periodicidade */}
                     <td className="px-4 py-2.5">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      <span className={`text-xs font-semibold px-2 py-0.5 ${
                         eq.periodicidade === 'Bienal' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                       }`}>
                         {eq.periodicidade ?? 'Anual'}
@@ -294,7 +332,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
 
                     {/* Estado */}
                     <td className="px-4 py-2.5">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>
+                      <span className={`text-xs font-bold px-2.5 py-1 ${cfg.badge}`}>
                         {cfg.label}
                       </span>
                     </td>
@@ -303,7 +341,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
                     <td className="px-4 py-2.5">
                       <button
                         onClick={e => abrirModal(eq, e)}
-                        className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg transition-all hover:opacity-90 active:scale-95 flex-shrink-0"
+                        className="text-xs font-semibold text-white px-3 py-1.5 transition-all hover:opacity-90 active:scale-95 flex-shrink-0"
                         style={{ background: '#C0001A' }}
                       >
                         Registar
@@ -323,7 +361,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
             className="w-full py-3 text-xs font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all border-t border-gray-100 flex items-center justify-center gap-2 group"
           >
             <span>Ver todos os {filtrados.length} equipamentos</span>
-            <span className="bg-gray-100 group-hover:bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full transition-colors">↓</span>
+            <span className="bg-gray-100 group-hover:bg-gray-200 text-gray-500 px-2 py-0.5 transition-colors">↓</span>
           </button>
         ) : expandida ? (
           <button
@@ -338,13 +376,13 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
       {/* Modal de registo */}
       {modalAberto && equipSelecionado && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl">
+          <div className="bg-white w-full max-w-lg shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h2 className="text-sm font-bold text-gray-800">Registar Calibração</h2>
                 <p className="text-xs text-gray-400 mt-0.5">{equipSelecionado.descricao} · {equipSelecionado.numeroSAP}</p>
               </div>
-              <button onClick={fecharModal} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+              <button onClick={fecharModal} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100">
                 <X size={16} />
               </button>
             </div>
@@ -354,34 +392,34 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Data *</label>
                   <input type="date" value={form.data} onChange={e => setForm({...form, data: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
+                    className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Entidade *</label>
                   <input type="text" placeholder="Ex: CATIM, IPQ..." value={form.entidade} onChange={e => setForm({...form, entidade: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
+                    className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
                 </div>
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Técnico *</label>
                 <input type="text" placeholder="Nome do técnico" value={form.tecnico} onChange={e => setForm({...form, tecnico: e.target.value})}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
+                  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Aprovado por</label>
                 <input type="text" placeholder="Nome do responsável" value={form.aprovadoPor} onChange={e => setForm({...form, aprovadoPor: e.target.value})}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
+                  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-red-400" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">Observações</label>
                 <textarea placeholder="Notas..." value={form.observacoes} onChange={e => setForm({...form, observacoes: e.target.value})}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400 resize-none h-16" />
+                  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-red-400 resize-none h-16" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">
                   Relatório PDF <span className="text-red-500">*</span>
                 </label>
-                <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-3 cursor-pointer transition-all ${ficheiro ? 'border-green-300 bg-green-50' : 'border-gray-200 hover:border-red-300'}`}>
+                <label className={`flex items-center gap-3 border-2 border-dashed p-3 cursor-pointer transition-all ${ficheiro ? 'border-green-300 bg-green-50' : 'border-gray-200 hover:border-red-300'}`}>
                   {ficheiro ? (
                     <>
                       <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
@@ -398,22 +436,22 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
               </div>
               <div
                 onClick={() => setAssinado(!assinado)}
-                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${assinado ? 'border-green-300 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}
+                className={`flex items-center gap-3 p-3 border cursor-pointer transition-all ${assinado ? 'border-green-300 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}
               >
                 <div className={`w-5 h-5 rounded flex items-center justify-center border-2 flex-shrink-0 transition-all ${assinado ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
                   {assinado && <CheckCircle size={12} className="text-white" />}
                 </div>
                 <p className="text-xs text-gray-600">Confirmo que os dados são corretos e assumo responsabilidade.</p>
               </div>
-              {erro    && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{erro}</p>}
-              {sucesso && <p className="text-xs text-green-700 bg-green-50 px-3 py-2 rounded-lg">✓ Calibração registada com sucesso!</p>}
+              {erro    && <p className="text-xs text-red-600 bg-red-50 px-3 py-2">{erro}</p>}
+              {sucesso && <p className="text-xs text-green-700 bg-green-50 px-3 py-2">✓ Calibração registada com sucesso!</p>}
             </div>
 
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-              <button onClick={fecharModal} className="text-xs font-semibold text-gray-500 px-4 py-2 rounded-lg border border-gray-200">
+              <button onClick={fecharModal} className="text-xs font-semibold text-gray-500 px-4 py-2 border border-gray-200">
                 Cancelar
               </button>
-              <button onClick={handleSubmit} className="text-xs font-semibold text-white px-4 py-2 rounded-lg" style={{ background: '#C0001A' }}>
+              <button onClick={handleSubmit} className="text-xs font-semibold text-white px-4 py-2" style={{ background: '#C0001A' }}>
                 Encerrar Calibração
               </button>
             </div>

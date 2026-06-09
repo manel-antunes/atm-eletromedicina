@@ -4,7 +4,9 @@
   "scripts": {
     "dev": "nodemon --exec ts-node src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -35,9 +37,12 @@
     "@types/nodemailer": "^6.4.23",
     "@types/pg": "^8.20.0",
     "@types/pino-http": "^5.8.4",
+    "@types/supertest": "^7.2.0",
     "@types/web-push": "^3.6.4",
     "nodemon": "^3.0.0",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.8"
   }
 }

@@ -44,14 +44,14 @@ export default function BottomNav({ paginaAtiva, onNavegar, alertas }: Props) {
       )}
       <div style={{
         position: 'fixed', left: 0, right: 0, bottom: maisAberto ? 64 : -300,
-        zIndex: 91, background: '#fff', borderRadius: '20px 20px 0 0',
+        zIndex: 91, background: '#fff',
         boxShadow: '0 -20px 60px rgba(0,0,0,0.15)',
         padding: '20px 16px 16px',
         transition: 'bottom 0.3s cubic-bezier(0.16,1,0.3,1)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', margin: 0 }}>Mais secções</p>
-          <button onClick={() => setMaisAberto(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: 99, padding: 6, cursor: 'pointer', display: 'flex' }}>
+          <button onClick={() => setMaisAberto(false)} style={{ background: '#f1f5f9', border: 'none', padding: 6, cursor: 'pointer', display: 'flex' }}>
             <X size={14} color="#64748b" />
           </button>
         </div>
@@ -64,7 +64,7 @@ export default function BottomNav({ paginaAtiva, onNavegar, alertas }: Props) {
                 onClick={() => navegar(id)}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                  padding: '12px 8px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                  padding: '12px 8px', border: 'none', cursor: 'pointer',
                   background: ativo ? 'rgba(192,0,26,0.08)' : '#f8fafc',
                   transition: 'all 0.15s',
                 }}
@@ -101,7 +101,7 @@ export default function BottomNav({ paginaAtiva, onNavegar, alertas }: Props) {
             >
               <div style={{ position: 'relative' }}>
                 <div style={{
-                  width: 40, height: 28, borderRadius: 14,
+                  width: 40, height: 28,
                   background: ativo ? 'rgba(192,0,26,0.1)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.2s',
@@ -109,7 +109,7 @@ export default function BottomNav({ paginaAtiva, onNavegar, alertas }: Props) {
                   <Icon size={20} color={ativo ? '#C0001A' : '#94a3b8'} />
                 </div>
                 {temBadge && (
-                  <div style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 99, background: '#C0001A', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: '50%', background: '#C0001A', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 8, fontWeight: 900, color: '#fff' }}>{alertas > 9 ? '9+' : alertas}</span>
                   </div>
                 )}
@@ -129,7 +129,7 @@ export default function BottomNav({ paginaAtiva, onNavegar, alertas }: Props) {
           }}
         >
           <div style={{
-            width: 40, height: 28, borderRadius: 14,
+            width: 40, height: 28,
             background: maisAberto ? 'rgba(192,0,26,0.1)' : 'transparent',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.2s',

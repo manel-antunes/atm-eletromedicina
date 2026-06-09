@@ -97,23 +97,7 @@ export default function Mapa({ equipamentos, onVerDetalhe }: Props) {
     return equipamentos.filter(eq => getEstado(eq) === filtroEstado)
   }, [equipamentos, filtroEstado])
 
-  // Agrupa equipamentos por local
-  const locaisComEquip = useMemo(() => {
-    const mapa: Record<string, { local: typeof LOCAIS[string] & { chave: string }; equipamentos: Equipamento[] }> = {}
-    equipFiltrados.forEach(eq => {
-      const local = encontrarLocal(eq.localizacao ?? '')
-      if (!local) return
-      const chave = local.chave
-      if (!mapa[chave]) mapa[chave] = { local, equipamentos: [] }
-      mapa[chave].equipamentos.push(eq)
-    })
-    return Object.values(mapa)
-  }, [equipFiltrados])
 
-  const semLocal = useMemo(() =>
-    equipFiltrados.filter(eq => !encontrarLocal(eq.localizacao ?? '')),
-    [equipFiltrados]
-  )
 
   // Estado dominante de cada local
   function getEstadoDominante(eqs: Equipamento[]): string {

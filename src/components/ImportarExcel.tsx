@@ -189,7 +189,7 @@ export default function ImportarExcel({ onImportar }: Props) {
         .float { animation: float 4s ease-in-out infinite }
         .upload-btn {
           display:flex;align-items:center;gap:10px;
-          padding:14px 28px;border:none;border-radius:12px;cursor:pointer;
+          padding:14px 28px;border:none;cursor:pointer;
           background:linear-gradient(135deg,#C0001A,#E30613);
           color:#fff;font-size:14px;font-weight:700;
           box-shadow:0 8px 32px rgba(192,0,26,.4);
@@ -199,7 +199,7 @@ export default function ImportarExcel({ onImportar }: Props) {
         .upload-btn:active { transform:scale(.97) }
         .drop-zone {
           border:2px dashed rgba(192,0,26,.25);
-          border-radius:16px;padding:20px;
+          padding:20px;
           transition:all .2s;cursor:pointer;
           background:rgba(192,0,26,.03);
         }
@@ -229,7 +229,7 @@ export default function ImportarExcel({ onImportar }: Props) {
                 { label: 'Tipos de ficha OT', valor: '51' },
                 { label: 'Unidade', valor: 'HPRT' },
               ].map((s, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
                   <span style={{ color: 'rgba(255,255,255,.4)', fontSize: 12 }}>{s.label}</span>
                   <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{s.valor}</span>
                 </div>
@@ -242,11 +242,11 @@ export default function ImportarExcel({ onImportar }: Props) {
         {/* Painel direito */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
           <div className="fade-up" style={{ width: '100%', maxWidth: 440 }}>
-            <div style={{ background: 'rgba(10,6,6,0.85)', border: '1px solid rgba(192,0,26,.2)', borderRadius: 24, padding: '40px 36px', backdropFilter: 'blur(32px)', boxShadow: '0 40px 100px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.04)' }}>
-              <div style={{ height: 2, background: 'linear-gradient(90deg,transparent,rgba(192,0,26,.8),transparent)', borderRadius: 99, marginBottom: 32 }} />
+            <div style={{ background: 'rgba(10,6,6,0.85)', border: '1px solid rgba(192,0,26,.2)', padding: '40px 36px', backdropFilter: 'blur(32px)', boxShadow: '0 40px 100px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.04)' }}>
+              <div style={{ height: 2, background: 'linear-gradient(90deg,transparent,rgba(192,0,26,.8),transparent)', marginBottom: 32 }} />
               <div style={{ position: 'relative', display: 'inline-block', marginBottom: 24 }}>
-                <div style={{ position: 'absolute', inset: -4, borderRadius: 20, border: '1px solid rgba(192,0,26,.3)', animation: 'pulse-ring 2s ease-out infinite' }} />
-                <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(192,0,26,.15)', border: '1px solid rgba(192,0,26,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ position: 'absolute', inset: -4, border: '1px solid rgba(192,0,26,.3)', animation: 'pulse-ring 2s ease-out infinite' }} />
+                <div style={{ width: 64, height: 64, background: 'rgba(192,0,26,.15)', border: '1px solid rgba(192,0,26,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <FileSpreadsheet size={28} color="#ff3333" />
                 </div>
               </div>
@@ -258,7 +258,7 @@ export default function ImportarExcel({ onImportar }: Props) {
               </p>
               <div className="drop-zone" onClick={() => inputRef.current?.click()}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '12px 0' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(192,0,26,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 48, height: 48, background: 'rgba(192,0,26,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Upload size={22} color="rgba(192,0,26,.8)" />
                   </div>
                   <div style={{ textAlign: 'center' }}>

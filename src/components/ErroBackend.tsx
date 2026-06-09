@@ -51,7 +51,7 @@ export default function ErroBackend({ onTentar }: Props) {
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             background: '#C0001A', color: '#fff',
-            border: 'none', borderRadius: 12,
+            border: 'none',
             padding: '12px 24px', cursor: 'pointer',
             fontSize: 13, fontWeight: 700,
           }}
@@ -66,7 +66,7 @@ export default function ErroBackend({ onTentar }: Props) {
             background: 'rgba(255,255,255,0.06)',
             color: 'rgba(255,255,255,0.5)',
             border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 12, padding: '12px 24px',
+            padding: '12px 24px',
             cursor: 'pointer', fontSize: 13, fontWeight: 700,
           }}
         >

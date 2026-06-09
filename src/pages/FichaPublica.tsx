@@ -65,7 +65,7 @@ export default function FichaPublica() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 420, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}>
+      <div style={{ background: '#fff', width: '100%', maxWidth: 420, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}>
 
         {/* Header */}
         <div style={{ background: 'linear-gradient(135deg, #0A0F1E, #1a0a0f)', padding: '24px 24px 20px' }}>
@@ -78,10 +78,10 @@ export default function FichaPublica() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontFamily: 'monospace' }}>{dados.numeroSAP}</span>
             {dados.tipo === 'calibracao' && (
-              <span style={{ background: 'rgba(192,0,26,0.3)', color: '#f87171', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6 }}>Calibração</span>
+              <span style={{ background: 'rgba(192,0,26,0.3)', color: '#f87171', fontSize: 10, fontWeight: 700, padding: '2px 6px' }}>Calibração</span>
             )}
             {dados.tipo === 'preventiva' && (
-              <span style={{ background: 'rgba(99,102,241,0.3)', color: '#a5b4fc', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6 }}>Preventiva</span>
+              <span style={{ background: 'rgba(99,102,241,0.3)', color: '#a5b4fc', fontSize: 10, fontWeight: 700, padding: '2px 6px' }}>Preventiva</span>
             )}
           </div>
         </div>

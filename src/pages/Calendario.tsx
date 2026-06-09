@@ -205,7 +205,7 @@ function EventPill({ ev }: { ev: CalEvent }) {
   const cfg = TYPE_CFG[ev.type]
   return (
     <div className="flex items-center gap-1.5 mb-0.5 truncate transition-all hover:brightness-110"
-      style={{ borderRadius:6, padding:'2px 6px 2px 5px', background:cfg.pillBg, border:`1px solid ${cfg.pillBorder}` }}>
+      style={{ padding:'2px 6px 2px 5px', background:cfg.pillBg, border:`1px solid ${cfg.pillBorder}` }}>
       <div className="flex-shrink-0 rounded-full" style={{ width:5, height:5, background:cfg.dot }} />
       {ev.time && <span className="flex-shrink-0 font-mono" style={{ fontSize:9, color:cfg.pillText, opacity:.65 }}>{ev.time}</span>}
       <span className="truncate font-medium" style={{ fontSize:10, color:cfg.pillText }}>{ev.title}</span>
@@ -238,7 +238,7 @@ function ViewMes({ cells, animKey, selectedDate, openDetail }: {
             <button key={cell.dateStr} onClick={() => openDetail(cell.dateStr)}
               className="relative text-left overflow-hidden transition-all group"
               style={{
-                padding:'8px 10px', borderRadius:10,
+                padding:'8px 10px',
                 background: cell.isToday ? 'rgba(192,0,26,0.08)' : isSel ? 'rgba(192,0,26,0.05)' : 'transparent',
                 outline: cell.isToday ? '1.5px solid rgba(192,0,26,0.45)' : isSel ? '1px solid rgba(192,0,26,0.25)' : '1px solid rgba(255,255,255,0.04)',
                 opacity: cell.isOther ? 0.25 : 1,
@@ -246,7 +246,7 @@ function ViewMes({ cells, animKey, selectedDate, openDetail }: {
             >
               {cell.isToday && <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[#C0001A] animate-pulse" />}
               <div className="mb-1.5 flex items-center justify-center font-mono font-semibold"
-                style={{ width:24, height:24, borderRadius:6, fontSize:11, background:cell.isToday?'#C0001A':'transparent', color:cell.isToday?'#fff':'rgba(255,255,255,0.5)' }}>
+                style={{ width:24, height:24, fontSize:11, background:cell.isToday?'#C0001A':'transparent', color:cell.isToday?'#fff':'rgba(255,255,255,0.5)' }}>
                 {cell.day}
               </div>
               {evs.slice(0,2).map((ev,ei) => <EventPill key={ei} ev={ev} />)}
@@ -316,7 +316,7 @@ function ViewDia({ date, openDetail }: { date:Date; openDetail:(d:string)=>void 
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
       <div className="flex items-center gap-4 px-6 py-4 flex-shrink-0" style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ width:44,height:44,borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,fontFamily:'monospace',background:isToday?'#C0001A':'rgba(255,255,255,0.05)',color:isToday?'#fff':'rgba(255,255,255,0.4)' }}>
+        <div style={{ width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,fontFamily:'monospace',background:isToday?'#C0001A':'rgba(255,255,255,0.05)',color:isToday?'#fff':'rgba(255,255,255,0.4)' }}>
           {date.getDate()}
         </div>
         <div>
@@ -337,7 +337,7 @@ function ViewDia({ date, openDetail }: { date:Date; openDetail:(d:string)=>void 
                 {slotEvs.map((ev,i)=>{
                   const cfg=TYPE_CFG[ev.type]
                   return (
-                    <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2 mb-1 transition-all hover:brightness-110"
+                    <div key={i} className="flex items-center gap-3 px-3 py-2 mb-1 transition-all hover:brightness-110"
                       style={{ background:cfg.pillBg, border:`1px solid ${cfg.pillBorder}` }}>
                       <div className="rounded-full flex-shrink-0" style={{ width:8,height:8,background:cfg.dot }} />
                       <span className="font-mono flex-shrink-0" style={{ fontSize:10,color:cfg.pillText,opacity:.7 }}>{ev.time}</span>
@@ -447,7 +447,7 @@ export default function CalendarioPage() {
               const isSel=selectedDate===cell.dateStr
               return (
                 <button key={i} onClick={()=>openDetail(cell.dateStr)} className="relative transition-all"
-                  style={{ textAlign:'center',fontSize:10,padding:'4px 0',borderRadius:5,fontFamily:'monospace',cursor:'pointer',
+                  style={{ textAlign:'center',fontSize:10,padding:'4px 0',fontFamily:'monospace',cursor:'pointer',
                     color:cell.isOther?'rgba(255,255,255,0.1)':cell.isToday?'#fff':'rgba(255,255,255,0.45)',
                     background:cell.isToday?'#C0001A':isSel?'rgba(192,0,26,0.18)':'transparent',
                     fontWeight:cell.isToday?700:400,
@@ -464,7 +464,7 @@ export default function CalendarioPage() {
         </div>
 
         {/* Count + stats */}
-        <div style={{ margin:'0 12px 12px',padding:'10px 12px',borderRadius:10,background:'rgba(192,0,26,0.07)',border:'1px solid rgba(192,0,26,0.15)' }}>
+        <div style={{ margin:'0 12px 12px',padding:'10px 12px',background:'rgba(192,0,26,0.07)',border:'1px solid rgba(192,0,26,0.15)' }}>
           <div className="flex items-center justify-between" style={{ marginBottom:8 }}>
             <span style={{ fontSize:11,color:'rgba(192,0,26,0.65)',fontWeight:500 }}>Este mês</span>
             <span style={{ fontSize:20,fontWeight:800,fontFamily:'monospace',color:'#C0001A',lineHeight:1 }}>{monthEvents.length}</span>
@@ -491,7 +491,7 @@ export default function CalendarioPage() {
               return (
                 <button key={i} onClick={()=>openDetail(item.dateStr)}
                   className="w-full text-left transition-all hover:translate-x-0.5"
-                  style={{ display:'flex',alignItems:'flex-start',gap:8,padding:'7px 9px',borderRadius:8,background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',cursor:'pointer' }}>
+                  style={{ display:'flex',alignItems:'flex-start',gap:8,padding:'7px 9px',background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',cursor:'pointer' }}>
                   <div className="rounded-full flex-shrink-0" style={{ width:6,height:6,background:cfg.dot,marginTop:4 }} />
                   <div style={{ minWidth:0,flex:1 }}>
                     <div className="flex items-center justify-between gap-1" style={{ marginBottom:2 }}>
@@ -519,21 +519,21 @@ export default function CalendarioPage() {
             <div className="flex gap-1">
               {([-1,1] as const).map(dir=>(
                 <button key={dir} onClick={()=>navigate(dir)} className="transition-all hover:bg-white/[0.08]"
-                  style={{ width:32,height:32,borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'rgba(255,255,255,0.5)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,cursor:'pointer' }}>
+                  style={{ width:32,height:32,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'rgba(255,255,255,0.5)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,cursor:'pointer' }}>
                   {dir===-1?'‹':'›'}
                 </button>
               ))}
             </div>
             <h1 style={{ fontSize:16,fontWeight:700,color:'#fff',letterSpacing:'-0.3px',minWidth:200 }}>{navLabel}</h1>
             <button onClick={goToday} className="transition-all hover:scale-105 active:scale-95"
-              style={{ padding:'5px 14px',background:'#C0001A',color:'#fff',fontSize:11,fontWeight:700,borderRadius:8,border:'none',cursor:'pointer',letterSpacing:'0.05em' }}>
+              style={{ padding:'5px 14px',background:'#C0001A',color:'#fff',fontSize:11,fontWeight:700,border:'none',cursor:'pointer',letterSpacing:'0.05em' }}>
               Hoje
             </button>
           </div>
-          <div className="flex" style={{ gap:2,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:3 }}>
+          <div className="flex" style={{ gap:2,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',padding:3 }}>
             {(['mes','semana','dia'] as ViewMode[]).map(v=>(
               <button key={v} onClick={()=>setView(v)} className="transition-all"
-                style={{ padding:'5px 14px',borderRadius:7,fontSize:11,fontWeight:600,cursor:'pointer',border:'none',
+                style={{ padding:'5px 14px',fontSize:11,fontWeight:600,cursor:'pointer',border:'none',
                   background:view===v?'rgba(255,255,255,0.1)':'transparent',
                   color:view===v?'#fff':'rgba(255,255,255,0.3)',
                   outline:view===v?'1px solid rgba(255,255,255,0.08)':'none' }}>
@@ -564,7 +564,7 @@ export default function CalendarioPage() {
             </>
           )}
           <button onClick={closeDetail} className="absolute transition-all hover:bg-white/[0.08]"
-            style={{ top:16,right:16,width:28,height:28,borderRadius:7,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,cursor:'pointer' }}>
+            style={{ top:16,right:16,width:28,height:28,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,cursor:'pointer' }}>
             ×
           </button>
         </div>
@@ -576,7 +576,7 @@ export default function CalendarioPage() {
             const cfg=TYPE_CFG[ev.type]
             return (
               <div key={i} className="transition-all hover:brightness-110"
-                style={{ padding:14,borderRadius:12,background:cfg.pillBg,border:`1px solid ${cfg.pillBorder}`,animation:`slideIn 0.2s ease ${i*60}ms both` }}>
+                style={{ padding:14,background:cfg.pillBg,border:`1px solid ${cfg.pillBorder}`,animation:`slideIn 0.2s ease ${i*60}ms both` }}>
                 <div className="flex items-center gap-2" style={{ marginBottom:8 }}>
                   <div className="rounded-full" style={{ width:8,height:8,background:cfg.dot }} />
                   <span style={{ fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:cfg.badgeText }}>{cfg.label}</span>
@@ -591,7 +591,7 @@ export default function CalendarioPage() {
         </div>
 
         <button className="transition-all hover:-translate-y-0.5 active:translate-y-0"
-          style={{ margin:'0 16px 16px',padding:11,background:'#C0001A',color:'#fff',fontSize:13,fontWeight:700,borderRadius:12,border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6 }}>
+          style={{ margin:'0 16px 16px',padding:11,background:'#C0001A',color:'#fff',fontSize:13,fontWeight:700,border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6 }}>
           <span style={{ fontSize:16,lineHeight:1 }}>+</span> Adicionar evento
         </button>
       </div>

@@ -26,7 +26,7 @@ const insightCfg = {
 const CustomTooltipBarra = ({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px' }}>
+    <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', padding: '10px 14px' }}>
       <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, marginBottom: 4 }}>{label}</p>
       <p style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{payload[0].value} calibrações</p>
     </div>
@@ -58,10 +58,10 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
     <div className="space-y-5">
 
       {/* Header escuro */}
-      <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)', borderRadius: 20, padding: '24px 28px', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)', padding: '24px 28px', border: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-3">
-            <div style={{ background: 'rgba(139,92,246,0.15)', borderRadius: 14, padding: 12, border: '1px solid rgba(139,92,246,0.2)' }}>
+            <div style={{ background: 'rgba(139,92,246,0.15)', padding: 12, border: '1px solid rgba(139,92,246,0.2)' }}>
               <Brain size={22} color="#a78bfa" />
             </div>
             <div>
@@ -82,12 +82,11 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
         </div>
 
         {/* Barra de progresso */}
-        <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden', marginBottom: 20 }}>
+        <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 20 }}>
           <div style={{
             height: '100%',
             width: `${taxaConformidade}%`,
             background: taxaConformidade >= 80 ? 'linear-gradient(90deg,#16a34a,#4ade80)' : taxaConformidade >= 60 ? 'linear-gradient(90deg,#d97706,#facc15)' : 'linear-gradient(90deg,#dc2626,#f87171)',
-            borderRadius: 99,
             transition: 'width 1.2s cubic-bezier(0.16,1,0.3,1)',
           }} />
         </div>
@@ -100,7 +99,7 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
             { label: 'Médio',   valor: medios.length,   cor: '#facc15', glow: 'rgba(250,204,21,0.2)' },
             { label: 'Baixo',   valor: baixos.length,   cor: '#4ade80', glow: 'rgba(74,222,128,0.2)' },
           ].map(k => (
-            <div key={k.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 0', textAlign: 'center' }}>
+            <div key={k.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', padding: '14px 0', textAlign: 'center' }}>
               <p style={{ color: k.cor, fontSize: 28, fontWeight: 800, fontFamily: 'monospace', lineHeight: 1, textShadow: `0 0 20px ${k.glow}` }}>{k.valor}</p>
               <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 6 }}>{k.label}</p>
             </div>
@@ -116,7 +115,7 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
           {insights.map((insight, i) => {
             const cfg = insightCfg[insight.tipo]
             return (
-              <div key={i} style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 12, padding: '12px 16px' }}>
+              <div key={i} style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, padding: '12px 16px' }}>
                 <div className="flex items-start gap-3">
                   <div style={{ color: cfg.iconCor, flexShrink: 0, marginTop: 1 }}>{cfg.icon}</div>
                   <div className="flex-1 min-w-0">
@@ -125,7 +124,7 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
                     {insight.equipamentos && insight.equipamentos.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {insight.equipamentos.slice(0, 3).map(nome => (
-                          <span key={nome} className="text-xs bg-white border border-gray-200 px-2 py-0.5 rounded-full text-gray-600 truncate max-w-xs">
+                          <span key={nome} className="text-xs bg-white border border-gray-200 px-2 py-0.5 text-gray-600 truncate max-w-xs">
                             {nome}
                           </span>
                         ))}
@@ -142,7 +141,7 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
         </div>
 
         {/* Radar */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white border border-gray-100 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-1">
             <Shield size={13} className="text-gray-400" />
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Saúde do inventário</p>
@@ -159,8 +158,8 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
               <div key={r.categoria} className="flex items-center justify-between">
                 <span className="text-xs text-gray-400 truncate max-w-32">{r.categoria}</span>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 h-1 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-600 rounded-full" style={{ width: `${r.valor}%` }} />
+                  <div className="w-16 h-1 bg-gray-100 overflow-hidden">
+                    <div className="h-full bg-red-600" style={{ width: `${r.valor}%` }} />
                   </div>
                   <span className="text-xs font-bold text-gray-600 w-8 text-right">{r.valor}%</span>
                 </div>
@@ -171,7 +170,7 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
       </div>
 
       {/* Gráfico de previsão */}
-      <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: 20, padding: '24px', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '24px', border: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-center justify-between mb-5">
           <div>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Previsão de carga</p>
@@ -184,7 +183,7 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
               { label: 'Normal', cor: '#22c55e' },
             ].map(l => (
               <div key={l.label} className="flex items-center gap-1.5">
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: l.cor }} />
+                <div style={{ width: 8, height: 8, background: l.cor }} />
                 <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 500 }}>{l.label}</span>
               </div>
             ))}
@@ -224,7 +223,7 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
           Ranking de risco — top {Math.min(10, scores.length)} equipamentos
         </p>
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-white border border-gray-100 overflow-hidden shadow-sm">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
@@ -245,14 +244,14 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
                     </td>
                     <td className="px-4 py-3 w-36">
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${score}%`, background: cfg.barra }} />
+                        <div className="flex-1 h-1.5 bg-gray-100 overflow-hidden">
+                          <div className="h-full transition-all" style={{ width: `${score}%`, background: cfg.barra }} />
                         </div>
                         <span className="text-xs font-bold w-6 text-right" style={{ color: cfg.cor }}>{score}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>{cfg.label}</span>
+                      <span className={`text-xs font-bold px-2.5 py-1 ${cfg.badge}`}>{cfg.label}</span>
                     </td>
                     <td className="px-4 py-3 max-w-48">
                       {fatores.slice(0, 2).map((f, fi) => (

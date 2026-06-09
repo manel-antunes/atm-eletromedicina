@@ -81,7 +81,7 @@ export default function PesquisaGlobal({ equipamentos, onVerDetalhe }: Props) {
       style={{
         display: 'flex', alignItems: 'center', gap: 8,
         background: '#f8fafc', border: '1px solid #e2e8f0',
-        borderRadius: 10, padding: '6px 12px', cursor: 'pointer',
+        padding: '6px 12px', cursor: 'pointer',
         transition: 'all 0.15s',
       }}
       onMouseEnter={e => e.currentTarget.style.borderColor = '#cbd5e1'}
@@ -89,7 +89,7 @@ export default function PesquisaGlobal({ equipamentos, onVerDetalhe }: Props) {
     >
       <Search size={13} color="#94a3b8" />
       <span style={{ fontSize: 12, color: '#94a3b8' }}>Pesquisar...</span>
-      <span style={{ fontSize: 10, color: '#cbd5e1', background: '#f1f5f9', padding: '2px 6px', borderRadius: 5, fontFamily: 'monospace' }}>
+      <span style={{ fontSize: 10, color: '#cbd5e1', background: '#f1f5f9', padding: '2px 6px', fontFamily: 'monospace' }}>
         Ctrl K
       </span>
     </button>
@@ -100,7 +100,7 @@ export default function PesquisaGlobal({ equipamentos, onVerDetalhe }: Props) {
       style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 80 }}
       onClick={e => { if (e.target === e.currentTarget) setAberto(false) }}
     >
-      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 560, boxShadow: '0 25px 60px rgba(0,0,0,0.3)', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+      <div style={{ background: '#fff', width: '100%', maxWidth: 560, boxShadow: '0 25px 60px rgba(0,0,0,0.3)', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
         
         {/* Input */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: resultados.length > 0 ? '1px solid #f1f5f9' : 'none' }}>
@@ -117,7 +117,7 @@ export default function PesquisaGlobal({ equipamentos, onVerDetalhe }: Props) {
               <X size={16} />
             </button>
           )}
-          <kbd style={{ fontSize: 10, color: '#cbd5e1', background: '#f8fafc', padding: '3px 8px', borderRadius: 6, border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>Esc</kbd>
+          <kbd style={{ fontSize: 10, color: '#cbd5e1', background: '#f8fafc', padding: '3px 8px', border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>Esc</kbd>
         </div>
 
         {/* Resultados */}
@@ -154,7 +154,7 @@ export default function PesquisaGlobal({ equipamentos, onVerDetalhe }: Props) {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <p style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{eq.descricao}</p>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: cfg.bg, color: cfg.color }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', background: cfg.bg, color: cfg.color }}>
                             {cfg.label}
                           </span>
                         </div>
@@ -207,7 +207,7 @@ export default function PesquisaGlobal({ equipamentos, onVerDetalhe }: Props) {
                 <div
                   key={eq.id}
                   onClick={() => { onVerDetalhe(eq); setAberto(false) }}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', borderRadius: 8, cursor: 'pointer', transition: 'background 0.1s' }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', cursor: 'pointer', transition: 'background 0.1s' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
@@ -215,7 +215,7 @@ export default function PesquisaGlobal({ equipamentos, onVerDetalhe }: Props) {
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
                     <span style={{ fontSize: 12, color: '#374151', fontWeight: 500 }}>{eq.descricao}</span>
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: cfg.bg, color: cfg.color }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', background: cfg.bg, color: cfg.color }}>
                     {cfg.label}
                   </span>
                 </div>

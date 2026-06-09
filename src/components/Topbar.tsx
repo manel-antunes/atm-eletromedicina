@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { RefreshCw, Presentation, Download, Menu, RefreshCw as Sync, WifiOff } from 'lucide-react'
 import { limparEquipamentos } from '../data/storage'
 import PesquisaGlobal from './PesquisaGlobal'
+import NotificacoesInApp from './NotificacoesInApp'
 import type { Equipamento } from '../data/equipamentos'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -114,9 +115,10 @@ export default function Topbar({ titulo, totalEquipamentos, onReimportar, equipa
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <SyncIndicator sincronizando={sincronizando} ultimaSync={ultimaSync} erro={erroBackend} />
+            <NotificacoesInApp equipamentos={equipamentos} />
             <button
               onClick={onApresentacao}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#C0001A', border: 'none', borderRadius: 8, color: '#fff', padding: '6px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#C0001A', border: 'none', color: '#fff', padding: '6px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
             >
               <Presentation size={12} />
               Apresentar
@@ -133,7 +135,7 @@ export default function Topbar({ titulo, totalEquipamentos, onReimportar, equipa
   return (
     <header style={{ height: 56, background: '#fff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', flexShrink: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 4, height: 24, borderRadius: 99, background: '#C0001A' }} />
+        <div style={{ width: 4, height: 24, background: '#C0001A' }} />
         <div>
           <p style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>{titulo}</p>
           <p style={{ fontSize: 11, color: '#94a3b8', margin: 0, textTransform: 'capitalize' }}>{hoje}</p>
@@ -143,12 +145,14 @@ export default function Topbar({ titulo, totalEquipamentos, onReimportar, equipa
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <SyncIndicator sincronizando={sincronizando} ultimaSync={ultimaSync} erro={erroBackend} />
 
+        <NotificacoesInApp equipamentos={equipamentos} />
+
         <PesquisaGlobal equipamentos={equipamentos} onVerDetalhe={onVerDetalhe} />
 
         {podeInstalar && (
           <button
             onClick={handleInstalar}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16a34a', border: 'none', borderRadius: 8, color: '#fff', padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16a34a', border: 'none', color: '#fff', padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
           >
             <Download size={12} />
             Instalar app
@@ -157,7 +161,7 @@ export default function Topbar({ titulo, totalEquipamentos, onReimportar, equipa
 
         <button
           onClick={onApresentacao}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#C0001A', border: 'none', borderRadius: 8, color: '#fff', padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#C0001A', border: 'none', color: '#fff', padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#991b1b'}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#C0001A'}
         >
@@ -169,7 +173,7 @@ export default function Topbar({ titulo, totalEquipamentos, onReimportar, equipa
 
         <button
           onClick={handleReimportar}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e2e8f0', background: '#fff', borderRadius: 8, color: '#94a3b8', padding: '6px 12px', fontSize: 11, cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e2e8f0', background: '#fff', color: '#94a3b8', padding: '6px 12px', fontSize: 11, cursor: 'pointer' }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#dc2626'; (e.currentTarget as HTMLElement).style.borderColor = '#fecaca' }}
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#94a3b8'; (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0' }}
         >

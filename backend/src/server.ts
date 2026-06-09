@@ -264,6 +264,9 @@ app.post('/api/refresh', async (req, res) => {
     const row = result.rows[0]
     if (!row.ativo) return res.status(401).json({ erro: 'Utilizador inativo' })
 
+    // Revogar token antigo (rotation)
+    await pool.query('UPDATE refresh_tokens SET revogado = TRUE WHERE token = $1', [refreshToken])
+
     // Novo access token
     const newToken = jwt.sign(
       { id: payload.id, username: payload.username, nome: row.nome, role: row.role },
@@ -271,7 +274,20 @@ app.post('/api/refresh', async (req, res) => {
       { expiresIn: '8h' }
     )
 
-    res.json({ token: newToken })
+    // Novo refresh token
+    const newRefreshToken = jwt.sign(
+      { id: payload.id, username: payload.username },
+      JWT_REFRESH_SECRET,
+      { expiresIn: '7d' }
+    )
+    const expiraEm = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    await pool.query(
+      `INSERT INTO refresh_tokens (user_id, token, device_info, ip, expira_em)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [row.user_id, newRefreshToken, row.device_info, getIP(req), expiraEm]
+    )
+
+    res.json({ token: newToken, refreshToken: newRefreshToken })
   } catch {
     res.status(401).json({ erro: 'Refresh token inválido' })
   }
@@ -999,13 +1015,17 @@ io.on('connection', async (socket) => {
   })
 })
 
+export { app }
+
 // ── ARRANQUE ───────────────────────────────────────────────
-const PORT = process.env.PORT ?? 3001
-inicializarDB().then(async () => {
-  await seedUtilizadores()
-  iniciarCron()
-  httpServer.listen(PORT, () => logger.info(`Servidor ATM a correr na porta ${PORT}`))
-}).catch(err => {
-  logger.fatal({ err }, 'Erro ao inicializar base de dados')
-  process.exit(1)
-})
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT ?? 3001
+  inicializarDB().then(async () => {
+    await seedUtilizadores()
+    iniciarCron()
+    httpServer.listen(PORT, () => logger.info(`Servidor ATM a correr na porta ${PORT}`))
+  }).catch(err => {
+    logger.fatal({ err }, 'Erro ao inicializar base de dados')
+    process.exit(1)
+  })
+}

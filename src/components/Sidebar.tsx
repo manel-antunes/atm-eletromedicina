@@ -73,7 +73,7 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos, nomeUtil
             style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: 12,
               padding: '10px 12px', fontSize: 12, fontWeight: 600,
-              borderRadius: 8, border: 'none', cursor: 'pointer',
+              border: 'none', cursor: 'pointer',
               background: paginaAtiva === id ? 'rgba(255,255,255,0.2)' : 'transparent',
               color: paginaAtiva === id ? '#fff' : 'rgba(255,200,200,0.8)',
               transition: 'all 0.15s',
@@ -85,7 +85,7 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos, nomeUtil
             <Icon size={15} style={{ opacity: paginaAtiva === id ? 1 : 0.6, flexShrink: 0 }} />
             <span style={{ flex: 1 }}>{label}</span>
             {badge > 0 && (
-              <span style={{ background: '#fff', color: '#C0001A', fontSize: 10, fontWeight: 900, padding: '1px 6px', borderRadius: 99, minWidth: 20, textAlign: 'center' }}>
+              <span style={{ background: '#fff', color: '#C0001A', fontSize: 10, fontWeight: 900, padding: '1px 6px', minWidth: 20, textAlign: 'center' }}>
                 {badge > 99 ? '99+' : badge}
               </span>
             )}
@@ -101,7 +101,7 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos, nomeUtil
       {/* Footer */}
       <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
         {nomeUtilizador && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px', borderRadius: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
               <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{nomeUtilizador.charAt(0).toUpperCase()}</span>
@@ -112,7 +112,7 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos, nomeUtil
               </div>
             </div>
             {onLogout && (
-              <button onClick={onLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 6, borderRadius: 8, display: 'flex' }}
+              <button onClick={onLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 6, display: 'flex' }}
                 title="Terminar sessão">
                 <LogOut size={13} />
               </button>

@@ -57,7 +57,7 @@ export default function CommandPalette({ aberto, onFechar, onNavegar }: Props) {
       style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '15vh', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
       onClick={e => { if (e.target === e.currentTarget) onFechar() }}
     >
-      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 560, boxShadow: '0 40px 100px rgba(0,0,0,0.3)', overflow: 'hidden', animation: 'palette-in 0.15s ease-out' }}>
+      <div style={{ background: '#fff', width: '100%', maxWidth: 560, boxShadow: '0 40px 100px rgba(0,0,0,0.3)', overflow: 'hidden', animation: 'palette-in 0.15s ease-out' }}>
         <style>{`
           @keyframes palette-in {
             from { opacity: 0; transform: scale(0.97) translateY(-8px); }
@@ -81,7 +81,7 @@ export default function CommandPalette({ aberto, onFechar, onNavegar }: Props) {
               <X size={14} />
             </button>
           )}
-          <kbd style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '2px 8px', fontSize: 11, color: '#64748b', fontFamily: 'monospace' }}>ESC</kbd>
+          <kbd style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '2px 8px', fontSize: 11, color: '#64748b', fontFamily: 'monospace' }}>ESC</kbd>
         </div>
 
         {/* Resultados */}
@@ -99,13 +99,13 @@ export default function CommandPalette({ aberto, onFechar, onNavegar }: Props) {
                   onMouseEnter={() => setSelecionado(idx)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '10px 14px', borderRadius: 10, cursor: 'pointer',
+                    padding: '10px 14px', cursor: 'pointer',
                     background: ativo ? '#f8fafc' : 'transparent',
                     border: ativo ? '1px solid #e2e8f0' : '1px solid transparent',
                     transition: 'all 0.1s',
                   }}
                 >
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: ativo ? '#C0001A' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.1s' }}>
+                  <div style={{ width: 36, height: 36, background: ativo ? '#C0001A' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.1s' }}>
                     <Icon size={16} color={ativo ? '#fff' : '#64748b'} />
                   </div>
                   <div>
@@ -113,7 +113,7 @@ export default function CommandPalette({ aberto, onFechar, onNavegar }: Props) {
                     <p style={{ fontSize: 11, color: '#94a3b8', margin: 0 }}>{item.desc}</p>
                   </div>
                   {ativo && (
-                    <kbd style={{ marginLeft: 'auto', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '2px 8px', fontSize: 11, color: '#64748b', fontFamily: 'monospace' }}>↵</kbd>
+                    <kbd style={{ marginLeft: 'auto', background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '2px 8px', fontSize: 11, color: '#64748b', fontFamily: 'monospace' }}>↵</kbd>
                   )}
                 </div>
               )
@@ -125,7 +125,7 @@ export default function CommandPalette({ aberto, onFechar, onNavegar }: Props) {
         <div style={{ padding: '10px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 16 }}>
           {[['↑↓', 'navegar'], ['↵', 'selecionar'], ['ESC', 'fechar']].map(([key, label]) => (
             <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <kbd style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 4, padding: '1px 6px', fontSize: 10, color: '#64748b', fontFamily: 'monospace' }}>{key}</kbd>
+              <kbd style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '1px 6px', fontSize: 10, color: '#64748b', fontFamily: 'monospace' }}>{key}</kbd>
               <span style={{ fontSize: 11, color: '#94a3b8' }}>{label}</span>
             </div>
           ))}
