@@ -1,24 +1,9 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle, AlertTriangle, Clock } from 'lucide-react'
-import { differenceInDays, parse, isValid } from 'date-fns'
+import { differenceInDays } from 'date-fns'
 import logoAtm from '../assets/logo-atm.png'
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
-
-function parseData(dataStr: string): Date | null {
-  if (!dataStr || dataStr === 'undefined') return null
-  const numerico = Number(dataStr)
-  if (!isNaN(numerico) && numerico > 40000) {
-    const data = new Date((numerico - 25569) * 86400 * 1000)
-    if (isValid(data)) return data
-  }
-  const formatos = ['M/d/yyyy', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd']
-  for (const fmt of formatos) {
-    const tentativa = parse(dataStr, fmt, new Date())
-    if (isValid(tentativa)) return tentativa
-  }
-  return null
-}
+import { API_URL } from '../config'
+import { parseData } from '../utils/dateUtils'
 
 function getEstado(dataCalibracao: string) {
   const proxima = parseData(dataCalibracao)

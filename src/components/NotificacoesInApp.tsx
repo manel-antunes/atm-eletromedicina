@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Bell, AlertTriangle, Clock, X } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
-import { differenceInDays, parse, isValid } from 'date-fns'
+import { differenceInDays, isValid } from 'date-fns'
+import { parseData } from '../utils/dateUtils'
 
 interface Cedencia {
   id: number
@@ -17,20 +18,6 @@ interface Alerta {
   titulo: string
   subtitulo: string
   urgencia: 'critica' | 'alta' | 'media'
-}
-
-function parseData(dataStr: string): Date | null {
-  if (!dataStr || dataStr === 'undefined') return null
-  const n = Number(dataStr)
-  if (!isNaN(n) && n > 40000) {
-    const d = new Date((n - 25569) * 86400 * 1000)
-    if (isValid(d)) return d
-  }
-  for (const fmt of ['M/d/yyyy', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd']) {
-    const t = parse(dataStr, fmt, new Date())
-    if (isValid(t)) return t
-  }
-  return null
 }
 
 function calcularAlertas(equipamentos: Equipamento[]): Alerta[] {
@@ -78,7 +65,7 @@ export default function NotificacoesInApp({ equipamentos }: Props) {
   })
   const ref = useRef<HTMLDivElement>(null)
 
-  const alertas = calcularAlertas(equipamentos)
+  const alertas = useMemo(() => calcularAlertas(equipamentos), [equipamentos])
   const naoLidos = alertas.filter(a => !lidos.has(a.id)).length
 
   useEffect(() => {

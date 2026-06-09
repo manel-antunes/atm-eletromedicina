@@ -1,12 +1,15 @@
 import { AlertTriangle, CheckCircle, Clock, Package, QrCode, Stethoscope, ChevronRight } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
-import { differenceInDays, parse, isValid } from 'date-fns'
+import { differenceInDays } from 'date-fns'
 import { useRef, useEffect, useState } from 'react'
 import GraficoCalibracoes from '../components/GraficoCalibracoes'
 import KpiCard from '../components/KpiCard'
 import { SkeletonKpis, SkeletonTabela, SkeletonLine } from '../components/Skeleton'
+import { API_URL } from '../config'
+import { parseData } from '../utils/dateUtils'
+import { getEstado } from '../utils/equipamentoUtils'
+import { useIsMobile } from '../hooks/useIsMobile'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
 const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 interface Props {
@@ -26,38 +29,11 @@ interface PreventivaEq {
 
 function getToken() { return localStorage.getItem('atm_token') ?? '' }
 
-function parseData(dataStr: string): Date | null {
-  if (!dataStr || dataStr === 'undefined' || dataStr === 'null') return null
-  const numerico = Number(dataStr)
-  if (!isNaN(numerico) && numerico > 40000) {
-    const data = new Date((numerico - 25569) * 86400 * 1000)
-    if (isValid(data)) return data
-  }
-  const formatos = ['M/d/yyyy', 'MM/dd/yyyy', 'dd/MM/yyyy', 'd/M/yyyy', 'yyyy-MM-dd', 'dd-MM-yyyy', 'M/d/yy']
-  for (const fmt of formatos) {
-    const tentativa = parse(dataStr, fmt, new Date())
-    if (isValid(tentativa)) return tentativa
-  }
-  const nativa = new Date(dataStr)
-  if (isValid(nativa)) return nativa
-  return null
-}
-
 function formatarData(dataStr: string): string {
   if (!dataStr || dataStr === 'undefined') return '—'
   const data = parseData(dataStr)
   if (!data) return '—'
   return data.toLocaleDateString('pt-PT')
-}
-
-function getEstado(eq: Equipamento): 'vencido' | 'urgente' | 'aviso' | 'ok' {
-  const proxima = parseData(eq.dataCalibracao)
-  if (!proxima) return 'vencido'
-  const diff = differenceInDays(proxima, new Date())
-  if (diff < 0) return 'vencido'
-  if (diff <= 30) return 'urgente'
-  if (diff <= 60) return 'aviso'
-  return 'ok'
 }
 
 function getDiasTexto(eq: Equipamento): string {
@@ -75,16 +51,6 @@ const estadoConfig = {
   urgente: { label: 'Urgente',  bg: 'bg-orange-50', text: 'text-orange-700',border: 'border-orange-200',dot: 'bg-orange-500',badge: 'bg-orange-100 text-orange-700',dotColor: '#f97316' },
   aviso:   { label: 'Em breve', bg: 'bg-yellow-50', text: 'text-yellow-700',border: 'border-yellow-200',dot: 'bg-yellow-400',badge: 'bg-yellow-100 text-yellow-700',dotColor: '#eab308' },
   ok:      { label: 'Em dia',   bg: 'bg-green-50',  text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500', badge: 'bg-green-100 text-green-700', dotColor: '#22c55e' },
-}
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
-  }, [])
-  return isMobile
 }
 
 function SkeletonGrafico() {

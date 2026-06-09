@@ -1,36 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { Search, X, Calendar, MapPin } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
-import { differenceInDays, parse, isValid } from 'date-fns'
+import { differenceInDays } from 'date-fns'
+import { parseData } from '../utils/dateUtils'
+import { getEstado } from '../utils/equipamentoUtils'
 
 interface Props {
   equipamentos: Equipamento[]
   onVerDetalhe: (eq: Equipamento) => void
-}
-
-function parseData(dataStr: string): Date | null {
-  if (!dataStr || dataStr === 'undefined') return null
-  const numerico = Number(dataStr)
-  if (!isNaN(numerico) && numerico > 40000) {
-    const data = new Date((numerico - 25569) * 86400 * 1000)
-    if (isValid(data)) return data
-  }
-  const formatos = ['M/d/yyyy', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd']
-  for (const fmt of formatos) {
-    const tentativa = parse(dataStr, fmt, new Date())
-    if (isValid(tentativa)) return tentativa
-  }
-  return null
-}
-
-function getEstado(eq: Equipamento) {
-  const proxima = parseData(eq.dataCalibracao)
-  if (!proxima) return 'vencido'
-  const diff = differenceInDays(proxima, new Date())
-  if (diff < 0) return 'vencido'
-  if (diff <= 30) return 'urgente'
-  if (diff <= 60) return 'aviso'
-  return 'ok'
 }
 
 const estadoCfg = {

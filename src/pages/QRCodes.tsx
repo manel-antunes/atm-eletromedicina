@@ -7,7 +7,7 @@ interface Props {
   equipamentos: Equipamento[]
 }
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
+import { API_URL } from '../config'
 const BASE_URL = window.location.origin
 
 function getToken() { return localStorage.getItem('atm_token') ?? '' }

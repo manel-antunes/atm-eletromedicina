@@ -1,37 +1,15 @@
 import { useState, useRef } from 'react'
 import { CheckCircle, Upload, X, Search } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
-import { differenceInDays, parse, isValid } from 'date-fns'
+import { differenceInDays } from 'date-fns'
+import { parseData } from '../utils/dateUtils'
+import { getEstado } from '../utils/equipamentoUtils'
+import { API_URL } from '../config'
 
 interface Props {
   equipamentos: Equipamento[]
   onAtualizar: (equipamentos: Equipamento[]) => void
   onVerDetalhe: (eq: Equipamento) => void
-}
-
-function parseData(dataStr: string): Date | null {
-  if (!dataStr || dataStr === 'undefined') return null
-  const numerico = Number(dataStr)
-  if (!isNaN(numerico) && numerico > 40000) {
-    const data = new Date((numerico - 25569) * 86400 * 1000)
-    if (isValid(data)) return data
-  }
-  const formatos = ['M/d/yyyy', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd']
-  for (const fmt of formatos) {
-    const tentativa = parse(dataStr, fmt, new Date())
-    if (isValid(tentativa)) return tentativa
-  }
-  return null
-}
-
-function getEstado(eq: Equipamento): 'vencido' | 'urgente' | 'aviso' | 'ok' {
-  const proxima = parseData(eq.dataCalibracao)
-  if (!proxima) return 'vencido'
-  const diff = differenceInDays(proxima, new Date())
-  if (diff < 0) return 'vencido'
-  if (diff <= 30) return 'urgente'
-  if (diff <= 60) return 'aviso'
-  return 'ok'
 }
 
 const estadoConfig = {
@@ -132,7 +110,6 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
     const excelDate = Math.round((novaProxima.getTime() / 86400000) + 25569)
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
       await fetch(`${API_URL}/api/calibracoes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

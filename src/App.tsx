@@ -30,9 +30,9 @@ import LoadingATM from './components/LoadingATM'
 import QRCodes from './pages/QRCodes'
 import FichaPublica from './pages/FichaPublica'
 import { carregarEquipamentos, importarEquipamentos } from './services/api'
-import { differenceInDays, isValid } from 'date-fns'
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
+import { API_URL } from './config'
+import { contarAlertas } from './utils/equipamentoUtils'
+import { useIsMobile } from './hooks/useIsMobile'
 
 const titulos: Record<string, string> = {
   dashboard:    'Dashboard Geral',
@@ -82,33 +82,6 @@ class ErrorBoundary extends Component<{ children: ReactNode }, EBState> {
     }
     return this.props.children
   }
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
-  }, [])
-  return isMobile
-}
-
-function contarAlertas(equipamentos: Equipamento[]): number {
-  return equipamentos.filter(eq => {
-    const dataStr = eq.dataCalibracao
-    if (!dataStr || dataStr === 'undefined') return true
-    const numerico = Number(dataStr)
-    let data: Date | null = null
-    if (!isNaN(numerico) && numerico > 40000) {
-      data = new Date((numerico - 25569) * 86400 * 1000)
-    } else {
-      data = new Date(dataStr)
-    }
-    if (!isValid(data)) return true
-    return differenceInDays(data, new Date()) <= 60
-  }).length
 }
 
 // ── App ───────────────────────────────────────────────────────────────────────

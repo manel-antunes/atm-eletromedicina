@@ -1,24 +1,10 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { Equipamento } from '../data/equipamentos'
-import { differenceInDays, parse, isValid } from 'date-fns'
+import { differenceInDays } from 'date-fns'
+import { parseData } from '../utils/dateUtils'
 
-function parseData(dataStr: string): Date | null {
-  if (!dataStr || dataStr === 'undefined') return null
-  const numerico = Number(dataStr)
-  if (!isNaN(numerico) && numerico > 40000) {
-    const data = new Date((numerico - 25569) * 86400 * 1000)
-    if (isValid(data)) return data
-  }
-  const formatos = ['M/d/yyyy', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd']
-  for (const fmt of formatos) {
-    const tentativa = parse(dataStr, fmt, new Date())
-    if (isValid(tentativa)) return tentativa
-  }
-  return null
-}
-
-function getEstado(eq: Equipamento): string {
+function getEstadoPdf(eq: Equipamento): string {
   const proxima = parseData(eq.dataCalibracao)
   if (!proxima) return 'Sem data'
   const diff = differenceInDays(proxima, new Date())
@@ -55,9 +41,9 @@ export function gerarPDFAlertas(equipamentos: Equipamento[]) {
     return differenceInDays(proxima, hoje) <= 60
   })
 
-  const vencidas = alertas.filter(eq => getEstado(eq) === 'Vencida')
-  const urgentes = alertas.filter(eq => getEstado(eq) === 'Urgente')
-  const emBreve  = alertas.filter(eq => getEstado(eq) === 'Em breve')
+  const vencidas = alertas.filter(eq => getEstadoPdf(eq) === 'Vencida')
+  const urgentes = alertas.filter(eq => getEstadoPdf(eq) === 'Urgente')
+  const emBreve  = alertas.filter(eq => getEstadoPdf(eq) === 'Em breve')
 
   // Header vermelho
   doc.setFillColor(192, 0, 26)
@@ -136,7 +122,7 @@ export function gerarPDFAlertas(equipamentos: Equipamento[]) {
       body: lista.map(eq => {
         const proxima = parseData(eq.dataCalibracao)
         const diff = proxima ? differenceInDays(proxima, hoje) : null
-        const estado = getEstado(eq)
+        const estado = getEstadoPdf(eq)
         return [
           eq.numeroSAP,
           eq.descricao,
@@ -228,7 +214,7 @@ export function gerarPDFInventario(equipamentos: Equipamento[]) {
     head: [['Nº SAP', 'Descrição', 'Marca', 'Modelo', 'Nº Série', 'Periodicidade', 'Última Calib.', 'Próxima Calib.', 'Estado', 'Localização']],
     body: equipamentos.map(eq => {
       const proxima = parseData(eq.dataCalibracao)
-      const estado = getEstado(eq)
+      const estado = getEstadoPdf(eq)
       return [
         eq.numeroSAP,
         eq.descricao,

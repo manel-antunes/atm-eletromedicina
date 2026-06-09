@@ -15,7 +15,7 @@ interface Documento {
   criado_em: string
 }
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
+import { API_URL } from '../config'
 
 function getToken() { return localStorage.getItem('atm_token') ?? '' }
 function authHeaders() {

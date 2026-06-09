@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import { FileText, Download, Table, Mail, CheckCircle, Send, Plus, X, Clock, Settings } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
-import { differenceInDays, parse, isValid } from 'date-fns'
+import { differenceInDays } from 'date-fns'
+import { parseData } from '../utils/dateUtils'
 import { enviarAlertasEmail, testarEmail, carregarConfig, guardarConfig, carregarHistorico, atualizarCache } from '../services/emailService'
 import { gerarPDFAlertas, gerarPDFInventario } from '../services/pdfService'
 
@@ -27,21 +28,6 @@ interface RegistoEmail {
   emBreve: number
   sucesso: boolean
   erro?: string
-}
-
-function parseData(dataStr: string): Date | null {
-  if (!dataStr || dataStr === 'undefined') return null
-  const numerico = Number(dataStr)
-  if (!isNaN(numerico) && numerico > 40000) {
-    const data = new Date((numerico - 25569) * 86400 * 1000)
-    if (isValid(data)) return data
-  }
-  const formatos = ['M/d/yyyy', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd']
-  for (const fmt of formatos) {
-    const tentativa = parse(dataStr, fmt, new Date())
-    if (isValid(tentativa)) return tentativa
-  }
-  return null
 }
 
 function getEstado(eq: Equipamento): string {

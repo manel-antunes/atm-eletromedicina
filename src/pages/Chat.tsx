@@ -3,7 +3,7 @@ import { io } from 'socket.io-client'
 import type { Socket } from 'socket.io-client'
 import { Send, MessageSquare, Circle } from 'lucide-react'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
+import { API_URL } from '../config'
 
 interface Mensagem {
   id: number

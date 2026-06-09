@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Users, ShieldCheck, Activity, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, Loader2, RefreshCw, LogOut, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
+import { API_URL } from '../config'
 
 function getToken() { return localStorage.getItem('atm_token') ?? '' }
 function getHeaders() {

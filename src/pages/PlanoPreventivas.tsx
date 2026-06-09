@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx'
 import { createWorker } from 'tesseract.js'
 import { FICHAS_TEMPLATES } from '../data/fichasTemplates'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://atm-eletromedicina.onrender.com'
+import { API_URL } from '../config'
 const SETORES_PROPRIOS = ['MEGOPMCOPMEQ', 'MEGOPMCOPMPR', 'MEGOPMGARTEQ']
 const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']

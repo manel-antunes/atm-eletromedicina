@@ -1,8 +1,8 @@
 import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Map, Calendar, LogOut, QrCode, Stethoscope } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
-import { differenceInDays, parse, isValid } from 'date-fns'
 import logoAtm from '../assets/logo-atm.png'
 import NotificacoesPush from './NotificacoesPush'
+import { contarAlertas } from '../utils/equipamentoUtils'
 
 interface Props {
   paginaAtiva: string
@@ -10,29 +10,6 @@ interface Props {
   equipamentos: Equipamento[]
   nomeUtilizador?: string
   onLogout?: () => void
-}
-
-function parseData(dataStr: string): Date | null {
-  if (!dataStr || dataStr === 'undefined') return null
-  const numerico = Number(dataStr)
-  if (!isNaN(numerico) && numerico > 40000) {
-    const data = new Date((numerico - 25569) * 86400 * 1000)
-    if (isValid(data)) return data
-  }
-  const formatos = ['M/d/yyyy', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd']
-  for (const fmt of formatos) {
-    const tentativa = parse(dataStr, fmt, new Date())
-    if (isValid(tentativa)) return tentativa
-  }
-  return null
-}
-
-function contarAlertas(equipamentos: Equipamento[]): number {
-  return equipamentos.filter(eq => {
-    const proxima = parseData(eq.dataCalibracao)
-    if (!proxima) return true
-    return differenceInDays(proxima, new Date()) <= 60
-  }).length
 }
 
 export default function Sidebar({ paginaAtiva, onNavegar, equipamentos, nomeUtilizador, onLogout }: Props) {
