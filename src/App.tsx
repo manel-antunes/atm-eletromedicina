@@ -139,13 +139,11 @@ function App() {
         if (!res.ok) {
           setToken(null)
           setNomeUtilizador('')
-          localStorage.removeItem('atm_token')
-          localStorage.removeItem('atm_nome')
-          localStorage.removeItem('atm_username')
-          localStorage.removeItem('atm_role')
+          const chaves = ['atm_token', 'atm_refresh_token', 'atm_nome', 'atm_username', 'atm_role', 'atm_user_id']
+          chaves.forEach(k => localStorage.removeItem(k))
         }
       })
-      .catch(() => {})
+      .catch(() => { /* sem rede — manter token, tentar depois */ })
       .finally(() => setVerificandoToken(false))
   }, [token])
 
@@ -181,18 +179,23 @@ function App() {
       .finally(() => { setCarregando(false); setSincronizando(false) })
   }, [token, verificandoToken])
 
-  // Sincronizar logout entre abas: se outra aba apagar atm_token, esta fecha sessão também
+  // Sincronizar sessão entre abas: logout ou login de outro utilizador noutro tab
   useEffect(() => {
     function onStorage(e: StorageEvent) {
-      if (e.key === 'atm_token' && e.newValue === null) {
+      if (e.key !== 'atm_token') return
+      if (e.newValue === null) {
+        // Outro tab fez logout — fechar sessão aqui também
         setToken(null)
         setNomeUtilizador('')
         setEquipamentos([])
+      } else if (e.newValue !== token) {
+        // Outro tab fez login com conta diferente — recarregar para assumir nova sessão
+        window.location.reload()
       }
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
-  }, [])
+  }, [token])
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
