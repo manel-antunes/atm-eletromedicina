@@ -9,8 +9,36 @@ interface MsgState { tipo: 'sucesso' | 'erro'; texto: string }
 
 export default function Perfil() {
   const [nome, setNomeState] = useState(localStorage.getItem('atm_nome') ?? '')
-  const username = localStorage.getItem('atm_username') ?? ''
+  const [username, setUsernameState] = useState(localStorage.getItem('atm_username') ?? '')
   const role = localStorage.getItem('atm_role') ?? 'tecnico'
+
+  // ── Alterar username ─────────────────────────────────────
+  const [usernameInput, setUsernameInput] = useState(username)
+  const [carregandoUser, setCarregandoUser] = useState(false)
+  const [msgUser, setMsgUser] = useState<MsgState | null>(null)
+
+  async function handleAlterarUsername(e: React.FormEvent) {
+    e.preventDefault()
+    const novo = usernameInput.trim().toLowerCase()
+    if (novo === username) { setMsgUser({ tipo: 'erro', texto: 'O username não foi alterado.' }); return }
+    setCarregandoUser(true); setMsgUser(null)
+    try {
+      const res = await fetch(`${API_URL}/api/perfil/username`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ username: novo }),
+      })
+      const data = await res.json().catch(() => { throw new Error('Servidor indisponível. Tenta novamente.') })
+      if (!res.ok) throw new Error(data.erro ?? 'Erro ao alterar username')
+      setUsernameState(data.username)
+      localStorage.setItem('atm_username', data.username)
+      setMsgUser({ tipo: 'sucesso', texto: 'Username atualizado com sucesso.' })
+    } catch (err: unknown) {
+      setMsgUser({ tipo: 'erro', texto: err instanceof Error ? err.message : 'Erro desconhecido' })
+    } finally {
+      setCarregandoUser(false)
+    }
+  }
 
   // ── Alterar nome ──────────────────────────────────────────
   const [nomeInput, setNomeInput] = useState(nome)
@@ -143,6 +171,53 @@ export default function Perfil() {
           }}>
             {carregandoNome && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
             Guardar nome
+          </button>
+        </form>
+      </div>
+
+      {/* Alterar username */}
+      <div style={{ background: '#fff', borderRadius: 12, padding: 28, border: '1px solid #e5e7eb' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <Pencil size={17} color="#C0001A" />
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Alterar Username</p>
+        </div>
+        <form onSubmit={handleAlterarUsername} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+              Username
+            </label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#9ca3af', pointerEvents: 'none' }}>@</span>
+              <input
+                type="text"
+                value={usernameInput}
+                onChange={e => setUsernameInput(e.target.value.toLowerCase())}
+                required
+                minLength={3}
+                maxLength={32}
+                pattern="[a-z0-9._\-]+"
+                title="Apenas letras minúsculas, números, pontos, hífens e underscores"
+                style={{
+                  width: '100%', boxSizing: 'border-box', padding: '9px 12px 9px 28px',
+                  border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 14,
+                  outline: 'none', color: '#111827', transition: 'border-color 0.15s, box-shadow 0.15s',
+                }}
+                onFocus={e => { e.currentTarget.style.borderColor = '#C0001A'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(192,0,26,0.08)' }}
+                onBlur={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.boxShadow = 'none' }}
+              />
+            </div>
+            <p style={{ fontSize: 11, color: '#9ca3af', margin: '5px 0 0' }}>Letras minúsculas, números, pontos, hífens e underscores.</p>
+          </div>
+          {msgUser && <Feedback msg={msgUser} />}
+          <button type="submit" disabled={carregandoUser || usernameInput.trim().length < 3} style={{
+            padding: '10px 20px', background: carregandoUser ? '#9ca3af' : '#C0001A', color: '#fff',
+            border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600,
+            cursor: carregandoUser ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            alignSelf: 'flex-start',
+          }}>
+            {carregandoUser && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
+            Guardar username
           </button>
         </form>
       </div>

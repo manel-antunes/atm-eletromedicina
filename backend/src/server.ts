@@ -350,6 +350,22 @@ app.post('/api/perfil/nome', autenticar, async (req: any, res) => {
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
+// ── PERFIL — alterar username ─────────────────────────────
+app.post('/api/perfil/username', autenticar, async (req: any, res) => {
+  const { username } = req.body
+  if (!username || typeof username !== 'string') return res.status(400).json({ erro: 'Username obrigatório' })
+  const u = username.trim().toLowerCase()
+  if (u.length < 3) return res.status(400).json({ erro: 'Username deve ter pelo menos 3 caracteres' })
+  if (!/^[a-z0-9._-]+$/.test(u)) return res.status(400).json({ erro: 'Apenas letras, números, pontos, hífens e underscores' })
+  try {
+    const existe = await pool.query('SELECT id FROM users WHERE username = $1 AND id != $2', [u, req.utilizador.id])
+    if (existe.rows.length > 0) return res.status(409).json({ erro: 'Este username já está em uso' })
+    await pool.query('UPDATE users SET username = $1 WHERE id = $2', [u, req.utilizador.id])
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'ALTERAR_USERNAME', null, null, { novo: u }, getIP(req))
+    res.json({ sucesso: true, username: u })
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
+})
+
 // ── SESSÕES ATIVAS (admin) ────────────────────────────────
 app.get('/api/sessoes', autenticar, apenasAdmin, async (req: any, res) => {
   try {
