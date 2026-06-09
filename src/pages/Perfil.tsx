@@ -1,20 +1,52 @@
 import { useState } from 'react'
-import { User, Lock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Lock, CheckCircle, AlertCircle, Loader2, Pencil } from 'lucide-react'
 
 import { API_URL } from '../config'
 
 function getToken() { return localStorage.getItem('atm_token') ?? '' }
 
+interface MsgState { tipo: 'sucesso' | 'erro'; texto: string }
+
 export default function Perfil() {
-  const nome = localStorage.getItem('atm_nome') ?? ''
+  const [nome, setNomeState] = useState(localStorage.getItem('atm_nome') ?? '')
   const username = localStorage.getItem('atm_username') ?? ''
   const role = localStorage.getItem('atm_role') ?? 'tecnico'
 
+  // ── Alterar nome ──────────────────────────────────────────
+  const [nomeInput, setNomeInput] = useState(nome)
+  const [carregandoNome, setCarregandoNome] = useState(false)
+  const [msgNome, setMsgNome] = useState<MsgState | null>(null)
+
+  async function handleAlterarNome(e: React.FormEvent) {
+    e.preventDefault()
+    if (nomeInput.trim() === nome) { setMsgNome({ tipo: 'erro', texto: 'O nome não foi alterado.' }); return }
+    setCarregandoNome(true)
+    setMsgNome(null)
+    try {
+      const res = await fetch(`${API_URL}/api/perfil/nome`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ nome: nomeInput.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.erro ?? 'Erro ao alterar nome')
+      const novoNome = data.nome as string
+      setNomeState(novoNome)
+      localStorage.setItem('atm_nome', novoNome)
+      setMsgNome({ tipo: 'sucesso', texto: 'Nome atualizado com sucesso.' })
+    } catch (err: unknown) {
+      setMsgNome({ tipo: 'erro', texto: err instanceof Error ? err.message : 'Erro desconhecido' })
+    } finally {
+      setCarregandoNome(false)
+    }
+  }
+
+  // ── Alterar password ──────────────────────────────────────
   const [passwordAtual, setPasswordAtual] = useState('')
   const [passwordNova, setPasswordNova] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
-  const [carregando, setCarregando] = useState(false)
-  const [mensagem, setMensagem] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null)
+  const [carregandoPass, setCarregandoPass] = useState(false)
+  const [msgPass, setMsgPass] = useState<MsgState | null>(null)
 
   function validarPassword(pwd: string): string | null {
     if (pwd.length < 8)             return 'Mínimo 8 caracteres.'
@@ -26,17 +58,11 @@ export default function Perfil() {
 
   async function handleAlterarPassword(e: React.FormEvent) {
     e.preventDefault()
-    if (passwordNova !== passwordConfirm) {
-      setMensagem({ tipo: 'erro', texto: 'As passwords novas não coincidem.' })
-      return
-    }
+    if (passwordNova !== passwordConfirm) { setMsgPass({ tipo: 'erro', texto: 'As passwords novas não coincidem.' }); return }
     const erroPass = validarPassword(passwordNova)
-    if (erroPass) {
-      setMensagem({ tipo: 'erro', texto: erroPass })
-      return
-    }
-    setCarregando(true)
-    setMensagem(null)
+    if (erroPass) { setMsgPass({ tipo: 'erro', texto: erroPass }); return }
+    setCarregandoPass(true)
+    setMsgPass(null)
     try {
       const res = await fetch(`${API_URL}/api/perfil/password`, {
         method: 'POST',
@@ -45,14 +71,12 @@ export default function Perfil() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.erro ?? 'Erro ao alterar password')
-      setMensagem({ tipo: 'sucesso', texto: 'Password alterada com sucesso.' })
-      setPasswordAtual('')
-      setPasswordNova('')
-      setPasswordConfirm('')
+      setMsgPass({ tipo: 'sucesso', texto: 'Password alterada com sucesso.' })
+      setPasswordAtual(''); setPasswordNova(''); setPasswordConfirm('')
     } catch (err: unknown) {
-      setMensagem({ tipo: 'erro', texto: err instanceof Error ? err.message : 'Erro desconhecido' })
+      setMsgPass({ tipo: 'erro', texto: err instanceof Error ? err.message : 'Erro desconhecido' })
     } finally {
-      setCarregando(false)
+      setCarregandoPass(false)
     }
   }
 
@@ -63,25 +87,70 @@ export default function Perfil() {
   const badge = roleBadge[role] ?? roleBadge.tecnico
 
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ maxWidth: 560, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
       {/* Cabeçalho */}
       <div style={{ background: '#fff', borderRadius: 12, padding: 28, border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 20 }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#C0001A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <User size={32} color="#fff" />
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, #C0001A, #8b0013)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(192,0,26,0.25)' }}>
+          <span style={{ fontSize: 26, fontWeight: 700, color: '#fff' }}>{nome.charAt(0).toUpperCase()}</span>
         </div>
         <div>
           <p style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: 0 }}>{nome}</p>
-          <p style={{ fontSize: 14, color: '#6b7280', margin: '2px 0 8px' }}>@{username}</p>
-          <span style={{ background: badge.bg, color: badge.cor, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, letterSpacing: '0.05em' }}>
+          <p style={{ fontSize: 13, color: '#9ca3af', margin: '2px 0 8px' }}>@{username}</p>
+          <span style={{ background: badge.bg, color: badge.cor, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99 }}>
             {badge.label}
           </span>
         </div>
       </div>
 
+      {/* Alterar nome */}
+      <div style={{ background: '#fff', borderRadius: 12, padding: 28, border: '1px solid #e5e7eb' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <Pencil size={17} color="#C0001A" />
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Alterar Nome</p>
+        </div>
+
+        <form onSubmit={handleAlterarNome} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+              Nome completo
+            </label>
+            <input
+              type="text"
+              value={nomeInput}
+              onChange={e => setNomeInput(e.target.value)}
+              required
+              minLength={2}
+              maxLength={80}
+              style={{
+                width: '100%', boxSizing: 'border-box', padding: '9px 12px',
+                border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 14,
+                outline: 'none', color: '#111827', transition: 'border-color 0.15s, box-shadow 0.15s',
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = '#C0001A'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(192,0,26,0.08)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.boxShadow = 'none' }}
+            />
+          </div>
+
+          {msgNome && <Feedback msg={msgNome} />}
+
+          <button type="submit" disabled={carregandoNome || nomeInput.trim().length < 2} style={{
+            padding: '10px 20px', background: carregandoNome ? '#9ca3af' : '#C0001A', color: '#fff',
+            border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600,
+            cursor: carregandoNome ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            alignSelf: 'flex-start',
+          }}>
+            {carregandoNome && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
+            Guardar nome
+          </button>
+        </form>
+      </div>
+
       {/* Alterar password */}
       <div style={{ background: '#fff', borderRadius: 12, padding: 28, border: '1px solid #e5e7eb' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <Lock size={18} color="#C0001A" />
+          <Lock size={17} color="#C0001A" />
           <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Alterar Password</p>
         </div>
 
@@ -89,11 +158,7 @@ export default function Perfil() {
           {(['passwordAtual', 'passwordNova', 'passwordConfirm'] as const).map((campo) => {
             const labels = { passwordAtual: 'Password atual', passwordNova: 'Nova password', passwordConfirm: 'Confirmar nova password' }
             const valores = { passwordAtual, passwordNova, passwordConfirm }
-            const setters = {
-              passwordAtual: setPasswordAtual,
-              passwordNova: setPasswordNova,
-              passwordConfirm: setPasswordConfirm,
-            }
+            const setters = { passwordAtual: setPasswordAtual, passwordNova: setPasswordNova, passwordConfirm: setPasswordConfirm }
             return (
               <div key={campo}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
@@ -106,34 +171,44 @@ export default function Perfil() {
                   required
                   style={{
                     width: '100%', boxSizing: 'border-box', padding: '9px 12px',
-                    border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14,
-                    outline: 'none', color: '#111827',
+                    border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 14,
+                    outline: 'none', color: '#111827', transition: 'border-color 0.15s, box-shadow 0.15s',
                   }}
+                  onFocus={e => { e.currentTarget.style.borderColor = '#C0001A'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(192,0,26,0.08)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.boxShadow = 'none' }}
                 />
               </div>
             )
           })}
 
-          {mensagem && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8,
-              background: mensagem.tipo === 'sucesso' ? '#f0fdf4' : '#fef2f2',
-              border: `1px solid ${mensagem.tipo === 'sucesso' ? '#bbf7d0' : '#fecaca'}`,
-              color: mensagem.tipo === 'sucesso' ? '#166534' : '#991b1b', fontSize: 13 }}>
-              {mensagem.tipo === 'sucesso' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-              {mensagem.texto}
-            </div>
-          )}
+          {msgPass && <Feedback msg={msgPass} />}
 
-          <button type="submit" disabled={carregando} style={{
-            padding: '10px 20px', background: carregando ? '#9ca3af' : '#C0001A', color: '#fff',
-            border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: carregando ? 'not-allowed' : 'pointer',
+          <button type="submit" disabled={carregandoPass} style={{
+            padding: '10px 20px', background: carregandoPass ? '#9ca3af' : '#C0001A', color: '#fff',
+            border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600,
+            cursor: carregandoPass ? 'not-allowed' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            alignSelf: 'flex-start',
           }}>
-            {carregando && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
+            {carregandoPass && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
             Guardar password
           </button>
         </form>
       </div>
+    </div>
+  )
+}
+
+function Feedback({ msg }: { msg: { tipo: 'sucesso' | 'erro'; texto: string } }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8,
+      background: msg.tipo === 'sucesso' ? '#f0fdf4' : '#fef2f2',
+      border: `1px solid ${msg.tipo === 'sucesso' ? '#bbf7d0' : '#fecaca'}`,
+      color: msg.tipo === 'sucesso' ? '#166534' : '#991b1b', fontSize: 13,
+    }}>
+      {msg.tipo === 'sucesso' ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+      {msg.texto}
     </div>
   )
 }

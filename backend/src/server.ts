@@ -336,6 +336,20 @@ app.post('/api/perfil/password', autenticar, async (req: any, res) => {
   } catch (err) { res.status(500).json({ erro: String(err) }) }
 })
 
+// ── PERFIL — alterar nome ─────────────────────────────────
+app.post('/api/perfil/nome', autenticar, async (req: any, res) => {
+  const { nome } = req.body
+  if (!nome || typeof nome !== 'string' || nome.trim().length < 2) {
+    return res.status(400).json({ erro: 'Nome deve ter pelo menos 2 caracteres' })
+  }
+  const nomeTrimado = nome.trim()
+  try {
+    await pool.query('UPDATE users SET nome = $1 WHERE id = $2', [nomeTrimado, req.utilizador.id])
+    await registarAudit(req.utilizador.id, req.utilizador.username, 'ALTERAR_NOME', null, null, null, getIP(req))
+    res.json({ sucesso: true, nome: nomeTrimado })
+  } catch (err) { res.status(500).json({ erro: String(err) }) }
+})
+
 // ── SESSÕES ATIVAS (admin) ────────────────────────────────
 app.get('/api/sessoes', autenticar, apenasAdmin, async (req: any, res) => {
   try {
