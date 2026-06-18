@@ -25,7 +25,7 @@ export default function EstadoOffline() {
       background: '#080c14',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      fontFamily: ''Noto Sans'',
+      fontFamily: 'Noto Sans',
     }}>
       {/* Fundo animado */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
