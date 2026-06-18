@@ -12,7 +12,7 @@ export default function ErroBackend({ onTentar }: Props) {
       background: '#080c14',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      fontFamily: ''Noto Sans'',
+      fontFamily: 'system-ui, sans-serif',
     }}>
       <style>{`
         @keyframes float {

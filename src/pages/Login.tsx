@@ -184,7 +184,7 @@ export default function Login({ onLogin }: Props) {
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#0A0F1E', display: 'flex' }}>
       <style>{`
-        
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
 
         @keyframes line-in {
           from { transform: scaleX(0); }
@@ -354,7 +354,7 @@ export default function Login({ onLogin }: Props) {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            fontFamily: "'Noto Sans'",
+            fontFamily: "'Cormorant Garamond', serif",
             fontSize: 'clamp(120px, 20vw, 280px)',
             fontWeight: 300,
             color: 'rgba(255,255,255,0.10)',
@@ -425,13 +425,13 @@ export default function Login({ onLogin }: Props) {
               { num: '100%', label: 'Digital' },
             ].map(stat => (
               <div key={stat.label}>
-                <p style={{ fontFamily: "'Noto Sans'", fontSize: 48, fontWeight: 300, color: '#fff', margin: 0, lineHeight: 1, letterSpacing: '-0.02em' }}>{stat.num}</p>
+                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 48, fontWeight: 300, color: '#fff', margin: 0, lineHeight: 1, letterSpacing: '-0.02em' }}>{stat.num}</p>
                 <p style={{ fontFamily: "'Noto Sans'", fontSize: 10, fontWeight: 400, color: 'rgba(255,255,255,0.4)', margin: '6px 0 0', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{stat.label}</p>
               </div>
             ))}
           </div>
           <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.15)', marginBottom: 24, transformOrigin: 'left', animation: mounted ? 'line-in 1.2s cubic-bezier(0.16,1,0.3,1) 0.6s both' : 'none' }} />
-          <p style={{ fontFamily: "'Noto Sans'", fontSize: 18, fontStyle: 'italic', fontWeight: 300, color: 'rgba(255,255,255,0.5)', margin: 0, letterSpacing: '0.02em' }}>
+          <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontStyle: 'italic', fontWeight: 300, color: 'rgba(255,255,255,0.5)', margin: 0, letterSpacing: '0.02em' }}>
             Sistema de Gestão de Eletromedicina do Hospital CUF Porto
           </p>
         </div>
@@ -472,7 +472,7 @@ export default function Login({ onLogin }: Props) {
       >
         {/* Label topo */}
         <div style={{ position: 'absolute', top: 40, left: 56 }}>
-          <p className="label-top" style={{ fontFamily: "'Noto Sans'", fontSize: 13, fontWeight: 400, color: '#1a1a1a', letterSpacing: '0.15em', textTransform: 'uppercase', margin: 0 }}>
+          <p className="label-top" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 13, fontWeight: 400, color: '#1a1a1a', letterSpacing: '0.15em', textTransform: 'uppercase', margin: 0 }}>
             Eletromedicina
           </p>
         </div>
@@ -482,7 +482,7 @@ export default function Login({ onLogin }: Props) {
           <p style={{ fontFamily: "'Noto Sans'", fontSize: 10, fontWeight: 500, color: '#C0001A', letterSpacing: '0.25em', textTransform: 'uppercase', margin: '0 0 16px' }}>
             Acesso Restrito
           </p>
-          <h1 style={{ fontFamily: "'Noto Sans'", fontSize: 52, fontWeight: 300, color: '#1a1a1a', margin: 0, lineHeight: 1, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 52, fontWeight: 300, color: '#1a1a1a', margin: 0, lineHeight: 1, letterSpacing: '-0.02em' }}>
             Bem-vindo
             <br />
             <em style={{ fontStyle: 'italic', color: '#666' }}>de volta.</em>

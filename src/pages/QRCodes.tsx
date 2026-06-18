@@ -130,7 +130,7 @@ export default function QRCodes({ equipamentos }: Props) {
         <title>QR Codes — ATM Eletromedicina</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Noto Sans'; background: #fff; }
+          body { font-family: -apple-system, sans-serif; background: #fff; }
           .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; }
           .card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; text-align: center; break-inside: avoid; }
           .card img { width: 120px; height: 120px; }

@@ -172,7 +172,7 @@ export default function Mapa({ equipamentos, onVerDetalhe }: Props) {
                     eventHandlers={{ click: () => setLocalSelecionado(local.chave) }}
                   >
                     <Popup>
-                      <div style={{ minWidth: 200, fontFamily: ''Noto Sans'' }}>
+                      <div style={{ minWidth: 200, fontFamily: 'system-ui, sans-serif' }}>
                         <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>{local.nome}</p>
                         <p style={{ color: '#64748b', fontSize: 11, marginBottom: 8 }}>{local.cidade}</p>
                         <p style={{ fontSize: 11, fontWeight: 600, color: cor, marginBottom: 8 }}>
