@@ -182,9 +182,10 @@ export default function Login({ onLogin }: Props) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#0A0F1E', display: 'flex' }}>
+    <div id="login-root" style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#0A0F1E', display: 'flex' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+        #login-root, #login-root * { font-family: 'Noto Sans', sans-serif; }
 
         @keyframes line-in {
           from { transform: scaleX(0); }
