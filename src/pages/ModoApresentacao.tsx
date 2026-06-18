@@ -54,7 +54,7 @@ export default function ModoApresentacao({ equipamentos, onFechar }: Props) {
       position: 'fixed', inset: 0, zIndex: 3000,
       background: '#080c14',
       display: 'flex', flexDirection: 'column',
-      fontFamily: 'system-ui, sans-serif',
+      fontFamily: ''Noto Sans'',
     }}>
 
       {/* Header */}
