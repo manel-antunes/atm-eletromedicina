@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Calendar, LogOut, QrCode, Stethoscope, ChevronRight, Command, User, ShieldCheck, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Calendar, LogOut, QrCode, Stethoscope, ChevronRight, Command, User, ShieldCheck, MessageSquare, ChevronDown } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import logoAtm from '../assets/logo-atm.png'
 import NotificacoesPush from './NotificacoesPush'
@@ -14,31 +14,115 @@ interface Props {
   onCommandPalette: () => void
 }
 
-const ITENS = [
-  { id: 'dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
-  { id: 'calibracoes', label: 'Calibrações',  icon: ClipboardCheck },
-  { id: 'inventario',  label: 'Inventário',   icon: Package },
-  { id: 'cedencias',   label: 'Cedências',    icon: ArrowLeftRight },
-  { id: 'relatorios',  label: 'Relatórios',   icon: FileText },
-  { id: 'ia',          label: 'Análise IA',   icon: Brain },
-  { id: 'calendario',  label: 'Calendário',   icon: Calendar },
-  { id: 'documentos',  label: 'Documentos',   icon: FolderOpen },
-  { id: 'contactos',   label: 'Contactos',    icon: Phone },
-  { id: 'qrcodes',     label: 'QR Codes',     icon: QrCode },
-  { id: 'preventivas', label: 'Preventivas',  icon: Stethoscope },
-  { id: 'chat',        label: 'Chat',         icon: MessageSquare },
+interface ItemNav {
+  id: string
+  label: string
+  icon: React.ElementType
+}
+
+interface Grupo {
+  label: string
+  itens: ItemNav[]
+}
+
+const DASHBOARD: ItemNav = { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }
+
+const GRUPOS: Grupo[] = [
+  {
+    label: 'Equipamentos',
+    itens: [
+      { id: 'inventario',  label: 'Inventário',  icon: Package },
+      { id: 'calibracoes', label: 'Calibrações', icon: ClipboardCheck },
+      { id: 'preventivas', label: 'Preventivas', icon: Stethoscope },
+      { id: 'qrcodes',     label: 'QR Codes',    icon: QrCode },
+    ],
+  },
+  {
+    label: 'Operações',
+    itens: [
+      { id: 'cedencias',  label: 'Cedências', icon: ArrowLeftRight },
+      { id: 'calendario', label: 'Calendário', icon: Calendar },
+    ],
+  },
+  {
+    label: 'Análise & Docs',
+    itens: [
+      { id: 'relatorios', label: 'Relatórios', icon: FileText },
+      { id: 'ia',         label: 'Análise IA', icon: Brain },
+      { id: 'documentos', label: 'Documentos', icon: FolderOpen },
+    ],
+  },
+  {
+    label: 'Comunicação',
+    itens: [
+      { id: 'contactos', label: 'Contactos', icon: Phone },
+      { id: 'chat',      label: 'Chat',      icon: MessageSquare },
+    ],
+  },
 ]
 
+const TODOS_ITENS: ItemNav[] = GRUPOS.flatMap(g => g.itens)
+
 const ITENS_FOOTER = [
-  { id: 'perfil',        label: 'Perfil',         icon: User,         roles: ['admin', 'tecnico'] },
-  { id: 'administracao', label: 'Administração',  icon: ShieldCheck,  roles: ['admin'] },
+  { id: 'perfil',        label: 'Perfil',        icon: User,        roles: ['admin', 'tecnico'] },
+  { id: 'administracao', label: 'Administração', icon: ShieldCheck, roles: ['admin'] },
 ]
 
 export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamentos, nomeUtilizador, onLogout, onCommandPalette }: Props) {
   const [expandida, setExpandida] = useState(false)
+  const [gruposAbertos, setGruposAbertos] = useState<Record<string, boolean>>({
+    'Equipamentos': true,
+    'Operações': true,
+    'Análise & Docs': true,
+    'Comunicação': true,
+  })
+
   const role = localStorage.getItem('atm_role') ?? 'tecnico'
   const alertas = contarAlertas(equipamentos)
   const largura = expandida ? 224 : 64
+
+  function toggleGrupo(label: string) {
+    setGruposAbertos(prev => ({ ...prev, [label]: !prev[label] }))
+  }
+
+  function renderItem({ id, label, icon: Icon }: ItemNav) {
+    const ativo = paginaAtiva === id
+    const temBadge = (id === 'dashboard' || id === 'calibracoes') && alertas > 0
+    return (
+      <button
+        key={id}
+        onClick={() => onNavegar(id)}
+        aria-label={label}
+        aria-current={ativo ? 'page' : undefined}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center',
+          gap: expandida ? 12 : 0, justifyContent: expandida ? 'flex-start' : 'center',
+          padding: expandida ? '9px 12px' : '9px',
+          border: 'none', cursor: 'pointer',
+          background: ativo ? 'rgba(192,0,26,0.2)' : 'transparent',
+          transition: 'all 0.15s', position: 'relative',
+        }}
+        onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.10)' }}
+        onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+      >
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <Icon size={18} color={ativo ? '#ff4458' : 'rgba(255,255,255,0.5)'} />
+          {temBadge && !expandida && (
+            <div style={{ position: 'absolute', top: -3, right: -3, width: 8, height: 8, borderRadius: '50%', background: '#C0001A', border: '1.5px solid #0A0F1E' }} />
+          )}
+        </div>
+        {expandida && (
+          <>
+            <span style={{ fontSize: 12, fontWeight: ativo ? 700 : 500, color: ativo ? '#fff' : 'rgba(255,255,255,0.6)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden' }}>{label}</span>
+            {temBadge && (
+              <span style={{ background: '#C0001A', color: '#fff', fontSize: 10, fontWeight: 900, padding: '1px 6px' }}>{alertas > 99 ? '99+' : alertas}</span>
+            )}
+            {ativo && <ChevronRight size={12} color="rgba(255,255,255,0.3)" />}
+          </>
+        )}
+      </button>
+    )
+  }
 
   return (
     <aside
@@ -56,7 +140,8 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
       onMouseLeave={() => setExpandida(false)}
     >
       {/* Logo */}
-<div onClick={() => onNavegar('dashboard')} style={{ padding: expandida ? '20px 20px 16px' : '20px 14px 16px', display: 'flex', alignItems: 'center', gap: 10, transition: 'padding 0.25s', borderBottom: '1px solid rgba(255,255,255,0.06)', minHeight: 72, cursor: 'pointer' }}>        <div style={{ width: 36, height: 36, background: '#C0001A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div onClick={() => onNavegar('dashboard')} style={{ padding: expandida ? '20px 20px 16px' : '20px 14px 16px', display: 'flex', alignItems: 'center', gap: 10, transition: 'padding 0.25s', borderBottom: '1px solid rgba(255,255,255,0.06)', minHeight: 72, cursor: 'pointer' }}>
+        <div style={{ width: 36, height: 36, background: '#C0001A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <img src={logoAtm} alt="ATM" style={{ width: 24, filter: 'brightness(0) invert(1)' }} />
         </div>
         {expandida && (
@@ -95,44 +180,48 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
         .atm-sidebar-nav::-webkit-scrollbar { display: none; }
       `}</style>
       <nav className="atm-sidebar-nav" aria-label="Navegação principal" style={{ flex: 1, padding: '8px', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: 2, scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
-        {ITENS.map(({ id, label, icon: Icon }) => {
-          const ativo = paginaAtiva === id
-          const temBadge = (id === 'dashboard' || id === 'calibracoes') && alertas > 0
-          return (
-            <button
-              key={id}
-              onClick={() => onNavegar(id)}
-              aria-label={label}
-              aria-current={ativo ? 'page' : undefined}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center',
-                gap: expandida ? 12 : 0, justifyContent: expandida ? 'flex-start' : 'center',
-                padding: expandida ? '9px 12px' : '9px',
-                border: 'none', cursor: 'pointer',
-                background: ativo ? 'rgba(192,0,26,0.2)' : 'transparent',
-                transition: 'all 0.15s', position: 'relative',
-              }}
-              onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.10)' }}
-              onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-            >
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <Icon size={18} color={ativo ? '#ff4458' : 'rgba(255,255,255,0.5)'} />
-                {temBadge && !expandida && (
-                  <div style={{ position: 'absolute', top: -3, right: -3, width: 8, height: 8, borderRadius: '50%', background: '#C0001A', border: '1.5px solid #0A0F1E' }} />
+
+        {/* Dashboard fixo no topo */}
+        {renderItem(DASHBOARD)}
+
+        {expandida ? (
+          /* Modo expandido: grupos com headers colapsáveis */
+          GRUPOS.map(grupo => {
+            const aberto = gruposAbertos[grupo.label] ?? true
+            const temAtivo = grupo.itens.some(i => paginaAtiva === i.id)
+            return (
+              <div key={grupo.label} style={{ marginTop: 6 }}>
+                <button
+                  onClick={() => toggleGrupo(grupo.label)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '4px 12px', border: 'none', cursor: 'pointer',
+                    background: 'transparent', transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                >
+                  <span style={{ fontSize: 10, fontWeight: 700, color: temAtivo ? 'rgba(255,100,120,0.8)' : 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', flex: 1, textAlign: 'left' }}>
+                    {grupo.label}
+                  </span>
+                  <ChevronDown
+                    size={11}
+                    color="rgba(255,255,255,0.2)"
+                    style={{ transition: 'transform 0.2s', transform: aberto ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                  />
+                </button>
+                {aberto && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {grupo.itens.map(renderItem)}
+                  </div>
                 )}
               </div>
-              {expandida && (
-                <>
-                  <span style={{ fontSize: 12, fontWeight: ativo ? 700 : 500, color: ativo ? '#fff' : 'rgba(255,255,255,0.6)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden' }}>{label}</span>
-                  {temBadge && (
-                    <span style={{ background: '#C0001A', color: '#fff', fontSize: 10, fontWeight: 900, padding: '1px 6px' }}>{alertas > 99 ? '99+' : alertas}</span>
-                  )}
-                  {ativo && <ChevronRight size={12} color="rgba(255,255,255,0.3)" />}
-                </>
-              )}
-            </button>
-          )
-        })}
+            )
+          })
+        ) : (
+          /* Modo colapsado: todos os ícones sem grupos */
+          TODOS_ITENS.map(renderItem)
+        )}
       </nav>
 
       {/* Perfil + Administração */}
@@ -165,10 +254,11 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
         })}
       </div>
 
-{/* Push */}
-<div style={{ padding: '0 8px 6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-  <NotificacoesPush compacto={!expandida} />
-</div>
+      {/* Push */}
+      <div style={{ padding: '0 8px 6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <NotificacoesPush compacto={!expandida} />
+      </div>
+
       {/* Footer */}
       <div style={{ padding: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         {nomeUtilizador && (
