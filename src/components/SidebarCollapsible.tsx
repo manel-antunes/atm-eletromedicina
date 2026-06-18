@@ -61,7 +61,6 @@ const GRUPOS: Grupo[] = [
   },
 ]
 
-const TODOS_ITENS: ItemNav[] = GRUPOS.flatMap(g => g.itens)
 
 const ITENS_FOOTER = [
   { id: 'perfil',        label: 'Perfil',        icon: User,        roles: ['admin', 'tecnico'] },
@@ -186,6 +185,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
 
         {expandida ? (
           /* Modo expandido: grupos com headers colapsáveis */
+          /* Modo colapsado: só Dashboard (ver renderItem acima) */
           GRUPOS.map(grupo => {
             const aberto = gruposAbertos[grupo.label] ?? true
             const temAtivo = grupo.itens.some(i => paginaAtiva === i.id)
@@ -218,10 +218,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
               </div>
             )
           })
-        ) : (
-          /* Modo colapsado: todos os ícones sem grupos */
-          TODOS_ITENS.map(renderItem)
-        )}
+        ) : null}
       </nav>
 
       {/* Perfil + Administração */}
