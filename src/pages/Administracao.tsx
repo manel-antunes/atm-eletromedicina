@@ -343,7 +343,7 @@ export default function Administracao() {
                         {s.device_info || '—'}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280', fontFamily: 'monospace' }}>{s.ip || '—'}</td>
+                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280', fontFamily: 'Noto Sans' }}>{s.ip || '—'}</td>
                     <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280' }}>{formatarData(s.criado_em)}</td>
                     <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280' }}>{formatarData(s.expira_em)}</td>
                     <td style={{ padding: '12px 16px' }}>
@@ -380,14 +380,14 @@ export default function Administracao() {
                       <td style={{ padding: '10px 16px', fontSize: 12, color: '#6b7280', whiteSpace: 'nowrap' }}>{formatarData(a.criado_em)}</td>
                       <td style={{ padding: '10px 16px', fontSize: 13, color: '#374151', fontWeight: 600 }}>{a.username}</td>
                       <td style={{ padding: '10px 16px' }}>
-                        <span style={{ background: a.acao.includes('FALHOU') ? '#fef2f2' : '#f3f4f6', color: a.acao.includes('FALHOU') ? '#dc2626' : '#374151', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
+                        <span style={{ background: a.acao.includes('FALHOU') ? '#fef2f2' : '#f3f4f6', color: a.acao.includes('FALHOU') ? '#dc2626' : '#374151', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, fontFamily: 'Noto Sans' }}>
                           {a.acao}
                         </span>
                       </td>
                       <td style={{ padding: '10px 16px', fontSize: 12, color: '#9ca3af' }}>
                         {a.entidade ? `${a.entidade}${a.entidade_id ? ` #${a.entidade_id}` : ''}` : '—'}
                       </td>
-                      <td style={{ padding: '10px 16px', fontSize: 12, color: '#9ca3af', fontFamily: 'monospace' }}>{a.ip || '—'}</td>
+                      <td style={{ padding: '10px 16px', fontSize: 12, color: '#9ca3af', fontFamily: 'Noto Sans' }}>{a.ip || '—'}</td>
                       <td style={{ padding: '10px 16px', fontSize: 11, color: '#9ca3af', maxWidth: 200 }}>
                         <span title={a.user_agent ?? ''} style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {a.user_agent || '—'}

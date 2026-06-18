@@ -61,7 +61,7 @@ export default function FichaPublica() {
           </div>
           <h1 style={{ color: '#fff', fontSize: 18, fontWeight: 800, margin: '0 0 6px', lineHeight: 1.2 }}>{dados.descricao}</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontFamily: 'monospace' }}>{dados.numeroSAP}</span>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontFamily: 'Noto Sans' }}>{dados.numeroSAP}</span>
             {dados.tipo === 'calibracao' && (
               <span style={{ background: 'rgba(192,0,26,0.3)', color: '#f87171', fontSize: 10, fontWeight: 700, padding: '2px 6px' }}>Calibração</span>
             )}
@@ -109,7 +109,7 @@ export default function FichaPublica() {
           ].filter(Boolean).map((item: any) => (
             <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, borderBottom: '1px solid #f1f5f9' }}>
               <span style={{ color: '#94a3b8', fontSize: 12 }}>{item.label}</span>
-              <span style={{ color: '#0f172a', fontSize: 12, fontWeight: 600, fontFamily: item.mono ? 'monospace' : 'inherit', textAlign: 'right', maxWidth: '60%' }}>{item.valor || '—'}</span>
+              <span style={{ color: '#0f172a', fontSize: 12, fontWeight: 600, fontFamily: 'Noto Sans', textAlign: 'right', maxWidth: '60%' }}>{item.valor || '—'}</span>
             </div>
           ))}
         </div>

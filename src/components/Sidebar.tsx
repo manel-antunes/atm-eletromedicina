@@ -96,7 +96,7 @@ export default function Sidebar({ paginaAtiva, onNavegar, equipamentos, nomeUtil
             )}
           </div>
         )}
-        <p style={{ fontSize: 10, color: 'rgba(255,200,200,0.3)', fontFamily: 'monospace', padding: '0 8px', marginTop: 4 }}>v1.0 · ATM 2026</p>
+        <p style={{ fontSize: 10, color: 'rgba(255,200,200,0.3)', fontFamily: 'Noto Sans', padding: '0 8px', marginTop: 4 }}>v1.0 · ATM 2026</p>
       </div>
     </aside>
   )

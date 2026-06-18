@@ -81,7 +81,7 @@ export default function CommandPalette({ aberto, onFechar, onNavegar }: Props) {
               <X size={14} />
             </button>
           )}
-          <kbd style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '2px 8px', fontSize: 11, color: '#64748b', fontFamily: 'monospace' }}>ESC</kbd>
+          <kbd style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '2px 8px', fontSize: 11, color: '#64748b', fontFamily: 'Noto Sans' }}>ESC</kbd>
         </div>
 
         {/* Resultados */}
@@ -113,7 +113,7 @@ export default function CommandPalette({ aberto, onFechar, onNavegar }: Props) {
                     <p style={{ fontSize: 11, color: '#94a3b8', margin: 0 }}>{item.desc}</p>
                   </div>
                   {ativo && (
-                    <kbd style={{ marginLeft: 'auto', background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '2px 8px', fontSize: 11, color: '#64748b', fontFamily: 'monospace' }}>↵</kbd>
+                    <kbd style={{ marginLeft: 'auto', background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '2px 8px', fontSize: 11, color: '#64748b', fontFamily: 'Noto Sans' }}>↵</kbd>
                   )}
                 </div>
               )
@@ -125,7 +125,7 @@ export default function CommandPalette({ aberto, onFechar, onNavegar }: Props) {
         <div style={{ padding: '10px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 16 }}>
           {[['↑↓', 'navegar'], ['↵', 'selecionar'], ['ESC', 'fechar']].map(([key, label]) => (
             <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <kbd style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '1px 6px', fontSize: 10, color: '#64748b', fontFamily: 'monospace' }}>{key}</kbd>
+              <kbd style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '1px 6px', fontSize: 10, color: '#64748b', fontFamily: 'Noto Sans' }}>{key}</kbd>
               <span style={{ fontSize: 11, color: '#94a3b8' }}>{label}</span>
             </div>
           ))}

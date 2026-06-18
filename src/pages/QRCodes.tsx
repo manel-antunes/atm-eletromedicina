@@ -135,7 +135,7 @@ export default function QRCodes({ equipamentos }: Props) {
           .card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; text-align: center; break-inside: avoid; }
           .card img { width: 120px; height: 120px; }
           .card .descricao { font-size: 10px; font-weight: 700; color: #0f172a; margin-top: 6px; line-height: 1.3; }
-          .card .sap { font-size: 9px; color: #94a3b8; font-family: monospace; margin-top: 2px; }
+          .card .sap { font-size: 9px; color: #94a3b8; font-family: 'Noto Sans'; margin-top: 2px; }
           .card .loc { font-size: 9px; color: #64748b; margin-top: 2px; }
           .card .tipo { font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 4px; display: inline-block; margin-top: 4px; }
           .tipo-calibracao { background: #fef2f2; color: #dc2626; }
@@ -201,7 +201,7 @@ export default function QRCodes({ equipamentos }: Props) {
                 <p style={{ fontSize: 11, fontWeight: 700, color: '#0f172a', margin: '8px 0 2px', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
                   {eq.descricao}
                 </p>
-                <p style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace', margin: '0 0 4px' }}>{eq.sap}</p>
+                <p style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'Noto Sans', margin: '0 0 4px' }}>{eq.sap}</p>
                 <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: eq.tipo === 'calibracao' ? '#fef2f2' : '#eff6ff', color: eq.tipo === 'calibracao' ? '#dc2626' : '#3b82f6' }}>
                   {eq.tipo === 'calibracao' ? 'Calibração' : 'Preventiva'}
                 </span>

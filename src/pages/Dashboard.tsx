@@ -285,7 +285,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
                     { label: 'Total',      valor: prevTotal,       cor: '#475569', bg: '#f8fafc' },
                   ].map(s => (
                     <div key={s.label} style={{ flex: 1, background: s.bg, border: `1px solid ${s.bg === '#f0fdf4' ? '#bbf7d0' : s.bg === '#fff5f5' ? '#fecaca' : '#e2e8f0'}`, padding: '8px', textAlign: 'center' }}>
-                      <p style={{ fontSize: 20, fontWeight: 800, color: s.cor, fontFamily: 'monospace', margin: 0, lineHeight: 1 }}>{s.valor}</p>
+                      <p style={{ fontSize: 20, fontWeight: 800, color: s.cor, fontFamily: 'Noto Sans', margin: 0, lineHeight: 1 }}>{s.valor}</p>
                       <p style={{ fontSize: 9, color: s.cor, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '3px 0 0', opacity: 0.7 }}>{s.label}</p>
                     </div>
                   ))}
@@ -302,7 +302,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
                           <p style={{ fontSize: 11, fontWeight: 600, color: '#0f172a', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nome}</p>
                           <p style={{ fontSize: 10, color: '#94a3b8', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.localizacao}</p>
                         </div>
-                        <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#cbd5e1', flexShrink: 0 }}>{p.cod_ativo}</span>
+                        <span style={{ fontSize: 9, fontFamily: 'Noto Sans', color: '#cbd5e1', flexShrink: 0 }}>{p.cod_ativo}</span>
                       </div>
                     ))}
                     {prevPendentes > 4 && (
@@ -356,7 +356,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <p style={{ color: '#fff', fontSize: 22, fontWeight: 800, fontFamily: 'monospace', margin: 0, lineHeight: 1 }}>{equipamentos.length}</p>
+                <p style={{ color: '#fff', fontSize: 22, fontWeight: 800, fontFamily: 'Noto Sans', margin: 0, lineHeight: 1 }}>{equipamentos.length}</p>
                 <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '2px 0 0' }}>equipamentos</p>
               </div>
               <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.12em', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -463,7 +463,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
               ].map(stat => (
                 <div key={stat.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{stat.label}</p>
-                  <p style={{ color: stat.cor, fontSize: 14, fontWeight: 800, fontFamily: 'monospace' }}>{stat.valor}</p>
+                  <p style={{ color: stat.cor, fontSize: 14, fontWeight: 800, fontFamily: 'Noto Sans' }}>{stat.valor}</p>
                 </div>
               ))}
             </div>
@@ -489,7 +489,7 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
                 </div>
                 <div style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <p style={{ fontSize: 24, fontWeight: 800, fontFamily: 'monospace', color: '#0f172a' }}>{eqLocal.length}</p>
+                    <p style={{ fontSize: 24, fontWeight: 800, fontFamily: 'Noto Sans', color: '#0f172a' }}>{eqLocal.length}</p>
                     <p style={{ fontSize: 11, color: '#94a3b8' }}>equipamentos</p>
                   </div>
                   <div style={{ marginBottom: 8 }}>
@@ -503,11 +503,11 @@ export default function Dashboard({ equipamentos, onVerDetalhe, onNavegar, loadi
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <div style={{ flex: 1, background: '#f0fdf4', padding: '6px 8px', textAlign: 'center' }}>
-                      <p style={{ fontSize: 14, fontWeight: 800, color: '#16a34a', fontFamily: 'monospace' }}>{emDiaLocal}</p>
+                      <p style={{ fontSize: 14, fontWeight: 800, color: '#16a34a', fontFamily: 'Noto Sans' }}>{emDiaLocal}</p>
                       <p style={{ fontSize: 9, color: '#16a34a', textTransform: 'uppercase' }}>Em dia</p>
                     </div>
                     <div style={{ flex: 1, background: vencidosLocal > 0 ? '#fef2f2' : '#f8fafc', padding: '6px 8px', textAlign: 'center' }}>
-                      <p style={{ fontSize: 14, fontWeight: 800, color: vencidosLocal > 0 ? '#dc2626' : '#94a3b8', fontFamily: 'monospace' }}>{vencidosLocal}</p>
+                      <p style={{ fontSize: 14, fontWeight: 800, color: vencidosLocal > 0 ? '#dc2626' : '#94a3b8', fontFamily: 'Noto Sans' }}>{vencidosLocal}</p>
                       <p style={{ fontSize: 9, color: vencidosLocal > 0 ? '#dc2626' : '#94a3b8', textTransform: 'uppercase' }}>Vencidas</p>
                     </div>
                   </div>

@@ -431,7 +431,7 @@ export default function PlanoPreventivas() {
                   { label: 'Localizações', valor: localizacoes.length - 1, cor: '#a78bfa' },
                 ].map(k => (
                   <div key={k.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ color: k.cor, fontSize: 14, fontWeight: 800, fontFamily: 'monospace' }}>{k.valor}</span>
+                    <span style={{ color: k.cor, fontSize: 14, fontWeight: 800, fontFamily: 'Noto Sans' }}>{k.valor}</span>
                     <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>{k.label}</span>
                   </div>
                 ))}
@@ -593,7 +593,7 @@ export default function PlanoPreventivas() {
                           {eq.area && <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 4px', borderRadius: 99, flexShrink: 0, background: eq.area.includes('Baixo') ? '#f0fdf4' : eq.area.includes('Médio') ? '#fffbeb' : '#fef2f2', color: eq.area.includes('Baixo') ? '#16a34a' : eq.area.includes('Médio') ? '#d97706' : '#dc2626' }}>{eq.area.split(' ')[0]}</span>}
                         </div>
                         <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
-                          <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>{eq.cod_ativo}</span>
+                          <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'Noto Sans' }}>{eq.cod_ativo}</span>
                           <span style={{ fontSize: 10, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><MapPin size={9} />{eq.localizacao}</span>
                         </div>
                         {eq.concluido && eq.concluido_por && (
@@ -628,7 +628,7 @@ export default function PlanoPreventivas() {
                     {fichaModal && <span style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 6, padding: '2px 8px', fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{fichaModal.nome}</span>}
                   </div>
                   <h2 style={{ color: '#fff', fontSize: 15, fontWeight: 800, margin: '0 0 4px', lineHeight: 1.3 }}>{modalEq.nome}</h2>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0, fontFamily: 'monospace' }}>{modalEq.cod_ativo} · {modalEq.localizacao}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0, fontFamily: 'Noto Sans' }}>{modalEq.cod_ativo} · {modalEq.localizacao}</p>
                 </div>
                 <button onClick={() => setModalEq(null)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: '#fff', display: 'flex', marginLeft: 12, flexShrink: 0 }}>
                   <X size={16} />
@@ -643,7 +643,7 @@ export default function PlanoPreventivas() {
                 ].map(c => (
                   <div key={c.label} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '8px 10px' }}>
                     <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 3px' }}>{c.label}</p>
-                    <p style={{ color: '#fff', fontSize: 11, fontWeight: 600, margin: 0, fontFamily: c.label === 'Nº Série' ? 'monospace' : 'inherit', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.valor}</p>
+                    <p style={{ color: '#fff', fontSize: 11, fontWeight: 600, margin: 0, fontFamily: 'Noto Sans', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.valor}</p>
                   </div>
                 ))}
               </div>
@@ -670,7 +670,7 @@ export default function PlanoPreventivas() {
                     return (
                       <div key={tarefa.codigo} style={{ background: resp.estado ? `${corEstado}08` : '#f8fafc', border: `1px solid ${resp.estado ? `${corEstado}30` : '#e2e8f0'}`, borderRadius: 10, padding: '10px 14px', transition: 'all 0.15s' }}>
                         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                          <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace', flexShrink: 0, marginTop: 2, minWidth: 80 }}>{tarefa.codigo}</span>
+                          <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'Noto Sans', flexShrink: 0, marginTop: 2, minWidth: 80 }}>{tarefa.codigo}</span>
                           <p style={{ fontSize: 12, color: '#0f172a', flex: 1, margin: 0, lineHeight: 1.5 }}>{tarefa.descricao}</p>
                           <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                             {(['ok', 'nok', 'na'] as EstadoTarefa[]).map(estado => (
@@ -709,7 +709,7 @@ export default function PlanoPreventivas() {
                     <div style={{ height: '100%', width: `${scanProgresso}%`, background: '#C0001A', borderRadius: 99, transition: 'width 0.3s' }} />
                   </div>
                 )}
-                <textarea value={obsModal} onChange={e => setObsModal(e.target.value)} placeholder="Notas sobre esta intervenção..." style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', fontSize: 12, resize: 'vertical', minHeight: 72, outline: 'none', color: '#0f172a', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                <textarea value={obsModal} onChange={e => setObsModal(e.target.value)} placeholder="Notas sobre esta intervenção..." style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', fontSize: 12, resize: 'vertical', minHeight: 72, outline: 'none', color: '#0f172a', boxSizing: 'border-box', fontFamily: 'Noto Sans' }} />
               </div>
 
               {/* Assinatura */}

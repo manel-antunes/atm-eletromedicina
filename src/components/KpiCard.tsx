@@ -34,7 +34,7 @@ export default function KpiCard({ label, valor, sub, icon, bg, border, iconBg, i
         </span>
       </div>
 
-      <p style={{ color: valCor, fontSize: 30, fontWeight: 800, fontFamily: 'monospace', lineHeight: 1 }}>
+      <p style={{ color: valCor, fontSize: 30, fontWeight: 800, fontFamily: 'Noto Sans', lineHeight: 1 }}>
         {contado}
       </p>
       <p style={{ color: subCor, fontSize: 11, marginTop: 6 }}>{sub}</p>

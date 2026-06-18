@@ -236,7 +236,7 @@ export default function ImportarExcel({ onImportar }: Props) {
               ))}
             </div>
           </div>
-          <p style={{ color: 'rgba(255,255,255,.2)', fontSize: 11, fontFamily: 'monospace' }}>v1.0 · ATM 2026</p>
+          <p style={{ color: 'rgba(255,255,255,.2)', fontSize: 11, fontFamily: 'Noto Sans' }}>v1.0 · ATM 2026</p>
         </div>
 
         {/* Painel direito */}

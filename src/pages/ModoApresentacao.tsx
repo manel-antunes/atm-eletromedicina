@@ -69,7 +69,7 @@ export default function ModoApresentacao({ equipamentos, onFechar }: Props) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ color: '#fff', fontSize: 28, fontWeight: 700, fontFamily: 'monospace', lineHeight: 1 }}>
+            <p style={{ color: '#fff', fontSize: 28, fontWeight: 700, fontFamily: 'Noto Sans', lineHeight: 1 }}>
               {hora.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </p>
             <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 2, textTransform: 'capitalize' }}>
@@ -107,7 +107,7 @@ export default function ModoApresentacao({ equipamentos, onFechar }: Props) {
                     <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{k.label}</span>
                   </div>
                   <div>
-                    <p style={{ color: k.cor, fontSize: 72, fontWeight: 800, fontFamily: 'monospace', lineHeight: 1 }}>{k.valor}</p>
+                    <p style={{ color: k.cor, fontSize: 72, fontWeight: 800, fontFamily: 'Noto Sans', lineHeight: 1 }}>{k.valor}</p>
                     <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, marginTop: 8 }}>{k.sub}</p>
                   </div>
                   {/* Mini barra */}

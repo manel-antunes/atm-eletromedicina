@@ -277,7 +277,7 @@ function ViewSemana({ weekStart, openDetail }: {
           return (
             <div key={i} className="text-center py-3" style={{ borderLeft:'1px solid rgba(255,255,255,0.04)' }}>
               <p style={{ fontSize:9, textTransform:'uppercase', letterSpacing:'0.1em', color:i===0||i===6?'rgba(192,0,26,0.5)':'rgba(255,255,255,0.25)', marginBottom:4 }}>{PT_DAYS_SHORT[d.getDay()]}</p>
-              <div style={{ width:28,height:28,borderRadius:'50%',margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,fontFamily:'monospace',background:isToday?'#C0001A':'transparent',color:isToday?'#fff':'rgba(255,255,255,0.5)' }}>
+              <div style={{ width:28,height:28,borderRadius:'50%',margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,fontFamily:'Noto Sans',background:isToday?'#C0001A':'transparent',color:isToday?'#fff':'rgba(255,255,255,0.5)' }}>
                 {d.getDate()}
               </div>
             </div>
@@ -287,7 +287,7 @@ function ViewSemana({ weekStart, openDetail }: {
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth:'none' }}>
         {hours.map(h=>(
           <div key={h} className="grid" style={{ gridTemplateColumns:'52px repeat(7,1fr)', minHeight:60, borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-            <div style={{ fontSize:10, color:'rgba(255,255,255,0.2)', fontFamily:'monospace', padding:'10px 8px 0 0', textAlign:'right' }}>{String(h).padStart(2,'0')}:00</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.2)', fontFamily:'Noto Sans', padding:'10px 8px 0 0', textAlign:'right' }}>{String(h).padStart(2,'0')}:00</div>
             {days.map((d,i)=>{
               const ds=mkDate(d.getFullYear(),d.getMonth(),d.getDate())
               const evs=getEventsForDate(ds).filter(ev=>ev.time&&parseInt(ev.time.split(':')[0])===h)
@@ -316,7 +316,7 @@ function ViewDia({ date, openDetail }: { date:Date; openDetail:(d:string)=>void 
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
       <div className="flex items-center gap-4 px-6 py-4 flex-shrink-0" style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,fontFamily:'monospace',background:isToday?'#C0001A':'rgba(255,255,255,0.05)',color:isToday?'#fff':'rgba(255,255,255,0.4)' }}>
+        <div style={{ width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,fontFamily:'Noto Sans',background:isToday?'#C0001A':'rgba(255,255,255,0.05)',color:isToday?'#fff':'rgba(255,255,255,0.4)' }}>
           {date.getDate()}
         </div>
         <div>
@@ -329,7 +329,7 @@ function ViewDia({ date, openDetail }: { date:Date; openDetail:(d:string)=>void 
           const slotEvs=evs.filter(ev=>ev.time&&parseInt(ev.time.split(':')[0])===h)
           return (
             <div key={h} className="flex" style={{ minHeight:68, borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-              <div style={{ width:64,fontSize:10,color:'rgba(255,255,255,0.2)',fontFamily:'monospace',paddingTop:12,textAlign:'right',paddingRight:12,flexShrink:0 }}>
+              <div style={{ width:64,fontSize:10,color:'rgba(255,255,255,0.2)',fontFamily:'Noto Sans',paddingTop:12,textAlign:'right',paddingRight:12,flexShrink:0 }}>
                 {String(h).padStart(2,'0')}:00
               </div>
               <div onClick={()=>openDetail(ds)} className="flex-1 cursor-pointer transition-colors hover:bg-white/[0.02]"
@@ -447,7 +447,7 @@ export default function CalendarioPage() {
               const isSel=selectedDate===cell.dateStr
               return (
                 <button key={i} onClick={()=>openDetail(cell.dateStr)} className="relative transition-all"
-                  style={{ textAlign:'center',fontSize:10,padding:'4px 0',fontFamily:'monospace',cursor:'pointer',
+                  style={{ textAlign:'center',fontSize:10,padding:'4px 0',fontFamily:'Noto Sans',cursor:'pointer',
                     color:cell.isOther?'rgba(255,255,255,0.1)':cell.isToday?'#fff':'rgba(255,255,255,0.45)',
                     background:cell.isToday?'#C0001A':isSel?'rgba(192,0,26,0.18)':'transparent',
                     fontWeight:cell.isToday?700:400,
@@ -467,7 +467,7 @@ export default function CalendarioPage() {
         <div style={{ margin:'0 12px 12px',padding:'10px 12px',background:'rgba(192,0,26,0.07)',border:'1px solid rgba(192,0,26,0.15)' }}>
           <div className="flex items-center justify-between" style={{ marginBottom:8 }}>
             <span style={{ fontSize:11,color:'rgba(192,0,26,0.65)',fontWeight:500 }}>Este mês</span>
-            <span style={{ fontSize:20,fontWeight:800,fontFamily:'monospace',color:'#C0001A',lineHeight:1 }}>{monthEvents.length}</span>
+            <span style={{ fontSize:20,fontWeight:800,fontFamily:'Noto Sans',color:'#C0001A',lineHeight:1 }}>{monthEvents.length}</span>
           </div>
           <div className="grid grid-cols-2" style={{ gap:4 }}>
             {(Object.entries(TYPE_CFG) as [EventType,typeof TYPE_CFG[EventType]][]).map(([k,v])=>(
@@ -495,8 +495,8 @@ export default function CalendarioPage() {
                   <div className="rounded-full flex-shrink-0" style={{ width:6,height:6,background:cfg.dot,marginTop:4 }} />
                   <div style={{ minWidth:0,flex:1 }}>
                     <div className="flex items-center justify-between gap-1" style={{ marginBottom:2 }}>
-                      <span style={{ fontSize:9,color:'rgba(255,255,255,0.22)',fontFamily:'monospace' }}>{ev.time}</span>
-                      <span style={{ fontSize:9,fontWeight:700,fontFamily:'monospace',color:diff===0?'#C0001A':'rgba(255,255,255,0.18)' }}>{diffStr}</span>
+                      <span style={{ fontSize:9,color:'rgba(255,255,255,0.22)',fontFamily:'Noto Sans' }}>{ev.time}</span>
+                      <span style={{ fontSize:9,fontWeight:700,fontFamily:'Noto Sans',color:diff===0?'#C0001A':'rgba(255,255,255,0.18)' }}>{diffStr}</span>
                     </div>
                     <p style={{ fontSize:11,color:'rgba(255,255,255,0.65)',fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{ev.title}</p>
                     {item.evs.length>1&&<p style={{ fontSize:9,color:'rgba(255,255,255,0.2)',marginTop:1 }}>+{item.evs.length-1} mais</p>}
@@ -555,7 +555,7 @@ export default function CalendarioPage() {
         <div className="flex-shrink-0 relative" style={{ padding:'20px 20px 16px',borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
           {detailDateObj&&(
             <>
-              <p style={{ fontSize:11,color:'rgba(255,255,255,0.25)',fontFamily:'monospace',marginBottom:4 }}>
+              <p style={{ fontSize:11,color:'rgba(255,255,255,0.25)',fontFamily:'Noto Sans',marginBottom:4 }}>
                 {PT_DAYS_SHORT[detailDateObj.getDay()]}, {detailDateObj.getDate()} {PT_MONTHS[detailDateObj.getMonth()]} {detailDateObj.getFullYear()}
               </p>
               <p style={{ fontSize:17,fontWeight:700,color:'#fff' }}>
@@ -580,7 +580,7 @@ export default function CalendarioPage() {
                 <div className="flex items-center gap-2" style={{ marginBottom:8 }}>
                   <div className="rounded-full" style={{ width:8,height:8,background:cfg.dot }} />
                   <span style={{ fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:cfg.badgeText }}>{cfg.label}</span>
-                  {ev.time&&<span style={{ fontSize:10,color:'rgba(255,255,255,0.25)',fontFamily:'monospace',marginLeft:'auto' }}>{ev.time}</span>}
+                  {ev.time&&<span style={{ fontSize:10,color:'rgba(255,255,255,0.25)',fontFamily:'Noto Sans',marginLeft:'auto' }}>{ev.time}</span>}
                 </div>
                 <p style={{ fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.9)',marginBottom:ev.desc||ev.eq?6:0,lineHeight:1.4 }}>{ev.title}</p>
                 {ev.desc&&<p style={{ fontSize:11,color:'rgba(255,255,255,0.4)',lineHeight:1.6 }}>{ev.desc}</p>}

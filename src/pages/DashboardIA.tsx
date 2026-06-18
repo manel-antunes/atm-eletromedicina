@@ -72,7 +72,7 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ color: taxaConformidade >= 80 ? '#4ade80' : taxaConformidade >= 60 ? '#facc15' : '#f87171', fontSize: 40, fontWeight: 800, fontFamily: 'monospace', lineHeight: 1 }}>
+            <p style={{ color: taxaConformidade >= 80 ? '#4ade80' : taxaConformidade >= 60 ? '#facc15' : '#f87171', fontSize: 40, fontWeight: 800, fontFamily: 'Noto Sans', lineHeight: 1 }}>
               {taxaConformidade}%
             </p>
             <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>
@@ -100,7 +100,7 @@ export default function DashboardIA({ equipamentos, onVerDetalhe }: Props) {
             { label: 'Baixo',   valor: baixos.length,   cor: '#4ade80', glow: 'rgba(74,222,128,0.2)' },
           ].map(k => (
             <div key={k.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', padding: '14px 0', textAlign: 'center' }}>
-              <p style={{ color: k.cor, fontSize: 28, fontWeight: 800, fontFamily: 'monospace', lineHeight: 1, textShadow: `0 0 20px ${k.glow}` }}>{k.valor}</p>
+              <p style={{ color: k.cor, fontSize: 28, fontWeight: 800, fontFamily: 'Noto Sans', lineHeight: 1, textShadow: `0 0 20px ${k.glow}` }}>{k.valor}</p>
               <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 6 }}>{k.label}</p>
             </div>
           ))}

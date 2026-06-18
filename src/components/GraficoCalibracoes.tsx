@@ -160,7 +160,7 @@ export default function GraficoCalibracoes({ equipamentos }: Props) {
       }}>
         {stats.map(s => (
           <div key={s.label} style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 22, fontWeight: 700, fontFamily: 'monospace', color: s.cor }}>{s.valor}</p>
+            <p style={{ fontSize: 22, fontWeight: 700, fontFamily: 'Noto Sans', color: s.cor }}>{s.valor}</p>
             <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontWeight: 500 }}>{s.label}</p>
           </div>
         ))}

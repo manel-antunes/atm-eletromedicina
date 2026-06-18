@@ -169,7 +169,7 @@ export default function Topbar({ titulo, totalEquipamentos, onReimportar, equipa
           Apresentar
         </button>
 
-        <span style={{ fontSize: 11, color: '#cbd5e1', fontFamily: 'monospace' }}>{totalEquipamentos} eq.</span>
+        <span style={{ fontSize: 11, color: '#cbd5e1', fontFamily: 'Noto Sans' }}>{totalEquipamentos} eq.</span>
 
         <button
           onClick={handleReimportar}

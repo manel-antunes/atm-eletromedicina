@@ -66,7 +66,7 @@ export default function PesquisaGlobal({ equipamentos, onVerDetalhe }: Props) {
     >
       <Search size={13} color="#94a3b8" />
       <span style={{ fontSize: 12, color: '#94a3b8' }}>Pesquisar...</span>
-      <span style={{ fontSize: 10, color: '#cbd5e1', background: '#f1f5f9', padding: '2px 6px', fontFamily: 'monospace' }}>
+      <span style={{ fontSize: 10, color: '#cbd5e1', background: '#f1f5f9', padding: '2px 6px', fontFamily: 'Noto Sans' }}>
         Ctrl K
       </span>
     </button>
@@ -94,7 +94,7 @@ export default function PesquisaGlobal({ equipamentos, onVerDetalhe }: Props) {
               <X size={16} />
             </button>
           )}
-          <kbd style={{ fontSize: 10, color: '#cbd5e1', background: '#f8fafc', padding: '3px 8px', border: '1px solid #e2e8f0', fontFamily: 'monospace' }}>Esc</kbd>
+          <kbd style={{ fontSize: 10, color: '#cbd5e1', background: '#f8fafc', padding: '3px 8px', border: '1px solid #e2e8f0', fontFamily: 'Noto Sans' }}>Esc</kbd>
         </div>
 
         {/* Resultados */}
@@ -138,7 +138,7 @@ export default function PesquisaGlobal({ equipamentos, onVerDetalhe }: Props) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 3 }}>
                           <span style={{ fontSize: 11, color: '#94a3b8' }}>{eq.marca} {eq.modelo}</span>
                           <span style={{ fontSize: 11, color: '#cbd5e1' }}>·</span>
-                          <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace' }}>{eq.numeroSAP}</span>
+                          <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'Noto Sans' }}>{eq.numeroSAP}</span>
                           {eq.localizacao && (
                             <>
                               <span style={{ fontSize: 11, color: '#cbd5e1' }}>·</span>
