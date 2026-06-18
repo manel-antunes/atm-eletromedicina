@@ -71,10 +71,10 @@ const ITENS_FOOTER = [
 export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamentos, nomeUtilizador, onLogout, onCommandPalette }: Props) {
   const [expandida, setExpandida] = useState(false)
   const [gruposAbertos, setGruposAbertos] = useState<Record<string, boolean>>({
-    'Equipamentos': true,
-    'Operações': true,
-    'Análise & Docs': true,
-    'Comunicação': true,
+    'Equipamentos': false,
+    'Operações': false,
+    'Análise & Docs': false,
+    'Comunicação': false,
   })
 
   const role = localStorage.getItem('atm_role') ?? 'tecnico'
