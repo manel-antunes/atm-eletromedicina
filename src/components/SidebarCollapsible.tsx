@@ -69,20 +69,11 @@ const ITENS_FOOTER = [
 
 export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamentos, nomeUtilizador, onLogout, onCommandPalette }: Props) {
   const [expandida, setExpandida] = useState(false)
-  const [gruposAbertos, setGruposAbertos] = useState<Record<string, boolean>>({
-    'Equipamentos': false,
-    'Operações': false,
-    'Análise & Docs': false,
-    'Comunicação': false,
-  })
+  const [grupoHover, setGrupoHover] = useState<string | null>(null)
 
   const role = localStorage.getItem('atm_role') ?? 'tecnico'
   const alertas = contarAlertas(equipamentos)
   const largura = expandida ? 224 : 64
-
-  function toggleGrupo(label: string) {
-    setGruposAbertos(prev => ({ ...prev, [label]: !prev[label] }))
-  }
 
   function renderItem({ id, label, icon: Icon }: ItemNav) {
     const ativo = paginaAtiva === id
@@ -184,24 +175,23 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
         {renderItem(DASHBOARD)}
 
         {expandida ? (
-          /* Modo expandido: grupos com headers colapsáveis */
-          /* Modo colapsado: só Dashboard (ver renderItem acima) */
           GRUPOS.map(grupo => {
-            const aberto = gruposAbertos[grupo.label] ?? true
+            const aberto = grupoHover === grupo.label
             const temAtivo = grupo.itens.some(i => paginaAtiva === i.id)
             return (
-              <div key={grupo.label} style={{ marginTop: 6 }}>
-                <button
-                  onClick={() => toggleGrupo(grupo.label)}
+              <div
+                key={grupo.label}
+                style={{ marginTop: 6 }}
+                onMouseEnter={() => setGrupoHover(grupo.label)}
+                onMouseLeave={() => setGrupoHover(null)}
+              >
+                <div
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '4px 12px', border: 'none', cursor: 'pointer',
-                    background: 'transparent', transition: 'all 0.15s',
+                    padding: '4px 12px', cursor: 'default',
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
                 >
-                  <span style={{ fontSize: 10, fontWeight: 700, color: temAtivo ? 'rgba(255,100,120,0.8)' : 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', flex: 1, textAlign: 'left' }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: temAtivo ? 'rgba(255,100,120,0.8)' : aberto ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', flex: 1, textAlign: 'left', transition: 'color 0.15s' }}>
                     {grupo.label}
                   </span>
                   <ChevronDown
@@ -209,7 +199,7 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
                     color="rgba(255,255,255,0.2)"
                     style={{ transition: 'transform 0.2s', transform: aberto ? 'rotate(0deg)' : 'rotate(-90deg)' }}
                   />
-                </button>
+                </div>
                 {aberto && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {grupo.itens.map(renderItem)}
