@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Calendar, LogOut, QrCode, Stethoscope, Command, User, ShieldCheck, MessageSquare, ChevronDown } from 'lucide-react'
+import { LayoutDashboard, ClipboardCheck, Package, ArrowLeftRight, FileText, Brain, FolderOpen, Phone, Calendar, LogOut, QrCode, Stethoscope, Command, User, ShieldCheck, MessageSquare, ChevronDown, Cpu, BarChart2, MessageCircle, Workflow } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import logoAtm from '../assets/logo-atm.png'
 import NotificacoesPush from './NotificacoesPush'
@@ -15,13 +15,14 @@ interface Props {
 }
 
 interface ItemNav { id: string; label: string; icon: React.ElementType }
-interface Grupo { label: string; itens: ItemNav[] }
+interface Grupo { label: string; icon: React.ElementType; itens: ItemNav[] }
 
 const DASHBOARD: ItemNav = { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }
 
 const GRUPOS: Grupo[] = [
   {
     label: 'Equipamentos',
+    icon: Cpu,
     itens: [
       { id: 'inventario',  label: 'Inventário',  icon: Package },
       { id: 'calibracoes', label: 'Calibrações', icon: ClipboardCheck },
@@ -31,6 +32,7 @@ const GRUPOS: Grupo[] = [
   },
   {
     label: 'Operações',
+    icon: Workflow,
     itens: [
       { id: 'cedencias',  label: 'Cedências',  icon: ArrowLeftRight },
       { id: 'calendario', label: 'Calendário', icon: Calendar },
@@ -38,6 +40,7 @@ const GRUPOS: Grupo[] = [
   },
   {
     label: 'Análise & Docs',
+    icon: BarChart2,
     itens: [
       { id: 'relatorios', label: 'Relatórios', icon: FileText },
       { id: 'ia',         label: 'Análise IA', icon: Brain },
@@ -46,6 +49,7 @@ const GRUPOS: Grupo[] = [
   },
   {
     label: 'Comunicação',
+    icon: MessageCircle,
     itens: [
       { id: 'contactos', label: 'Contactos', icon: Phone },
       { id: 'chat',      label: 'Chat',      icon: MessageSquare },
@@ -191,46 +195,45 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
             {GRUPOS.map(grupo => {
               const aberto = gruposAbertos[grupo.label] ?? false
               const temAtivo = grupo.itens.some(i => paginaAtiva === i.id)
+              const GrupoIcon = grupo.icon
               return (
                 <div key={grupo.label}>
-                  {/* Header do grupo */}
                   <button
                     onClick={() => toggleGrupo(grupo.label)}
                     style={{
-                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                      padding: '7px 12px', border: 'none', cursor: 'pointer',
-                      background: aberto ? 'rgba(255,255,255,0.04)' : 'transparent',
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '9px 12px', border: 'none', cursor: 'pointer',
+                      background: aberto ? 'rgba(255,255,255,0.06)' : temAtivo ? 'rgba(192,0,26,0.12)' : 'transparent',
                       borderRadius: 4,
+                      borderLeft: temAtivo && !aberto ? '2px solid #C0001A' : '2px solid transparent',
                       transition: 'background 0.15s',
                     }}
-                    onMouseEnter={e => { if (!aberto) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)' }}
-                    onMouseLeave={e => { if (!aberto) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                    onMouseEnter={e => { if (!aberto && !temAtivo) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
+                    onMouseLeave={e => { if (!aberto && !temAtivo) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
                   >
-                    {temAtivo && !aberto && (
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#C0001A', flexShrink: 0 }} />
-                    )}
+                    <GrupoIcon size={16} color={temAtivo ? '#ff6b7a' : aberto ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)'} style={{ flexShrink: 0, transition: 'color 0.15s' }} />
                     <span style={{
-                      fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-                      color: temAtivo ? 'rgba(255,150,150,0.9)' : aberto ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)',
-                      flex: 1, textAlign: 'left', transition: 'color 0.15s',
+                      fontSize: 12, fontWeight: 500,
+                      color: temAtivo ? 'rgba(255,180,180,0.95)' : aberto ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)',
+                      flex: 1, textAlign: 'left', transition: 'color 0.15s', whiteSpace: 'nowrap',
                     }}>
                       {grupo.label}
                     </span>
                     <ChevronDown
-                      size={12}
-                      color={aberto ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)'}
+                      size={13}
+                      color={aberto ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)'}
                       style={{ transition: 'transform 0.22s ease', transform: aberto ? 'rotate(0deg)' : 'rotate(-90deg)', flexShrink: 0 }}
                     />
                   </button>
 
-                  {/* Itens com animação */}
                   <div style={{
                     overflow: 'hidden',
-                    maxHeight: aberto ? `${grupo.itens.length * 44}px` : '0px',
+                    maxHeight: aberto ? `${grupo.itens.length * 38}px` : '0px',
                     transition: 'max-height 0.22s ease',
-                    paddingLeft: 4,
                   }}>
-                    {grupo.itens.map(item => renderItem(item, true))}
+                    <div style={{ paddingLeft: 8, paddingTop: 2, paddingBottom: 2, borderLeft: '1px solid rgba(255,255,255,0.06)', marginLeft: 19, marginBottom: 2 }}>
+                      {grupo.itens.map(item => renderItem(item, true))}
+                    </div>
                   </div>
                 </div>
               )
