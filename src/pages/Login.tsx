@@ -184,7 +184,7 @@ export default function Login({ onLogin }: Props) {
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#0A0F1E', display: 'flex' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
 
         @keyframes line-in {
           from { transform: scaleX(0); }
@@ -211,7 +211,7 @@ export default function Login({ onLogin }: Props) {
           border: none;
           width: 100%;
           padding: 16px;
-          font-family: 'Inter', sans-serif;
+          font-family: 'Noto Sans', sans-serif;
           font-size: 11px;
           font-weight: 500;
           letter-spacing: 0.15em;
@@ -241,7 +241,7 @@ export default function Login({ onLogin }: Props) {
           border-bottom: 1px solid #1a1a1a;
           padding: 12px 0;
           font-size: 15px;
-          font-family: 'Inter', sans-serif;
+          font-family: 'Noto Sans', sans-serif;
           font-weight: 300;
           color: #1a1a1a;
           outline: none;
@@ -426,7 +426,7 @@ export default function Login({ onLogin }: Props) {
             ].map(stat => (
               <div key={stat.label}>
                 <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 48, fontWeight: 300, color: '#fff', margin: 0, lineHeight: 1, letterSpacing: '-0.02em' }}>{stat.num}</p>
-                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 400, color: 'rgba(255,255,255,0.4)', margin: '6px 0 0', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{stat.label}</p>
+                <p style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 10, fontWeight: 400, color: 'rgba(255,255,255,0.4)', margin: '6px 0 0', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{stat.label}</p>
               </div>
             ))}
           </div>
@@ -440,7 +440,7 @@ export default function Login({ onLogin }: Props) {
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 36, background: '#C0001A', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
           <div style={{ display: 'flex', animation: 'marquee 20s linear infinite', whiteSpace: 'nowrap' }}>
             {Array.from({ length: 8 }).map((_, i) => (
-              <span key={i} style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.2em', textTransform: 'uppercase', padding: '0 32px' }}>
+              <span key={i} style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.2em', textTransform: 'uppercase', padding: '0 32px' }}>
                 ATM Eletromedicina · Hospital CUF Porto · Gestão de Calibrações · Manutenção Preventiva ·
               </span>
             ))}
@@ -479,7 +479,7 @@ export default function Login({ onLogin }: Props) {
 
         {/* Título */}
         <div style={{ marginBottom: 56 }}>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 500, color: '#C0001A', letterSpacing: '0.25em', textTransform: 'uppercase', margin: '0 0 16px' }}>
+          <p style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 10, fontWeight: 500, color: '#C0001A', letterSpacing: '0.25em', textTransform: 'uppercase', margin: '0 0 16px' }}>
             Acesso Restrito
           </p>
           <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 52, fontWeight: 300, color: '#1a1a1a', margin: 0, lineHeight: 1, letterSpacing: '-0.02em' }}>
@@ -493,7 +493,7 @@ export default function Login({ onLogin }: Props) {
         {/* Formulário */}
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 32 }} aria-label="Formulário de autenticação">
           <div>
-            <label htmlFor="login-username" style={{ display: 'block', fontFamily: "'Inter', sans-serif", fontSize: 9, fontWeight: 500, color: focusedField === 'user' ? '#C0001A' : '#999', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 8, transition: 'color 0.3s' }}>
+            <label htmlFor="login-username" style={{ display: 'block', fontFamily: "'Noto Sans', sans-serif", fontSize: 9, fontWeight: 500, color: focusedField === 'user' ? '#C0001A' : '#999', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 8, transition: 'color 0.3s' }}>
               Utilizador
             </label>
             <input
@@ -514,7 +514,7 @@ export default function Login({ onLogin }: Props) {
           </div>
 
           <div>
-            <label htmlFor="login-password" style={{ display: 'block', fontFamily: "'Inter', sans-serif", fontSize: 9, fontWeight: 500, color: focusedField === 'pass' ? '#C0001A' : '#999', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 8, transition: 'color 0.3s' }}>
+            <label htmlFor="login-password" style={{ display: 'block', fontFamily: "'Noto Sans', sans-serif", fontSize: 9, fontWeight: 500, color: focusedField === 'pass' ? '#C0001A' : '#999', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 8, transition: 'color 0.3s' }}>
               Password
             </label>
             <input
@@ -535,7 +535,7 @@ export default function Login({ onLogin }: Props) {
 
           {erro && (
             <div id="login-erro" role="alert" style={{ display: 'flex', alignItems: 'center', gap: 10, borderLeft: '2px solid #C0001A', paddingLeft: 12 }}>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#C0001A', fontWeight: 400 }}>{erro}</span>
+              <span style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 12, color: '#C0001A', fontWeight: 400 }}>{erro}</span>
             </div>
           )}
 
@@ -555,8 +555,8 @@ export default function Login({ onLogin }: Props) {
         <div style={{ position: 'absolute', bottom: 40, left: 56, right: 56 }}>
           <div className="footer-line" style={{ height: 1, background: '#e0deda', marginBottom: 20 }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <p className="footer-text" style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#999', margin: 0, letterSpacing: '0.05em' }}>ATM Manutenção Total</p>
-            <p className="footer-text" style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#999', margin: 0, letterSpacing: '0.05em' }}>Porto · 2026</p>
+            <p className="footer-text" style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 10, color: '#999', margin: 0, letterSpacing: '0.05em' }}>ATM Manutenção Total</p>
+            <p className="footer-text" style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 10, color: '#999', margin: 0, letterSpacing: '0.05em' }}>Porto · 2026</p>
           </div>
         </div>
       </div>
