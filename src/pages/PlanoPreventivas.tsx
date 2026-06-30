@@ -316,19 +316,26 @@ export default function PlanoPreventivas() {
         let mesAtualIdx = 0
         let eqsMesAtual: any[] = []
 
+        let totalLinhas = 0
+        let totalFiltradas = 0
+        const setoresEncontrados = new Set<string>()
+
         for (const linha of linhas) {
           const val0 = String(linha[0] ?? '').trim()
-          const mesIdx = MESES_PT.findIndex(m => val0.startsWith(m))
+          const val0Lower = val0.toLowerCase()
+          const mesIdx = MESES_PT.findIndex(m => val0Lower.startsWith(m.toLowerCase()))
           if (mesIdx !== -1) {
             if (mesAtualIdx > 0 && eqsMesAtual.length > 0) mesesData.push({ mes: mesAtualIdx, equipamentos: eqsMesAtual })
             mesAtualIdx = mesIdx + 1
             eqsMesAtual = []
             continue
           }
-          if (!val0 || val0 === 'Cód. Ativo' || val0.startsWith('Manutenção')) continue
+          if (!val0 || val0.toLowerCase().includes('cód. ativo') || val0.toLowerCase().startsWith('manut')) continue
           if (mesAtualIdx === 0) continue
+          totalLinhas++
           const setor = String(linha[6] ?? '').trim()
-          if (!SETORES_PROPRIOS.some(s => setor.includes(s))) continue
+          setoresEncontrados.add(setor)
+          if (!SETORES_PROPRIOS.some(s => setor.includes(s))) { totalFiltradas++; continue }
           eqsMesAtual.push({
             codAtivo: val0,
             nome: String(linha[1] ?? '').trim(),
@@ -344,6 +351,15 @@ export default function PlanoPreventivas() {
         if (mesAtualIdx > 0 && eqsMesAtual.length > 0) mesesData.push({ mes: mesAtualIdx, equipamentos: eqsMesAtual })
 
         const totalEqs = mesesData.reduce((acc, m) => acc + m.equipamentos.length, 0)
+
+        if (totalEqs === 0) {
+          const setoresStr = [...setoresEncontrados].filter(Boolean).slice(0, 5).join(', ') || 'nenhum'
+          setImportProgress(`0 equipamentos encontrados. Linhas lidas: ${totalLinhas}, filtradas por setor: ${totalFiltradas}. Setores no ficheiro: ${setoresStr}`)
+          setTimeout(() => setImportProgress(''), 8000)
+          setImportando(false)
+          return
+        }
+
         setImportProgress(`A importar ${totalEqs} equipamentos em ${mesesData.length} meses...`)
 
         const res = await fetch(`${API_URL}/api/preventivas/importar-anual`, {
