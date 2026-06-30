@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atm-v1'
+const CACHE_NAME = 'atm-v2'
 const ASSETS = [
   '/',
   '/index.html',
