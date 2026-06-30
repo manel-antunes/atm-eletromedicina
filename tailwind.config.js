@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Noto Sans'],
+        sans: ['Noto Sans', 'system-ui', 'Arial'],
       },
     },
   },
