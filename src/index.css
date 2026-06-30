@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-body, * {
+body, *, *::before, *::after {
   font-family: 'Noto Sans', system-ui, Arial;
 }
 @keyframes fadeInUp {
