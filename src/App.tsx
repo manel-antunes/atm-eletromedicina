@@ -21,6 +21,7 @@ import Perfil from './pages/Perfil'
 import Administracao from './pages/Administracao'
 import Chat from './pages/Chat'
 import Calendario from './pages/Calendario'
+import Mapa from './pages/Mapa'
 import Login from './pages/Login'
 import ToastContainer from './components/Toast'
 import EstadoOffline from './components/EstadoOffline'
@@ -164,6 +165,13 @@ function App() {
       .catch(() => {})
   }, [token])
 
+  // Logout automático quando o refresh token expira (disparado por authFetch)
+  useEffect(() => {
+    function onLogoutForcado() { limparSessaoLocal() }
+    window.addEventListener('atm:logout', onLogoutForcado)
+    return () => window.removeEventListener('atm:logout', onLogoutForcado)
+  }, [])
+
   // Sincronizar sessão entre abas: logout ou login de outro utilizador noutro tab
   useEffect(() => {
     function onStorage(e: StorageEvent) {
@@ -278,6 +286,7 @@ function App() {
       case 'contactos':    return <Contactos equipamentos={equipamentos} />
       case 'preventivas':  return <PlanoPreventivas />
       case 'qrcodes':      return <QRCodes equipamentos={equipamentos} />
+      case 'mapa':         return <Mapa equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       case 'chat':         return <Chat />
       case 'perfil':       return <Perfil />
       case 'administracao': return role === 'admin' ? <Administracao /> : null

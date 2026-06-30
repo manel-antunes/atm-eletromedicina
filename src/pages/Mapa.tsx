@@ -3,8 +3,6 @@ import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { Equipamento } from '../data/equipamentos'
-import { differenceInDays } from 'date-fns'
-import { parseData } from '../utils/dateUtils'
 import { getEstado } from '../utils/equipamentoUtils'
 
 // Fix ícones Leaflet
@@ -74,7 +72,17 @@ export default function Mapa({ equipamentos, onVerDetalhe }: Props) {
     return equipamentos.filter(eq => getEstado(eq) === filtroEstado)
   }, [equipamentos, filtroEstado])
 
-
+  const { locaisComEquip, semLocal } = useMemo(() => {
+    const mapa = new Map<string, { local: { chave: string; lat: number; lng: number; nome: string; cidade: string }; equipamentos: Equipamento[] }>()
+    const semLoc: Equipamento[] = []
+    for (const eq of equipFiltrados) {
+      const local = encontrarLocal(eq.localizacao ?? '')
+      if (!local) { semLoc.push(eq); continue }
+      if (!mapa.has(local.chave)) mapa.set(local.chave, { local, equipamentos: [] })
+      mapa.get(local.chave)!.equipamentos.push(eq)
+    }
+    return { locaisComEquip: Array.from(mapa.values()), semLocal: semLoc }
+  }, [equipFiltrados])
 
   // Estado dominante de cada local
   function getEstadoDominante(eqs: Equipamento[]): string {
@@ -172,7 +180,7 @@ export default function Mapa({ equipamentos, onVerDetalhe }: Props) {
                     eventHandlers={{ click: () => setLocalSelecionado(local.chave) }}
                   >
                     <Popup>
-                      <div style={{ minWidth: 200, fontFamily: ''Noto Sans'' }}>
+                      <div style={{ minWidth: 200, fontFamily: 'Noto Sans' }}>
                         <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>{local.nome}</p>
                         <p style={{ color: '#64748b', fontSize: 11, marginBottom: 8 }}>{local.cidade}</p>
                         <p style={{ fontSize: 11, fontWeight: 600, color: cor, marginBottom: 8 }}>

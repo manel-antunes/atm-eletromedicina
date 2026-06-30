@@ -5,11 +5,9 @@ import { differenceInDays } from 'date-fns'
 import { parseData } from '../utils/dateUtils'
 import { getEstado } from '../utils/equipamentoUtils'
 import { API_URL } from '../config'
+import { authFetch } from '../services/authFetch'
 
-function getToken() { return localStorage.getItem('atm_token') ?? '' }
-function authHeaders() {
-  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }
-}
+const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
 interface EntradaHistorico {
   id: number
@@ -109,7 +107,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
     setHistorico([])
     setLoadingHistorico(true)
     try {
-      const res = await fetch(`${API_URL}/api/calibracoes/${eq.numeroSAP}`, { headers: authHeaders() })
+      const res = await authFetch(`${API_URL}/api/calibracoes/${eq.numeroSAP}`)
       if (res.ok) setHistorico(await res.json())
     } catch {}
     finally { setLoadingHistorico(false) }
@@ -134,9 +132,9 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
     const excelDate = Math.round((novaProxima.getTime() / 86400000) + 25569)
 
     try {
-      await fetch(`${API_URL}/api/calibracoes`, {
+      await authFetch(`${API_URL}/api/calibracoes`, {
         method: 'POST',
-        headers: authHeaders(),
+        headers: JSON_HEADERS,
         body: JSON.stringify({
           equipamentoSAP:   equipSelecionado?.numeroSAP,
           dataCalibracao:   form.data,

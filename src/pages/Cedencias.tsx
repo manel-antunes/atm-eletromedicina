@@ -4,6 +4,7 @@ import type { Equipamento } from '../data/equipamentos'
 import { guardarEquipamentos } from '../data/storage'
 import { API_URL } from '../config'
 import { SkeletonTabela } from '../components/Skeleton'
+import { authFetch } from '../services/authFetch'
 
 interface Props {
   equipamentos: Equipamento[]
@@ -25,10 +26,7 @@ interface Cedencia {
   observacoes: string
 }
 
-function getToken() { return localStorage.getItem('atm_token') ?? '' }
-function authHeaders() {
-  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }
-}
+const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
 function mapRow(r: any): Cedencia {
   return {
@@ -75,7 +73,7 @@ export default function Cedencias({ equipamentos, onAtualizar, mostrar }: Props)
   async function carregar() {
     try {
       setLoading(true)
-      const res = await fetch(`${API_URL}/api/cedencias`, { headers: authHeaders() })
+      const res = await authFetch(`${API_URL}/api/cedencias`)
       if (res.ok) setCedencias((await res.json()).map(mapRow))
     } catch {}
     finally { setLoading(false) }
@@ -99,9 +97,9 @@ export default function Cedencias({ equipamentos, onAtualizar, mostrar }: Props)
 
     setSaving(true)
     try {
-      const res = await fetch(`${API_URL}/api/cedencias`, {
+      const res = await authFetch(`${API_URL}/api/cedencias`, {
         method: 'POST',
-        headers: authHeaders(),
+        headers: JSON_HEADERS,
         body: JSON.stringify({
           equipamentoSAP: eq.numeroSAP,
           equipamentoNome: eq.descricao,
@@ -135,9 +133,9 @@ export default function Cedencias({ equipamentos, onAtualizar, mostrar }: Props)
 
     setSaving(true)
     try {
-      const res = await fetch(`${API_URL}/api/cedencias/${modalRetorno.id}/retorno`, {
+      const res = await authFetch(`${API_URL}/api/cedencias/${modalRetorno.id}/retorno`, {
         method: 'PATCH',
-        headers: authHeaders(),
+        headers: JSON_HEADERS,
         body: JSON.stringify({ dataRetornoEfetiva: dataRetorno }),
       })
       if (!res.ok) { mostrar('erro', 'Erro ao registar retorno', 'Tente novamente.'); return }
