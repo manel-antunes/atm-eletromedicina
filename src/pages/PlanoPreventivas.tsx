@@ -304,63 +304,82 @@ export default function PlanoPreventivas() {
       try {
         const dados = new Uint8Array(ev.target?.result as ArrayBuffer)
         const wb = XLSX.read(dados, { type: 'array' })
-        const ws = wb.Sheets[wb.SheetNames[0]]
-        const linhas = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
 
-        let ano = anoAtivo
-        const primeiraLinha = String(linhas[0]?.[0] ?? '')
-        const anoMatch = primeiraLinha.match(/\d{4}/)
-        if (anoMatch) ano = parseInt(anoMatch[0])
-
-        const mesesData: { mes: number; equipamentos: any[] }[] = []
-        let mesAtualIdx = 0
-        let eqsMesAtual: any[] = []
-
-        let totalLinhas = 0
-        let totalFiltradas = 0
-        const setoresEncontrados = new Set<string>()
-
-        for (const linha of linhas) {
-          const val0 = String(linha[0] ?? '').trim()
-          const val0Lower = val0.toLowerCase()
-          const mesIdx = MESES_PT.findIndex(m => val0Lower.startsWith(m.toLowerCase()))
-          if (mesIdx !== -1) {
-            if (mesAtualIdx > 0 && eqsMesAtual.length > 0) mesesData.push({ mes: mesAtualIdx, equipamentos: eqsMesAtual })
-            mesAtualIdx = mesIdx + 1
-            eqsMesAtual = []
-            continue
-          }
-          if (!val0 || val0.toLowerCase().includes('cód. ativo') || val0.toLowerCase().startsWith('manut')) continue
-          if (mesAtualIdx === 0) continue
-          totalLinhas++
-          const setor = String(linha[6] ?? '').trim()
-          setoresEncontrados.add(setor)
-          if (!SETORES_PROPRIOS.some(s => setor.includes(s))) { totalFiltradas++; continue }
-          eqsMesAtual.push({
-            codAtivo: val0,
-            nome: String(linha[1] ?? '').trim(),
-            marca: String(linha[2] ?? '').trim(),
-            modelo: String(linha[3] ?? '').trim(),
-            numeroSerie: String(linha[4] ?? '').trim(),
-            codLocalizacao: '',
-            localizacao: String(linha[5] ?? '').trim(),
-            setor,
-            area: String(linha[7] ?? '').trim(),
+        // Sheet1: info dos equipamentos (setor, nome, marca, etc.) — a partir da linha 6
+        // Colunas: 0=codAtivo, 4=nome, 8=marca, 12=modelo, 13=nrSerie, 14=codLoc, 15=loc, 17=setor, 19=area
+        const ws1 = wb.Sheets[wb.SheetNames[0]]
+        const l1 = XLSX.utils.sheet_to_json(ws1, { header: 1 }) as any[][]
+        const infoMap = new Map<string, any>()
+        for (let i = 6; i < l1.length; i++) {
+          const cod = String(l1[i][0] ?? '').trim()
+          if (!cod) continue
+          infoMap.set(cod, {
+            nome: String(l1[i][4] ?? '').trim(),
+            marca: String(l1[i][8] ?? '').trim(),
+            modelo: String(l1[i][12] ?? '').trim(),
+            numeroSerie: String(l1[i][13] ?? '').trim(),
+            codLocalizacao: String(l1[i][14] ?? '').trim(),
+            localizacao: String(l1[i][15] ?? '').trim(),
+            setor: String(l1[i][17] ?? '').trim(),
+            area: String(l1[i][19] ?? '').trim(),
           })
         }
-        if (mesAtualIdx > 0 && eqsMesAtual.length > 0) mesesData.push({ mes: mesAtualIdx, equipamentos: eqsMesAtual })
+
+        // Ano da linha de impressão (Sheet1, linha 3: "Impresso em 2026/...")
+        let ano = anoAtivo
+        const anoMatch = String(l1[3]?.[0] ?? '').match(/\d{4}/)
+        if (anoMatch) ano = parseInt(anoMatch[0])
+
+        // Sheet2: datas planeadas por equipamento
+        // Estrutura: linha com col0 preenchido = cabeçalho do equipamento
+        //            linhas seguintes col0 vazio = ocorrências com Data Previsto em col7 (dd/mm/yyyy)
+        const ws2 = wb.Sheets[wb.SheetNames[1]]
+        const l2 = XLSX.utils.sheet_to_json(ws2, { header: 1 }) as any[][]
+
+        const mesesMap = new Map<number, Map<string, any>>()
+        for (let m = 1; m <= 12; m++) mesesMap.set(m, new Map())
+
+        let codAtual = ''
+        let filtrados = 0
+
+        for (let i = 5; i < l2.length; i++) {
+          const linha = l2[i]
+          const col0 = String(linha[0] ?? '').trim()
+          if (col0) { codAtual = col0; continue }
+
+          const dataStr = String(linha[7] ?? '').trim()
+          if (!dataStr || !codAtual) continue
+
+          const info = infoMap.get(codAtual)
+          if (!info) continue
+          if (!SETORES_PROPRIOS.some(s => info.setor.includes(s))) { filtrados++; continue }
+
+          // Data Previsto: dd/mm/yyyy
+          const parts = dataStr.split('/')
+          if (parts.length !== 3) continue
+          const mes = parseInt(parts[1])
+          if (mes < 1 || mes > 12) continue
+
+          // Deduplica: um equipamento por mês
+          if (!mesesMap.get(mes)!.has(codAtual)) {
+            mesesMap.get(mes)!.set(codAtual, { codAtivo: codAtual, ...info })
+          }
+        }
+
+        const mesesData = Array.from(mesesMap.entries())
+          .map(([mes, eqsMap]) => ({ mes, equipamentos: Array.from(eqsMap.values()) }))
+          .filter(({ equipamentos }) => equipamentos.length > 0)
 
         const totalEqs = mesesData.reduce((acc, m) => acc + m.equipamentos.length, 0)
 
         if (totalEqs === 0) {
-          const setoresStr = [...setoresEncontrados].filter(Boolean).slice(0, 5).join(', ') || 'nenhum'
-          setImportProgress(`0 equipamentos encontrados. Linhas lidas: ${totalLinhas}, filtradas por setor: ${totalFiltradas}. Setores no ficheiro: ${setoresStr}`)
+          setImportProgress(`0 equipamentos encontrados (filtrados por setor: ${filtrados})`)
           setTimeout(() => setImportProgress(''), 8000)
           setImportando(false)
           return
         }
 
-        setImportProgress(`A importar ${totalEqs} equipamentos em ${mesesData.length} meses...`)
+        setImportProgress(`A importar ${totalEqs} entradas em ${mesesData.length} meses...`)
 
         const res = await fetch(`${API_URL}/api/preventivas/importar-anual`, {
           method: 'POST', headers: authHeaders(),
