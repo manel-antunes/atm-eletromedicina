@@ -1,10 +1,25 @@
 import { useState, useRef } from 'react'
-import { CheckCircle, Upload, X, Search } from 'lucide-react'
+import { CheckCircle, Upload, X, Search, Loader, History } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { differenceInDays } from 'date-fns'
 import { parseData } from '../utils/dateUtils'
 import { getEstado } from '../utils/equipamentoUtils'
 import { API_URL } from '../config'
+
+function getToken() { return localStorage.getItem('atm_token') ?? '' }
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }
+}
+
+interface EntradaHistorico {
+  id: number
+  data_calibracao: string
+  tecnico: string
+  entidade: string
+  observacoes?: string
+  relatorio?: string
+  aprovado_por?: string
+}
 
 interface Props {
   equipamentos: Equipamento[]
@@ -27,6 +42,8 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
   const [assinado, setAssinado]               = useState(false)
   const [erro, setErro]                       = useState('')
   const [sucesso, setSucesso]                 = useState(false)
+  const [historico, setHistorico]             = useState<EntradaHistorico[]>([])
+  const [loadingHistorico, setLoadingHistorico] = useState(false)
   const [filtro, setFiltro]                   = useState<'todos' | 'vencido' | 'urgente' | 'aviso' | 'ok'>('todos')
   const [pesquisa, setPesquisa]               = useState('')
   const [expandida, setExpandida]             = useState(false)
@@ -80,7 +97,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
       e.eq.numeroSAP.includes(pesquisa)
     )
 
-  function abrirModal(eq: Equipamento, e: React.MouseEvent) {
+  async function abrirModal(eq: Equipamento, e: React.MouseEvent) {
     e.stopPropagation()
     setEquipSelecionado(eq)
     setModalAberto(true)
@@ -89,6 +106,13 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
     setAssinado(false)
     setErro('')
     setSucesso(false)
+    setHistorico([])
+    setLoadingHistorico(true)
+    try {
+      const res = await fetch(`${API_URL}/api/calibracoes/${eq.numeroSAP}`, { headers: authHeaders() })
+      if (res.ok) setHistorico(await res.json())
+    } catch {}
+    finally { setLoadingHistorico(false) }
   }
 
   function fecharModal() {
@@ -112,7 +136,7 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
     try {
       await fetch(`${API_URL}/api/calibracoes`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({
           equipamentoSAP:   equipSelecionado?.numeroSAP,
           dataCalibracao:   form.data,
@@ -422,6 +446,42 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
               </div>
               {erro    && <p className="text-xs text-red-600 bg-red-50 px-3 py-2">{erro}</p>}
               {sucesso && <p className="text-xs text-green-700 bg-green-50 px-3 py-2">✓ Calibração registada com sucesso!</p>}
+
+              {/* Histórico */}
+              <div className="border-t border-gray-100 pt-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <History size={13} className="text-gray-400" />
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Histórico de Calibrações</span>
+                </div>
+                {loadingHistorico ? (
+                  <div className="flex items-center gap-2 py-3 text-gray-400">
+                    <Loader size={11} className="animate-spin" />
+                    <span className="text-xs">A carregar...</span>
+                  </div>
+                ) : historico.length === 0 ? (
+                  <p className="text-xs text-gray-400 py-2">Nenhum registo anterior.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {historico.map(h => (
+                      <div key={h.id} className="bg-gray-50 border border-gray-100 px-3 py-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-gray-700">
+                            {new Date(h.data_calibracao).toLocaleDateString('pt-PT')}
+                          </span>
+                          <span className="text-gray-400">{h.entidade}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <span className="text-gray-500">Técnico: <span className="text-gray-700">{h.tecnico}</span></span>
+                          {h.aprovado_por && (
+                            <span className="text-gray-400">Aprovado: {h.aprovado_por}</span>
+                          )}
+                        </div>
+                        {h.observacoes && <p className="text-gray-400 mt-0.5 italic">{h.observacoes}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">

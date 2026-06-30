@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { ArrowLeftRight, X, CheckCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ArrowLeftRight, X, CheckCircle, Loader } from 'lucide-react'
 import type { Equipamento } from '../data/equipamentos'
 import { guardarEquipamentos } from '../data/storage'
+import { API_URL } from '../config'
 
 interface Props {
   equipamentos: Equipamento[]
@@ -10,7 +11,7 @@ interface Props {
 
 interface Cedencia {
   id: number
-  equipamentoId: number
+  equipamentoSAP: string
   equipamentoNome: string
   destino: string
   responsavel: string
@@ -22,20 +23,31 @@ interface Cedencia {
   observacoes: string
 }
 
-const CHAVE_CED = 'atm_cedencias'
-
-function carregarCedencias(): Cedencia[] {
-  const dados = localStorage.getItem(CHAVE_CED)
-  if (!dados) return []
-  return JSON.parse(dados)
+function getToken() { return localStorage.getItem('atm_token') ?? '' }
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }
 }
 
-function guardarCedencias(lista: Cedencia[]) {
-  localStorage.setItem(CHAVE_CED, JSON.stringify(lista))
+function mapRow(r: any): Cedencia {
+  return {
+    id: r.id,
+    equipamentoSAP: r.equipamento_sap,
+    equipamentoNome: r.equipamento_nome,
+    destino: r.destino,
+    responsavel: r.responsavel,
+    contacto: r.contacto ?? '',
+    dataSaida: r.data_saida,
+    dataRetornoPrevista: r.data_retorno_prevista,
+    dataRetornoEfetiva: r.data_retorno_efetiva ?? undefined,
+    ativa: r.ativa,
+    observacoes: r.observacoes ?? '',
+  }
 }
 
 export default function Cedencias({ equipamentos, onAtualizar }: Props) {
-  const [cedencias, setCedencias] = useState<Cedencia[]>(carregarCedencias())
+  const [cedencias, setCedencias] = useState<Cedencia[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [modalAberto, setModalAberto] = useState(false)
   const [modalRetorno, setModalRetorno] = useState<Cedencia | null>(null)
   const [filtro, setFiltro] = useState<'todas' | 'ativas' | 'devolvidas'>('todas')
@@ -51,72 +63,87 @@ export default function Cedencias({ equipamentos, onAtualizar }: Props) {
   })
   const [erro, setErro] = useState('')
 
-  const filtradas = cedencias.filter(c =>
-    filtro === 'todas' ? true :
-    filtro === 'ativas' ? c.ativa :
-    !c.ativa
-  )
+  useEffect(() => { carregar() }, [])
 
+  async function carregar() {
+    try {
+      setLoading(true)
+      const res = await fetch(`${API_URL}/api/cedencias`, { headers: authHeaders() })
+      if (res.ok) setCedencias((await res.json()).map(mapRow))
+    } catch {}
+    finally { setLoading(false) }
+  }
+
+  const filtradas = cedencias.filter(c =>
+    filtro === 'todas' ? true : filtro === 'ativas' ? c.ativa : !c.ativa
+  )
   const ativas = cedencias.filter(c => c.ativa).length
 
-  function handleSubmit() {
-    if (!form.equipamentoId) { setErro('Seleciona um equipamento.'); return }
-    if (!form.destino) { setErro('O destino é obrigatório.'); return }
-    if (!form.responsavel) { setErro('O responsável é obrigatório.'); return }
-    if (!form.dataSaida) { setErro('A data de saída é obrigatória.'); return }
-    if (!form.dataRetornoPrevista) { setErro('A data de retorno prevista é obrigatória.'); return }
+  async function handleSubmit() {
+    if (!form.equipamentoId)      { setErro('Seleciona um equipamento.');             return }
+    if (!form.destino)            { setErro('O destino é obrigatório.');              return }
+    if (!form.responsavel)        { setErro('O responsável é obrigatório.');          return }
+    if (!form.dataSaida)          { setErro('A data de saída é obrigatória.');        return }
+    if (!form.dataRetornoPrevista){ setErro('A data de retorno prevista é obrigatória.'); return }
 
     const eq = equipamentos.find(e => e.id === Number(form.equipamentoId))
     if (!eq) return
 
-    const nova: Cedencia = {
-      id: Date.now(),
-      equipamentoId: eq.id,
-      equipamentoNome: eq.descricao,
-      destino: form.destino,
-      responsavel: form.responsavel,
-      contacto: form.contacto,
-      dataSaida: form.dataSaida,
-      dataRetornoPrevista: form.dataRetornoPrevista,
-      ativa: true,
-      observacoes: form.observacoes,
-    }
+    setSaving(true)
+    try {
+      const res = await fetch(`${API_URL}/api/cedencias`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          equipamentoSAP: eq.numeroSAP,
+          equipamentoNome: eq.descricao,
+          destino: form.destino,
+          responsavel: form.responsavel,
+          contacto: form.contacto,
+          dataSaida: form.dataSaida,
+          dataRetornoPrevista: form.dataRetornoPrevista,
+          observacoes: form.observacoes,
+        }),
+      })
+      if (!res.ok) { setErro('Erro ao registar cedência.'); return }
 
-    // atualiza localização do equipamento
-    const novosEquip = equipamentos.map(e =>
-      e.id === eq.id ? { ...e, localizacao: form.destino } : e
-    )
-
-    const novasCed = [...cedencias, nova]
-    guardarCedencias(novasCed)
-    guardarEquipamentos(novosEquip)
-    setCedencias(novasCed)
-    onAtualizar(novosEquip)
-    setModalAberto(false)
-    setErro('')
-    setForm({ equipamentoId: '', destino: '', responsavel: '', contacto: '', dataSaida: new Date().toISOString().split('T')[0], dataRetornoPrevista: '', observacoes: '' })
+      const novosEquip = equipamentos.map(e =>
+        e.id === eq.id ? { ...e, localizacao: form.destino } : e
+      )
+      guardarEquipamentos(novosEquip)
+      onAtualizar(novosEquip)
+      await carregar()
+      setModalAberto(false)
+      setErro('')
+      setForm({ equipamentoId: '', destino: '', responsavel: '', contacto: '', dataSaida: new Date().toISOString().split('T')[0], dataRetornoPrevista: '', observacoes: '' })
+    } catch { setErro('Erro ao registar cedência.') }
+    finally { setSaving(false) }
   }
 
-  function registarRetorno() {
+  async function registarRetorno() {
     if (!modalRetorno) return
     if (!dataRetorno) { setErro('Indica a data de retorno.'); return }
-const eqSelecionado = equipamentos.find(e => e.id === Number(form.equipamentoId))
-if (!eqSelecionado) return
-    const novosEquip = equipamentos.map(e =>
-      e.id === modalRetorno.equipamentoId ? { ...e, localizacao: 'FIXO HPRT' } : e
-    )
 
-    const novasCed = cedencias.map(c =>
-      c.id === modalRetorno.id ? { ...c, ativa: false, dataRetornoEfetiva: dataRetorno } : c
-    )
+    setSaving(true)
+    try {
+      const res = await fetch(`${API_URL}/api/cedencias/${modalRetorno.id}/retorno`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ dataRetornoEfetiva: dataRetorno }),
+      })
+      if (!res.ok) { setErro('Erro ao registar retorno.'); return }
 
-    guardarCedencias(novasCed)
-    guardarEquipamentos(novosEquip)
-    setCedencias(novasCed)
-    onAtualizar(novosEquip)
-    setModalRetorno(null)
-    setDataRetorno('')
-    setErro('')
+      const novosEquip = equipamentos.map(e =>
+        e.numeroSAP === modalRetorno.equipamentoSAP ? { ...e, localizacao: 'FIXO HPRT' } : e
+      )
+      guardarEquipamentos(novosEquip)
+      onAtualizar(novosEquip)
+      await carregar()
+      setModalRetorno(null)
+      setDataRetorno('')
+      setErro('')
+    } catch { setErro('Erro ao registar retorno.') }
+    finally { setSaving(false) }
   }
 
   return (
@@ -169,6 +196,12 @@ if (!eqSelecionado) return
 
       {/* Tabela */}
       <div className="bg-white border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12 gap-2 text-gray-400">
+            <Loader size={14} className="animate-spin" />
+            <span className="text-xs">A carregar...</span>
+          </div>
+        ) : (
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
@@ -194,6 +227,7 @@ if (!eqSelecionado) return
                 <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
                     <p className="font-medium text-gray-800 text-xs">{c.equipamentoNome}</p>
+                    <p className="text-gray-400 text-xs font-mono">{c.equipamentoSAP}</p>
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-600 font-medium">{c.destino}</td>
                   <td className="px-4 py-3 text-xs text-gray-500">
@@ -227,6 +261,7 @@ if (!eqSelecionado) return
             )}
           </tbody>
         </table>
+        )}
       </div>
 
       {/* Modal nova cedência */}
@@ -257,25 +292,16 @@ if (!eqSelecionado) return
                 </select>
               </div>
               <div>
-<select
-  value={form.destino} onChange={e => setForm({ ...form, destino: e.target.value })}
-  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400"
->
-  <option value="">Seleciona um destino...</option>
-  {[
-    'FIXO HPRT',
-    'FIXO HTRD',
-    'FIXO CINS',
-    'HPRT',
-    'HTRD',
-    'CINS',
-    'CMAS',
-    'Geral CMAS',
-    'Equipa Móvel',
-  ].map(loc => (
-    <option key={loc} value={loc}>{loc}</option>
-  ))}
-</select>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Destino *</label>
+                <select
+                  value={form.destino} onChange={e => setForm({ ...form, destino: e.target.value })}
+                  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400"
+                >
+                  <option value="">Seleciona um destino...</option>
+                  {['FIXO HPRT','FIXO HTRD','FIXO CINS','HPRT','HTRD','CINS','CMAS','Geral CMAS','Equipa Móvel'].map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -299,9 +325,9 @@ if (!eqSelecionado) return
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Retorno previsto *</label>
-                <input type="date" value={form.dataRetornoPrevista} onChange={e => setForm({ ...form, dataRetornoPrevista: e.target.value })}
-  min={new Date().toISOString().split('T')[0]}
-  className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
+                  <input type="date" value={form.dataRetornoPrevista} onChange={e => setForm({ ...form, dataRetornoPrevista: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-sky-400" />
                 </div>
               </div>
               <div>
@@ -315,7 +341,8 @@ if (!eqSelecionado) return
               <button onClick={() => { setModalAberto(false); setErro('') }} className="text-xs font-semibold text-gray-500 px-4 py-2 border border-gray-200 hover:border-gray-300 transition-all">
                 Cancelar
               </button>
-              <button onClick={handleSubmit} className="text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 transition-all">
+              <button onClick={handleSubmit} disabled={saving} className="text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 transition-all disabled:opacity-60 flex items-center gap-2">
+                {saving && <Loader size={11} className="animate-spin" />}
                 Registar Cedência
               </button>
             </div>
@@ -347,8 +374,8 @@ if (!eqSelecionado) return
               <button onClick={() => { setModalRetorno(null); setErro('') }} className="text-xs font-semibold text-gray-500 px-4 py-2 border border-gray-200 transition-all">
                 Cancelar
               </button>
-              <button onClick={registarRetorno} className="text-xs font-semibold bg-green-600 hover:bg-green-700 text-white px-4 py-2 transition-all flex items-center gap-1.5">
-                <CheckCircle size={12} />
+              <button onClick={registarRetorno} disabled={saving} className="text-xs font-semibold bg-green-600 hover:bg-green-700 text-white px-4 py-2 transition-all disabled:opacity-60 flex items-center gap-1.5">
+                {saving ? <Loader size={11} className="animate-spin" /> : <CheckCircle size={12} />}
                 Confirmar retorno
               </button>
             </div>
