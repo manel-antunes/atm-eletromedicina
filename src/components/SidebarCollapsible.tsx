@@ -12,6 +12,7 @@ interface Props {
   nomeUtilizador?: string
   onLogout?: () => void
   onCommandPalette: () => void
+  cedenciasAtrasadas?: number
 }
 
 interface ItemNav { id: string; label: string; icon: React.ElementType }
@@ -62,7 +63,7 @@ const ITENS_FOOTER = [
   { id: 'administracao', label: 'Administração', icon: ShieldCheck, roles: ['admin'] },
 ]
 
-export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamentos, nomeUtilizador, onLogout, onCommandPalette }: Props) {
+export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamentos, nomeUtilizador, onLogout, onCommandPalette, cedenciasAtrasadas = 0 }: Props) {
   const [expandida, setExpandida] = useState(false)
 
   const [gruposAbertos, setGruposAbertos] = useState<Record<string, boolean>>(() => {
@@ -81,7 +82,8 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
 
   function renderItem({ id, label, icon: Icon }: ItemNav, indentado = false) {
     const ativo = paginaAtiva === id
-    const temBadge = (id === 'dashboard' || id === 'calibracoes') && alertas > 0
+    const temBadge = ((id === 'dashboard' || id === 'calibracoes') && alertas > 0) || (id === 'cedencias' && cedenciasAtrasadas > 0)
+    const badgeCount = id === 'cedencias' ? cedenciasAtrasadas : alertas
     return (
       <button
         key={id}
@@ -113,8 +115,8 @@ export default function SidebarCollapsible({ paginaAtiva, onNavegar, equipamento
               {label}
             </span>
             {temBadge && (
-              <span style={{ background: '#C0001A', color: '#fff', fontSize: 10, fontWeight: 800, padding: '1px 5px', borderRadius: 2 }}>
-                {alertas > 99 ? '99+' : alertas}
+              <span style={{ background: id === 'cedencias' ? '#ea580c' : '#C0001A', color: '#fff', fontSize: 10, fontWeight: 800, padding: '1px 5px', borderRadius: 2 }}>
+                {badgeCount > 99 ? '99+' : badgeCount}
               </span>
             )}
           </>

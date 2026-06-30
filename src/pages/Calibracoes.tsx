@@ -447,11 +447,14 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
               {erro    && <p className="text-xs text-red-600 bg-red-50 px-3 py-2">{erro}</p>}
               {sucesso && <p className="text-xs text-green-700 bg-green-50 px-3 py-2">✓ Calibração registada com sucesso!</p>}
 
-              {/* Histórico */}
+              {/* Histórico — timeline */}
               <div className="border-t border-gray-100 pt-3">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <History size={13} className="text-gray-400" />
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Histórico de Calibrações</span>
+                  {historico.length > 0 && (
+                    <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 font-mono">{historico.length}</span>
+                  )}
                 </div>
                 {loadingHistorico ? (
                   <div className="flex items-center gap-2 py-3 text-gray-400">
@@ -459,26 +462,32 @@ export default function Calibracoes({ equipamentos, onAtualizar, onVerDetalhe }:
                     <span className="text-xs">A carregar...</span>
                   </div>
                 ) : historico.length === 0 ? (
-                  <p className="text-xs text-gray-400 py-2">Nenhum registo anterior.</p>
+                  <p className="text-xs text-gray-400 py-2 italic">Nenhum registo anterior.</p>
                 ) : (
-                  <div className="space-y-2">
-                    {historico.map(h => (
-                      <div key={h.id} className="bg-gray-50 border border-gray-100 px-3 py-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-gray-700">
-                            {new Date(h.data_calibracao).toLocaleDateString('pt-PT')}
-                          </span>
-                          <span className="text-gray-400">{h.entidade}</span>
+                  <div className="relative">
+                    {/* linha vertical */}
+                    <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200" />
+                    <div className="space-y-3">
+                      {historico.map((h, i) => (
+                        <div key={h.id} className="flex gap-3">
+                          {/* ponto */}
+                          <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 mt-0.5 z-10 ${i === 0 ? 'border-green-500 bg-green-500' : 'border-gray-300 bg-white'}`} />
+                          <div className="flex-1 pb-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-semibold text-gray-800">
+                                {new Date(h.data_calibracao).toLocaleDateString('pt-PT')}
+                              </span>
+                              <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5">{h.entidade}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              Técnico: <span className="text-gray-700">{h.tecnico}</span>
+                              {h.aprovado_por && <span className="text-gray-400"> · Aprov. {h.aprovado_por}</span>}
+                            </p>
+                            {h.observacoes && <p className="text-xs text-gray-400 italic mt-0.5">{h.observacoes}</p>}
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between mt-0.5">
-                          <span className="text-gray-500">Técnico: <span className="text-gray-700">{h.tecnico}</span></span>
-                          {h.aprovado_por && (
-                            <span className="text-gray-400">Aprovado: {h.aprovado_por}</span>
-                          )}
-                        </div>
-                        {h.observacoes && <p className="text-gray-400 mt-0.5 italic">{h.observacoes}</p>}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

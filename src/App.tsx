@@ -102,6 +102,7 @@ function App() {
   const [sincronizando, setSincronizando] = useState(false)
   const [ultimaSync, setUltimaSync] = useState<Date | null>(null)
   const { toasts, mostrar, remover } = useToast()
+  const [cedenciasAtrasadas, setCedenciasAtrasadas] = useState(0)
   const isMobile = useIsMobile()
   const role = localStorage.getItem('atm_role') ?? 'tecnico'
 
@@ -151,6 +152,17 @@ function App() {
       .catch(() => setErroBackend(true))
       .finally(() => { setCarregando(false); setSincronizando(false) })
   }, [token, verificandoToken])
+
+  useEffect(() => {
+    if (!token) return
+    fetch(`${API_URL}/api/cedencias`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then((data: any[]) => {
+        const hoje = Date.now()
+        setCedenciasAtrasadas(data.filter(c => c.ativa && new Date(c.data_retorno_prevista).getTime() < hoje).length)
+      })
+      .catch(() => {})
+  }, [token])
 
   // Sincronizar sessão entre abas: logout ou login de outro utilizador noutro tab
   useEffect(() => {
@@ -258,7 +270,7 @@ function App() {
       case 'dashboard':    return <Dashboard equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} onNavegar={navegar} />
       case 'calibracoes':  return <Calibracoes equipamentos={equipamentos} onAtualizar={handleAtualizar} onVerDetalhe={setEquipDetalhe} />
       case 'inventario':   return <Inventario equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
-      case 'cedencias':    return <Cedencias equipamentos={equipamentos} onAtualizar={setEquipamentos} />
+      case 'cedencias':    return <Cedencias equipamentos={equipamentos} onAtualizar={setEquipamentos} mostrar={mostrar} />
       case 'relatorios':   return <Relatorios equipamentos={equipamentos} />
       case 'ia':           return <DashboardIA equipamentos={equipamentos} onVerDetalhe={setEquipDetalhe} />
       case 'calendario':   return <Calendario />
@@ -303,6 +315,7 @@ function App() {
             nomeUtilizador={nomeUtilizador}
             onLogout={handleLogout}
             onCommandPalette={() => setCommandPaletteAberta(true)}
+            cedenciasAtrasadas={cedenciasAtrasadas}
           />
         )}
 
@@ -347,6 +360,7 @@ function App() {
               nomeUtilizador={nomeUtilizador}
               onLogout={handleLogout}
               onCommandPalette={() => { setSidebarMobileAberta(false); setCommandPaletteAberta(true) }}
+              cedenciasAtrasadas={cedenciasAtrasadas}
             />
           </div>
         </>
