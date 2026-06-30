@@ -6,7 +6,6 @@ import { FICHAS_TEMPLATES } from '../data/fichasTemplates'
 
 import { API_URL } from '../config'
 const SETORES_PROPRIOS = ['MEGOPMCOPMEQ', 'MEGOPMCOPMPR', 'MEGOPMGARTEQ']
-const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 function getToken() { return localStorage.getItem('atm_token') ?? '' }
